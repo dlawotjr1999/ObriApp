@@ -20,7 +20,7 @@ import com.obri_back.obri.user.User;
 @Getter
 @NoArgsConstructor
 @Entity
-@Table(name = "practice_logs")
+@Table(name = "practice_log")
 public class PracticeLog {
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;

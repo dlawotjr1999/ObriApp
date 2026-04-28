@@ -16,8 +16,8 @@ import lombok.NoArgsConstructor;
 @Getter
 @Entity
 @NoArgsConstructor
-@Table(name = "post_instruments")
-public class postInstrument {
+@Table(name = "post_instrument")
+public class PostInstrument {
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
