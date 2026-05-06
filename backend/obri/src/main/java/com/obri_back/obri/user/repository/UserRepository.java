@@ -8,7 +8,8 @@ import org.springframework.stereotype.Repository;
 import com.obri_back.obri.user.entity.User;
 
 @Repository
-public interface UserRepository extends JpaRepository<User, String> {
-    Optional<User> findByEmail(String email);
-    boolean existsByEmail(String email);
+public interface UserRepository extends JpaRepository<User, Long> {
+    Optional<User> findByFirebaseUid(String firebaseUid);
+    Optional<User> findByNickname(String nickname);
+    boolean existsByNickname(String nickname);
 }

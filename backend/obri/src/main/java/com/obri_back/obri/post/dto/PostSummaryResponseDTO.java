@@ -1,0 +1,45 @@
+package com.obri_back.obri.post.dto;
+
+import com.obri_back.obri.post.entity.Post;
+import com.obri_back.obri.post.entity.PostStatus;
+
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.stream.Collectors;
+
+@Getter
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+public class PostSummaryResponseDTO {
+    private Long id;
+    private String title;
+    private String category;
+    private LocalDateTime eventAt;
+    private String location;
+    private List<PostInstrumentDTO> instruments;
+    private String timetable;
+    private Integer pay;
+    private PostStatus status;
+
+    public static PostSummaryResponseDTO from(Post post) {
+        return PostSummaryResponseDTO.builder()
+                .id(post.getId())
+                .title(post.getTitle())
+                .category(post.getCategory())
+                .eventAt(post.getEventAt())
+                .location(post.getLocation())
+                .instruments(post.getPostInstruments().stream()
+                        .map(PostInstrumentDTO::from)
+                        .collect(Collectors.toList()))
+                .timetable(post.getTimetable())
+                .pay(post.getPay())
+                .status(post.getStatus())
+                .build();
+    }
+}
