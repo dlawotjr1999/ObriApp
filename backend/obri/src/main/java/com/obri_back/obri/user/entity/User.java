@@ -1,4 +1,4 @@
-package com.obri_back.obri.user;
+package com.obri_back.obri.user.entity;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -20,13 +20,13 @@ import java.util.ArrayList;
 public class User {
     @Id
     @Column(name = "user_id", nullable = false, unique = true)
-    private String id;
+    private Long id;
 
     @Column(name = "email")
     private String email;
 
-    @Column(name = "password", nullable = false)
-    private String password;
+    @Column(name = "firebase_uid", nullable = false)
+    private String firebase_uid;
 
     @Column(name = "phoneNumber", nullable = false)
     private String phoneNumber;

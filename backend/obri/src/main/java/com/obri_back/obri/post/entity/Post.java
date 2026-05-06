@@ -1,10 +1,11 @@
-package com.obri_back.obri.post;
+package com.obri_back.obri.post.entity;
 
 import java.time.LocalDateTime;
 
 import org.hibernate.annotations.CreationTimestamp;
 
-import com.obri_back.obri.user.User;
+import com.obri_back.obri.post.PostStatus;
+import com.obri_back.obri.user.entity.User;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -28,7 +29,7 @@ import lombok.NoArgsConstructor;
 public class Post {
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "post_id", nullable = false)
-    private Integer id;
+    private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)

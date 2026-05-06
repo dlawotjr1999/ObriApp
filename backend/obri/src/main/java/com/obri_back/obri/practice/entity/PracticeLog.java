@@ -1,4 +1,4 @@
-package com.obri_back.obri.practice;
+package com.obri_back.obri.practice.entity;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -15,7 +15,7 @@ import lombok.NoArgsConstructor;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
-import com.obri_back.obri.user.User;
+import com.obri_back.obri.user.entity.User;
 
 @Getter
 @NoArgsConstructor
@@ -23,7 +23,7 @@ import com.obri_back.obri.user.User;
 @Table(name = "practice_log")
 public class PracticeLog {
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Integer id;
+    private Long id;
 
     @ManyToOne
     @JoinColumn(name = "user_id", nullable = false)

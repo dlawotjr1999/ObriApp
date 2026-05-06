@@ -12,8 +12,8 @@ import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-import com.obri_back.obri.user.User;
-import com.obri_back.obri.post.Post;;
+import com.obri_back.obri.post.entity.Post;
+import com.obri_back.obri.user.entity.User;;
 
 @Getter
 @NoArgsConstructor
@@ -21,7 +21,7 @@ import com.obri_back.obri.post.Post;;
 @Table(name = "application")
 public class Application {
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Integer id;
+    private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
