@@ -63,3 +63,6 @@ out/
 application-local.yml
 application-local.yaml
 application-local.properties
+
+### security ###
+src/main/resources/firebase-service-account.json
