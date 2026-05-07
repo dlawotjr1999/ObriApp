@@ -8,7 +8,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
-/**
+/*
  * 전역 예외 처리 핸들러
  * 모든 예외를 ApiResponse 형식으로 변환해 반환
  * @RestControllerAdvice로 모든 컨트롤러에 적용

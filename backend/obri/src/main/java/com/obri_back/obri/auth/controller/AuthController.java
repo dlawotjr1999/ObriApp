@@ -25,7 +25,7 @@ public class AuthController {
 
     private final AuthService authService;
 
-    /**
+    /*
      * 회원가입
      * Firebase 가입 후 MySQL에 유저 정보 저장
      * Authorization 헤더의 Firebase ID Token에서 UID와 이메일 추출
@@ -46,7 +46,7 @@ public class AuthController {
         return ResponseEntity.ok(APIResponse.ok("회원가입이 완료되었습니다", response));
     }
 
-    /**
+    /*
      * FCM 토큰 갱신
      * 앱 실행 시 최신 FCM 토큰을 서버에 저장
      * 푸시 알림 발송 시 이 토큰을 사용

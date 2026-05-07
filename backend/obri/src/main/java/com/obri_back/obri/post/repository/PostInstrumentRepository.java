@@ -8,6 +8,6 @@ import org.springframework.stereotype.Repository;
 import com.obri_back.obri.post.entity.PostInstrument;
 
 @Repository
-public interface PostInstrumentRepository extends JpaRepository<PostInstrument, Integer> {
+public interface PostInstrumentRepository extends JpaRepository<PostInstrument, Long> {
     List<PostInstrument> findByPostId(Long postId);  // 구인글의 악기 목록
 }
