@@ -8,6 +8,7 @@ import org.springframework.stereotype.Repository;
 import com.obri_back.obri.user.entity.Career;
 
 @Repository
-public interface CareerRepository extends JpaRepository<Career, Integer> {
-    List<Career> findByUserId(String userId);
+public interface CareerRepository extends JpaRepository<Career, Long> {
+    List<Career> findByUserId(Long userId);
+    void deleteByUserId(Long userId);
 }

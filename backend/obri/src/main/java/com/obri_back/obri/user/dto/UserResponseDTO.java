@@ -1,7 +1,6 @@
 package com.obri_back.obri.user.dto;
 
 import com.obri_back.obri.user.entity.User;
-import com.obri_back.obri.user.dto.CareerDTO;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;

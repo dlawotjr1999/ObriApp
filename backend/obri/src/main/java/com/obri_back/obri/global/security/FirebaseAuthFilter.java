@@ -3,7 +3,6 @@ package com.obri_back.obri.global.security;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseAuthException;
 import com.google.firebase.auth.FirebaseToken;
-import com.obri_back.obri.user.entity.User;
 import com.obri_back.obri.user.repository.UserRepository;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;

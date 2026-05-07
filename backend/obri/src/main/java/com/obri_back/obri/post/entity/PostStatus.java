@@ -1,4 +1,4 @@
-package com.obri_back.obri.post;
+package com.obri_back.obri.post.entity;
 
 public enum PostStatus {
     OPEN,          // 모집중
