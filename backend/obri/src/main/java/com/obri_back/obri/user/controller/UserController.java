@@ -62,6 +62,7 @@ public class UserController {
 
     /**
      * 회원 탈퇴
+     * 근데 지금 안 됨
      */
     @DeleteMapping("/me")
     public ResponseEntity<APIResponse<Void>> deleteUser(

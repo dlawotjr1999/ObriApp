@@ -1,5 +1,6 @@
 package com.obri_back.obri.user.entity;
 
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -65,7 +66,9 @@ public class User {
     // User와 Career는 1:N 관계
     // career 필드를 통해 조회를 
     @Builder.Default
-    @OneToMany(mappedBy = "user", fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "user", fetch = FetchType.LAZY,
+        cascade = CascadeType.ALL, orphanRemoval = true
+    )
     private List<Career> careers = new ArrayList<>();
 
     public void updateFcmToken(String fcmToken) {

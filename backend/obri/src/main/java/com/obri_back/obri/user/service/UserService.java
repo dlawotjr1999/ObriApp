@@ -31,7 +31,7 @@ public class UserService {
     private final CareerRepository careerRepository;
     private final PostRepository postRepository;
 
-    /**
+    /*
      * 내 정보 조회
      *
      * @param userId 현재 로그인한 유저의 내부 ID
@@ -44,7 +44,7 @@ public class UserService {
         return UserResponseDTO.from(user);
     }
 
-    /**
+    /*
      * 타인 프로필 조회
      *
      * @param nickname 조회할 유저의 닉네임
@@ -57,7 +57,7 @@ public class UserService {
         return UserResponseDTO.from(user);
     }
 
-    /**
+    /*
      * 내 정보 수정
      * 수정 요청의 모든 필드를 한 번에 반영 (PUT 방식)
      * careers는 기존 데이터 전체 삭제 후 새로 insert
@@ -97,7 +97,7 @@ public class UserService {
         return UserResponseDTO.from(user);
     }
 
-    /**
+    /*
      * 회원 탈퇴
      * MySQL 유저 삭제 (Firebase 계정 삭제는 클라이언트에서 처리)
      *
@@ -110,7 +110,7 @@ public class UserService {
         userRepository.delete(user);
     }
 
-    /**
+    /*
      * 닉네임 중복 체크
      *
      * @param nickname 중복 확인할 닉네임
@@ -121,7 +121,7 @@ public class UserService {
         return userRepository.existsByNickname(nickname);
     }
 
-    /**
+    /*
      * 내가 올린 구인글 목록 조회
      * 요약 정보만 반환 (카드 리스트용)
      *
