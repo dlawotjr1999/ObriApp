@@ -1,10 +1,11 @@
 package com.obri_back.obri.post.entity;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.hibernate.annotations.CreationTimestamp;
 
-import com.obri_back.obri.post.PostStatus;
 import com.obri_back.obri.user.entity.User;
 
 import jakarta.persistence.Column;
@@ -17,8 +18,9 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
-
+import jakarta.persistence.Version;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
@@ -35,13 +37,15 @@ public class Post {
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
-    @Column(name = "category", nullable = false)
-    private String category;
-
     @Column(name = "title", nullable = false)  
     private String title;
 
-    @CreationTimestamp
+    @Column(name = "category", nullable = false)
+    private String category;
+
+    @OneToMany(mappedBy = "post", fetch = FetchType.LAZY)
+    private List<PostInstrument> postInstruments = new ArrayList<>();
+
     @Column(name = "event_at", nullable = false)
     private LocalDateTime eventAt;
 
@@ -57,6 +61,11 @@ public class Post {
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false)
     private PostStatus status;
+
+    // 낙관적 락
+    @Version
+    @Column(name = "version")
+    private Long version;                
 
     @CreationTimestamp
     @Column(name = "created_at")

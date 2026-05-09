@@ -23,7 +23,7 @@ public class PostInstrument {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "post_id", nullable = false)
-    private Post post_id;
+    private Post post;
 
     @Column(name = "instrument", nullable = false)
     private String instrument;
