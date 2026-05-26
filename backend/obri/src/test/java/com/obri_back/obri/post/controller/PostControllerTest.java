@@ -110,7 +110,7 @@ class PostControllerTest {
     }
 
     @Test
-    void createPost_returns400WhenTitleBlank() throws Exception {
+    void createPost_returns400WhenTitleMissing() throws Exception {
         mockMvc.perform(post("/api/posts")
                         .with(authentication(auth))
                         .contentType(MediaType.APPLICATION_JSON)
