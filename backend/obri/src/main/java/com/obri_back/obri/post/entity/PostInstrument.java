@@ -30,4 +30,12 @@ public class PostInstrument {
 
     @Column(name = "people", nullable = false)
     private Integer people;
+
+    public static PostInstrument of(Post post, String instrument, int people) {
+        PostInstrument pi = new PostInstrument();
+        pi.post = post;
+        pi.instrument = instrument;
+        pi.people = people;
+        return pi;
+    }
 }
