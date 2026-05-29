@@ -1,4 +1,7 @@
-package com.obri_back.obri.application;
+package com.obri_back.obri.application.entity;
+
+import com.obri_back.obri.post.entity.Post;
+import com.obri_back.obri.user.entity.User;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -9,14 +12,19 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.Builder;  
 import lombok.NoArgsConstructor;
 
-import com.obri_back.obri.post.entity.Post;
-import com.obri_back.obri.user.entity.User;;
+import org.hibernate.annotations.CreationTimestamp;
+
+import java.time.LocalDateTime;
 
 @Getter
+@Builder
 @NoArgsConstructor
+@AllArgsConstructor
 @Entity
 @Table(name = "application")
 public class Application {
@@ -32,8 +40,12 @@ public class Application {
     private Post post;
 
     @Column(name = "status", nullable = false)
-    private String status; 
+    private Boolean status; 
 
     @Column(name = "additional_info")
     private String additionalInfo;
+
+    @CreationTimestamp
+    @Column(name = "created_at")
+    private LocalDateTime createdAt;
 }
