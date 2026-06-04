@@ -1,29 +1,35 @@
 package com.obri_back.obri.auth.controller;
 
+import com.google.firebase.auth.FirebaseAuth;
 import com.obri_back.obri.auth.service.AuthService;
 import com.obri_back.obri.global.config.SecurityConfig;
 import com.obri_back.obri.global.security.FirebaseAuthFilter;
 import com.obri_back.obri.user.dto.UserResponseDTO;
 import com.obri_back.obri.user.entity.User;
+import com.obri_back.obri.user.repository.UserRepository;
 import jakarta.servlet.FilterChain;
-import jakarta.servlet.ServletRequest;
-import jakarta.servlet.ServletResponse;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.boot.test.context.TestConfiguration;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
+import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.List;
 
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.authentication;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
@@ -35,24 +41,32 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 class AuthControllerTest {
 
     @Autowired MockMvc mockMvc;
-    @MockBean AuthService authService;
-    @MockBean FirebaseAuthFilter firebaseAuthFilter;
+    @MockitoBean AuthService authService;
+
+    @TestConfiguration
+    static class FilterPassThroughConfig {
+        @Bean
+        FirebaseAuthFilter firebaseAuthFilter() {
+            return new FirebaseAuthFilter(
+                    Mockito.mock(FirebaseAuth.class),
+                    Mockito.mock(UserRepository.class)) {
+                @Override
+                protected void doFilterInternal(
+                        HttpServletRequest request,
+                        HttpServletResponse response,
+                        FilterChain filterChain)
+                        throws ServletException, IOException {
+                    filterChain.doFilter(request, response);
+                }
+            };
+        }
+    }
 
     private Authentication auth;
     private User mockUser;
 
     @BeforeEach
-    void setUp() throws Exception {
-        // FirebaseAuthFilter를 통과시키는 Mock 설정
-        doAnswer(invocation -> {
-            FilterChain chain = invocation.getArgument(2, FilterChain.class);
-            chain.doFilter(
-                invocation.getArgument(0, ServletRequest.class),
-                invocation.getArgument(1, ServletResponse.class)
-            );
-            return null;
-        }).when(firebaseAuthFilter).doFilter(any(), any(), any());
-
+    void setUp() {
         mockUser = User.builder()
                 .id(1L)
                 .email("test@test.com")

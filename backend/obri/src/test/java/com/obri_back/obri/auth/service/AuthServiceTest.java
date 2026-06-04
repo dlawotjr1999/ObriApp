@@ -21,6 +21,7 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -37,8 +38,8 @@ class AuthServiceTest {
     @BeforeEach
     void setUp() throws Exception {
         mockToken = mock(FirebaseToken.class);
-        given(mockToken.getUid()).willReturn("test-uid");
-        given(mockToken.getEmail()).willReturn("test@test.com");
+        lenient().when(mockToken.getUid()).thenReturn("test-uid");
+        lenient().when(mockToken.getEmail()).thenReturn("test@test.com");
     }
 
     @Test
