@@ -40,7 +40,7 @@ public class Application {
     private Post post;
 
     @Column(name = "status", nullable = false)
-    private Boolean status; 
+    private ApplicationStatus status; 
 
     @Column(name = "additional_info")
     private String additionalInfo;

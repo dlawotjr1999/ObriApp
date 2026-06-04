@@ -4,6 +4,7 @@ import com.obri_back.obri.application.dto.AppRequestDTO;
 import com.obri_back.obri.application.dto.AppResponseDTO;
 import com.obri_back.obri.application.dto.AppStatusUpdateDTO;
 import com.obri_back.obri.application.entity.Application;
+import com.obri_back.obri.application.entity.ApplicationStatus;
 import com.obri_back.obri.application.repository.ApplicationRepository;
 import com.obri_back.obri.global.exception.BadRequestException;
 import com.obri_back.obri.global.exception.ForbiddenException;
@@ -56,7 +57,7 @@ public class ApplicationService {
             .user(user)
             .post(post)
             .additionalInfo(requestDto.getAdditionalInfo())
-            .status(true)
+            .status(ApplicationStatus.PENDING)
             .build();
 
         applicationRepository.save(application);

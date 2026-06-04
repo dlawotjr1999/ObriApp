@@ -3,6 +3,7 @@ package com.obri_back.obri.application.dto;
 import com.obri_back.obri.user.entity.User;
 import com.obri_back.obri.user.dto.UserResponseDTO;
 import com.obri_back.obri.application.entity.Application;
+import com.obri_back.obri.application.entity.ApplicationStatus;
 
 import lombok.Builder;
 import lombok.Getter;
@@ -16,7 +17,7 @@ public class AppResponseDTO {
     private Long postId;
     private UserResponseDTO applicant;
     private String additionalInfo;
-    private Boolean status;
+    private ApplicationStatus status;
     private LocalDateTime createdAt;
 
     public static AppResponseDTO from(Application application, User user) {
