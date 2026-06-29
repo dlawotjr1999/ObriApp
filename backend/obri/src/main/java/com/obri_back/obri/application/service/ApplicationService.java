@@ -7,6 +7,7 @@ import com.obri_back.obri.application.entity.Application;
 import com.obri_back.obri.application.entity.ApplicationStatus;
 import com.obri_back.obri.application.repository.ApplicationRepository;
 import com.obri_back.obri.global.exception.BadRequestException;
+import com.obri_back.obri.global.exception.ConflictException;
 import com.obri_back.obri.global.exception.ForbiddenException;
 import com.obri_back.obri.global.exception.NotFoundException;
 import com.obri_back.obri.post.entity.Post;
@@ -51,6 +52,11 @@ public class ApplicationService {
         // 본인 글 지원 체크
         if (post.getUser().getId().equals(user.getId())) {
             throw new ForbiddenException("본인 구인글에는 지원할 수 없습니다");
+        }
+
+        // 중복 지원 체크 (DB UNIQUE 제약의 사전 방어선)
+        if (applicationRepository.existsByPostIdAndUserId(post.getId(), user.getId())) {
+            throw new ConflictException("이미 지원한 구인글입니다");
         }
 
         Application application = Application.builder()
@@ -105,9 +111,25 @@ public class ApplicationService {
         return AppResponseDTO.from(application, application.getUser());
     }
 
-    // 지원서 상태 업데이트 (승인/거절)
+    // 지원서 상태 업데이트 (승인/거절/취소)
+    // CANCELLED: 지원자만 / ACCEPTED·REJECTED: 구인자만 — 역할이 다르므로 분기 처리
     @Transactional
     public void updateApplicationStatus(User user, Long id, AppStatusUpdateDTO statusUpdateDto) {
+        Application application = applicationRepository.findById(id)
+                .orElseThrow(() -> new NotFoundException("지원서를 찾을 수 없습니다"));
 
+        ApplicationStatus newStatus = statusUpdateDto.getStatus();
+        boolean isApplicant = application.getUser().getId().equals(user.getId());
+        boolean isRecruiter = application.getPost().getUser().getId().equals(user.getId());
+
+        if (newStatus == ApplicationStatus.CANCELLED) {
+            if (!isApplicant) throw new ForbiddenException("지원자만 지원을 취소할 수 있습니다");
+        } else if (newStatus == ApplicationStatus.ACCEPTED || newStatus == ApplicationStatus.REJECTED) {
+            if (!isRecruiter) throw new ForbiddenException("구인자만 수락 또는 거절할 수 있습니다");
+        } else {
+            throw new BadRequestException("유효하지 않은 상태 값입니다");
+        }
+
+        application.updateStatus(newStatus);
     }
 }

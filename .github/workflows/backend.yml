@@ -6,7 +6,7 @@ on:
   push:
     branches:
       - main
-      - "feature/**" # feature 브랜치도 포함
+      - "feat/**" # feature 브랜치도 포함
     paths:
       - "backend/**" # backend 폴더 변경 시에만 실행
   pull_request:

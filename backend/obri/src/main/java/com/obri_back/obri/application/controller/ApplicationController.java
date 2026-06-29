@@ -9,6 +9,10 @@ import com.obri_back.obri.user.entity.User;
 
 import jakarta.validation.Valid;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -33,8 +37,8 @@ public class ApplicationController {
         @AuthenticationPrincipal User user,
         @RequestBody @Valid AppRequestDTO requestDto
     ) {
-        applicationService.submitApplication(user, requestDto);
-        return ResponseEntity.ok(APIResponse.ok("지원서가 제출되었습니다"));
+        AppResponseDTO response = applicationService.submitApplication(user, requestDto);
+        return ResponseEntity.ok(APIResponse.ok("지원서가 제출되었습니다", response));
     }
 
     // 지원서 단건 조회
@@ -58,13 +62,16 @@ public class ApplicationController {
         return ResponseEntity.ok(APIResponse.ok("지원 상태가 업데이트되었습니다"));
     }
 
-    // 한 게시글에 대한 지원서 목록 조회(post로 옮길 듯)
-    // @GetMapping("/{postId}/applications")
-    // public ResponseEntity<APIResponse<Page<AppResponseDTO>>> getApplicationsByPostId(
-    //     @AuthenticationPrincipal User user,
-    //     @PathVariable Long postId
-    // ) {
-    //     Page<AppResponseDTO> responses = applicationService.getApplicationsByPostId(postId, user, pageable);
-    //     return ResponseEntity.ok(APIResponse.ok("게시글에 대한 지원서 목록을 조회했습니다", responses));
-    // }
+    // 구인글별 지원자 목록 (구인자용)
+    // PostController 이동 시 PostController → ApplicationService cross-domain 의존이 생기므로 여기에 유지
+    @GetMapping("/post/{postId}")
+    public ResponseEntity<APIResponse<Page<AppResponseDTO>>> getApplicationsByPostId(
+        @AuthenticationPrincipal User user,
+        @PathVariable Long postId,
+        @PageableDefault(size = 10, sort = "createdAt",
+                direction = Sort.Direction.DESC) Pageable pageable
+    ) {
+        Page<AppResponseDTO> response = applicationService.getApplicationsByPostId(postId, user, pageable);
+        return ResponseEntity.ok(APIResponse.ok("지원자 목록 조회 성공", response));
+    }
 }

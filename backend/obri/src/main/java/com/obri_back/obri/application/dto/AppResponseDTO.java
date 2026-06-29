@@ -1,7 +1,6 @@
 package com.obri_back.obri.application.dto;
 
 import com.obri_back.obri.user.entity.User;
-import com.obri_back.obri.user.dto.UserResponseDTO;
 import com.obri_back.obri.application.entity.Application;
 import com.obri_back.obri.application.entity.ApplicationStatus;
 
@@ -15,7 +14,8 @@ import java.time.LocalDateTime;
 public class AppResponseDTO {
     private Long id;
     private Long postId;
-    private UserResponseDTO applicant;
+    // UserResponseDTO 대신 ApplicantResponseDTO 사용: 구인자에게 지원자의 email·phoneNumber가 노출되는 것을 차단
+    private ApplicantResponseDTO applicant;
     private String additionalInfo;
     private ApplicationStatus status;
     private LocalDateTime createdAt;
@@ -24,7 +24,7 @@ public class AppResponseDTO {
         return AppResponseDTO.builder()
                 .id(application.getId())
                 .postId(application.getPost().getId())
-                .applicant(UserResponseDTO.from(user))
+                .applicant(ApplicantResponseDTO.from(user))
                 .additionalInfo(application.getAdditionalInfo())
                 .status(application.getStatus())
                 .createdAt(application.getCreatedAt())

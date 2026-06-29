@@ -72,7 +72,7 @@ class ApplicationControllerTest {
 
         when(applicationService.submitApplication(any(), any())).thenReturn(response);
 
-        mockMvc.perform(post("/api/applications")
+        mockMvc.perform(post("/api/applications/submit")
                         .with(authentication(auth))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
