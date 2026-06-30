@@ -28,9 +28,12 @@ public class SecurityConfig {
                 // 인증 불필요
                 .requestMatchers("/api/auth/register").permitAll()
                 .requestMatchers("/api/users/check/**").permitAll()
-                // 나머지 전부 인증 필요
+                // Swagger 관련 경로 추가
+                .requestMatchers("/swagger-ui/**").permitAll()
+                .requestMatchers("/v3/api-docs/**").permitAll()
                 .anyRequest().authenticated()
             )
+            
             .addFilterBefore(firebaseAuthFilter,
                 UsernamePasswordAuthenticationFilter.class);
 
