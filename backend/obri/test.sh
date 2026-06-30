@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # ── 설정 ──────────────────────────────────────────
-FIREBASE_API_KEY="AIzaSyBLKropGeYZ6GSZ2eqdRzKrgLhPPtkJ4io"
+FIREBASE_API_KEY="//"
 EMAIL="test@test.com"
 PASSWORD="test1234"
 BASE_URL="http://localhost:8080"
