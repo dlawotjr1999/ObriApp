@@ -59,9 +59,11 @@ public class ApplicationService {
             throw new ConflictException("이미 지원한 구인글입니다");
         }
 
+        // 전공 악기는 지원 시점의 프로필 값을 스냅샷으로 저장 (수락 시 모집 악기와 매칭에 사용)
         Application application = Application.builder()
             .user(user)
             .post(post)
+            .instrument(user.getInstrument())
             .additionalInfo(requestDto.getAdditionalInfo())
             .status(ApplicationStatus.PENDING)
             .build();
@@ -131,5 +133,23 @@ public class ApplicationService {
         }
 
         application.updateStatus(newStatus);
+    }
+
+    // 구인글 단건 조회(applicationCount)용 — Post 도메인에서 호출
+    @Transactional(readOnly = true)
+    public long countApplicationsByPostId(Long postId) {
+        return applicationRepository.countByPostId(postId);
+    }
+
+    // 구인글 단건 조회(hasApplied)용 — Post 도메인에서 호출
+    @Transactional(readOnly = true)
+    public boolean hasApplied(Long postId, Long userId) {
+        return applicationRepository.existsByPostIdAndUserId(postId, userId);
+    }
+
+    // 구인글 삭제 시 연관 지원서 정리용 — Post 도메인에서 호출
+    @Transactional
+    public void deleteAllByPostId(Long postId) {
+        applicationRepository.deleteByPostId(postId);
     }
 }

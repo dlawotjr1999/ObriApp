@@ -1,16 +1,37 @@
 package com.obri_back.obri.post.controller;
 
 import com.obri_back.obri.global.common.APIResponse;
+import com.obri_back.obri.global.common.PageResponse;
 import com.obri_back.obri.post.dto.PostCreateRequestDTO;
+import com.obri_back.obri.post.dto.PostDetailResponseDTO;
 import com.obri_back.obri.post.dto.PostResponseDTO;
+import com.obri_back.obri.post.dto.PostSummaryResponseDTO;
+import com.obri_back.obri.post.entity.PostStatus;
 import com.obri_back.obri.post.service.PostService;
 import com.obri_back.obri.user.entity.User;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDate;
+import java.util.List;
+
+/**
+ * 구인글 관련 API 컨트롤러
+ * POST   /api/posts             — 구인글 등록
+ * GET    /api/posts             — 구인글 전체 조회 (필터·페이지네이션)
+ * GET    /api/posts/{id}        — 구인글 단건 조회
+ * PUT    /api/posts/{id}        — 구인글 수정 (작성자만)
+ * PATCH  /api/posts/{id}/close  — 구인글 수동 전체 마감 (작성자만)
+ * DELETE /api/posts/{id}        — 구인글 삭제 (작성자만)
+ */
 @RestController
 @RequestMapping("/api/posts")
 @RequiredArgsConstructor
@@ -24,5 +45,57 @@ public class PostController {
             @RequestBody @Valid PostCreateRequestDTO request) {
         PostResponseDTO response = postService.createPost(user, request);
         return ResponseEntity.ok(APIResponse.ok("구인글이 등록되었습니다", response));
+    }
+
+    @GetMapping
+    public ResponseEntity<APIResponse<PageResponse<PostSummaryResponseDTO>>> getPosts(
+            @RequestParam(required = false) List<String> category,
+            @RequestParam(required = false) List<String> instrument,
+            @RequestParam(required = false) List<String> region,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
+            @RequestParam(required = false) PostStatus status,
+            @PageableDefault(size = 10, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
+
+        Page<PostSummaryResponseDTO> response =
+                postService.getPosts(category, instrument, region, startDate, endDate, status, pageable);
+        return ResponseEntity.ok(APIResponse.ok("구인글 목록 조회 성공", PageResponse.from(response)));
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<APIResponse<PostDetailResponseDTO>> getPost(
+            @AuthenticationPrincipal User user,
+            @PathVariable Long id) {
+
+        PostDetailResponseDTO response = postService.getPost(id, user);
+        return ResponseEntity.ok(APIResponse.ok("구인글 조회 성공", response));
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<APIResponse<PostResponseDTO>> updatePost(
+            @AuthenticationPrincipal User user,
+            @PathVariable Long id,
+            @RequestBody @Valid PostCreateRequestDTO request) {
+
+        PostResponseDTO response = postService.updatePost(id, user, request);
+        return ResponseEntity.ok(APIResponse.ok("구인글이 수정되었습니다", response));
+    }
+
+    @PatchMapping("/{id}/close")
+    public ResponseEntity<APIResponse<Void>> closePost(
+            @AuthenticationPrincipal User user,
+            @PathVariable Long id) {
+
+        postService.closePost(id, user);
+        return ResponseEntity.ok(APIResponse.ok("구인글이 마감되었습니다"));
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<APIResponse<Void>> deletePost(
+            @AuthenticationPrincipal User user,
+            @PathVariable Long id) {
+
+        postService.deletePost(id, user);
+        return ResponseEntity.ok(APIResponse.ok("구인글이 삭제되었습니다"));
     }
 }

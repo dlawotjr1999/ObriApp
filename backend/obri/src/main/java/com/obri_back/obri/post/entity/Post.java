@@ -90,4 +90,23 @@ public class Post {
     public void addInstrument(PostInstrument instrument) {
         this.postInstruments.add(instrument);
     }
+
+    public void updateInfo(PostCreateRequestDTO dto) {
+        this.category = dto.getCategory();
+        this.title = dto.getTitle();
+        this.eventAt = dto.getEventAt();
+        this.location = dto.getLocation();
+        this.timetable = dto.getTimetable();
+        this.pay = dto.getPay();
+    }
+
+    // 악기 목록 전체 교체 (career와 동일하게 전체 삭제 후 재삽입 패턴, orphanRemoval로 처리)
+    public void replaceInstruments(List<PostInstrument> newInstruments) {
+        this.postInstruments.clear();
+        newInstruments.forEach(this::addInstrument);
+    }
+
+    public void close() {
+        this.status = PostStatus.CLOSED;
+    }
 }

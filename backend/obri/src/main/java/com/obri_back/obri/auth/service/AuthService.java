@@ -61,6 +61,11 @@ public class AuthService {
             throw new ConflictException("이미 가입된 계정입니다");
         }
 
+        // 이미 가입된 이메일인지 확인
+        if (userRepository.existsByEmail(email)) {
+            throw new ConflictException("이미 가입된 이메일입니다");
+        }
+
         // 닉네임 중복 확인
         if (userRepository.existsByNickname(request.getNickname())) {
             throw new ConflictException("이미 사용 중인 닉네임입니다");
