@@ -9,7 +9,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
-
+import jakarta.persistence.Version;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
@@ -31,11 +31,20 @@ public class PostInstrument {
     @Column(name = "people", nullable = false)
     private Integer people;
 
+    @Column(name = "is_deleted", nullable = false)
+    private Integer filled;
+
+    @Version
+    @Column(name = "version")
+    private Long version;
+
     public static PostInstrument of(Post post, String instrument, int people) {
         PostInstrument pi = new PostInstrument();
         pi.post = post;
         pi.instrument = instrument;
         pi.people = people;
+        pi.filled = 0;
+        pi.version = 1L;
         return pi;
     }
 }
