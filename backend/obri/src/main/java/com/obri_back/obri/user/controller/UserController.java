@@ -4,6 +4,7 @@ import com.obri_back.obri.global.common.APIResponse;
 import com.obri_back.obri.application.dto.AppResponseDTO;
 import com.obri_back.obri.application.service.ApplicationService;
 import com.obri_back.obri.post.dto.PostSummaryResponseDTO;
+import com.obri_back.obri.user.dto.UserPublicProfileDTO;
 import com.obri_back.obri.user.dto.UserResponseDTO;
 import com.obri_back.obri.user.dto.UserUpdateRequestDTO;
 import com.obri_back.obri.user.entity.User;
@@ -94,10 +95,10 @@ public class UserController {
      * /me 보다 우선순위가 높아야 함 (충돌 방지)
      */
     @GetMapping("/{nickname}")
-    public ResponseEntity<APIResponse<UserResponseDTO>> getUserProfile(
+    public ResponseEntity<APIResponse<UserPublicProfileDTO>> getUserProfile(
             @PathVariable String nickname) {
 
-        UserResponseDTO response = userService.getUserProfile(nickname);
+        UserPublicProfileDTO response = userService.getUserProfile(nickname);
         return ResponseEntity.ok(APIResponse.ok("유저 프로필 조회 성공", response));
     }
 

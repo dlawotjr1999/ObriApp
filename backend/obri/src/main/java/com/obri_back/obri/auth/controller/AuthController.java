@@ -2,9 +2,9 @@ package com.obri_back.obri.auth.controller;
 
 import com.obri_back.obri.auth.dto.FCMTokenUpdateRequestDTO;
 import com.obri_back.obri.auth.dto.RegisterRequestDTO;
+import com.obri_back.obri.auth.dto.RegisterResponseDTO;
 import com.obri_back.obri.auth.service.AuthService;
 import com.obri_back.obri.global.common.APIResponse;
-import com.obri_back.obri.user.dto.UserResponseDTO;
 import com.obri_back.obri.user.entity.User;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -32,16 +32,16 @@ public class AuthController {
      *
      * @param authorization Firebase ID Token (Bearer {token})
      * @param request       닉네임, 악기, 학교, 경력 등 추가 정보
-     * @return 저장된 유저 정보
+     * @return 가입 시각(createdAt)만 포함한 응답
      */
     @PostMapping("/register")
-    public ResponseEntity<APIResponse<UserResponseDTO>> register(
+    public ResponseEntity<APIResponse<RegisterResponseDTO>> register(
             @RequestHeader("Authorization") String authorization,
             @RequestBody @Valid RegisterRequestDTO request) {
 
         // "Bearer " 제거 후 토큰만 추출
         String idToken = authorization.substring(7);
-        UserResponseDTO response = authService.register(idToken, request);
+        RegisterResponseDTO response = authService.register(idToken, request);
 
         return ResponseEntity.ok(APIResponse.ok("회원가입이 완료되었습니다", response));
     }
