@@ -13,4 +13,6 @@ public interface ApplicationRepository extends JpaRepository<Application, Long> 
     Page<Application> findByPostId(Long postId, Pageable pageable);
     // DB UNIQUE 제약 전에 애플리케이션 레벨에서 먼저 차단해 409 에러 메시지를 제어
     boolean existsByPostIdAndUserId(Long postId, Long userId);
+    long countByPostId(Long postId);
+    void deleteByPostId(Long postId);
 }

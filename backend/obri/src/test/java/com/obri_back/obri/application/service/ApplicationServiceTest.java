@@ -45,7 +45,6 @@ class ApplicationServiceTest {
                 .id(2L).nickname("recruiter").firebaseUid("recruiter-uid").build();
 
         post = mock(Post.class);
-        given(post.getId()).willReturn(10L);
     }
 
     // ── 지원서 제출 ──────────────────────────────────
@@ -53,6 +52,7 @@ class ApplicationServiceTest {
     @Test
     void submitApplication_savesWhenValid() {
         given(postRepository.findById(10L)).willReturn(Optional.of(post));
+        given(post.getId()).willReturn(10L);
         given(post.getStatus()).willReturn(PostStatus.OPEN);
         given(post.getUser()).willReturn(recruiter);
         given(applicationRepository.save(any(Application.class)))

@@ -13,8 +13,8 @@ import java.time.LocalDateTime;
 @Builder
 public class AppResponseDTO {
     private Long id;
-    private Long postId;
-    // UserResponseDTO 대신 ApplicantResponseDTO 사용: 구인자에게 지원자의 email·phoneNumber가 노출되는 것을 차단
+    private ApplicationPostSummaryDTO post;
+    // UserResponseDTO 대신 ApplicantResponseDTO 사용: 구인자에게 지원자의 email이 노출되는 것을 차단
     private ApplicantResponseDTO applicant;
     private String additionalInfo;
     private ApplicationStatus status;
@@ -23,7 +23,7 @@ public class AppResponseDTO {
     public static AppResponseDTO from(Application application, User user) {
         return AppResponseDTO.builder()
                 .id(application.getId())
-                .postId(application.getPost().getId())
+                .post(ApplicationPostSummaryDTO.from(application.getPost()))
                 .applicant(ApplicantResponseDTO.from(user))
                 .additionalInfo(application.getAdditionalInfo())
                 .status(application.getStatus())

@@ -1,6 +1,7 @@
 package com.obri_back.obri.user.controller;
 
 import com.obri_back.obri.global.common.APIResponse;
+import com.obri_back.obri.global.common.PageResponse;
 import com.obri_back.obri.application.dto.AppResponseDTO;
 import com.obri_back.obri.application.service.ApplicationService;
 import com.obri_back.obri.post.dto.PostSummaryResponseDTO;
@@ -108,13 +109,13 @@ public class UserController {
      * 기본 정렬: 최신순(createdAt DESC)
      */
     @GetMapping("/me/posts")
-    public ResponseEntity<APIResponse<Page<PostSummaryResponseDTO>>> getMyPosts(
+    public ResponseEntity<APIResponse<PageResponse<PostSummaryResponseDTO>>> getMyPosts(
             @AuthenticationPrincipal User user,
             @PageableDefault(size = 10, sort = "createdAt",
                     direction = Sort.Direction.DESC) Pageable pageable) {
 
         Page<PostSummaryResponseDTO> response = userService.getMyPosts(user.getId(), pageable);
-        return ResponseEntity.ok(APIResponse.ok("유저가 올린 구인글 목록 조회 성공", response));
+        return ResponseEntity.ok(APIResponse.ok("유저가 올린 구인글 목록 조회 성공", PageResponse.from(response)));
     }
 
     /**
@@ -123,12 +124,12 @@ public class UserController {
      * 추후 ApplicationController에서 동일한 로직을 처리함
      */
     @GetMapping("/me/applications")
-    public ResponseEntity<APIResponse<Page<AppResponseDTO>>> getMyApplications(
+    public ResponseEntity<APIResponse<PageResponse<AppResponseDTO>>> getMyApplications(
             @AuthenticationPrincipal User user,
             @PageableDefault(size = 10, sort = "createdAt",
                     direction = Sort.Direction.DESC) Pageable pageable) {
 
         Page<AppResponseDTO> response = applicationService.getApplicationsByUserId(user.getId(), pageable);
-        return ResponseEntity.ok(APIResponse.ok("구인글 목록 조회 성공", response));
+        return ResponseEntity.ok(APIResponse.ok("구인글 목록 조회 성공", PageResponse.from(response)));
     }
 }

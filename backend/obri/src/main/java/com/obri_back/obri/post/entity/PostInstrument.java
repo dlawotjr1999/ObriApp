@@ -31,9 +31,13 @@ public class PostInstrument {
     @Column(name = "people", nullable = false)
     private Integer people;
 
-    @Column(name = "is_deleted", nullable = false)
-    private Integer filled;
+    @Column(name = "confirmed", nullable = false)
+    private Integer confirmed;
 
+    @Column(name = "closed", nullable = false)
+    private Boolean closed;
+
+    // 낙관적 락: 같은 Post 내 다른 악기끼리는 경합하지 않도록 악기 단위로 버전 관리
     @Version
     @Column(name = "version")
     private Long version;
@@ -43,8 +47,8 @@ public class PostInstrument {
         pi.post = post;
         pi.instrument = instrument;
         pi.people = people;
-        pi.filled = 0;
-        pi.version = 1L;
+        pi.confirmed = 0;
+        pi.closed = false;
         return pi;
     }
 }
