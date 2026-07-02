@@ -51,4 +51,20 @@ public class PostInstrument {
         pi.closed = false;
         return pi;
     }
+
+    // 지원 수락: 확정 인원 1 증가, 정원 도달 시 악기 마감
+    public void confirm() {
+        this.confirmed++;
+        if (this.confirmed >= this.people) {
+            this.closed = true;
+        }
+    }
+
+    // 수락 철회: 확정 인원 1 감소, 악기 마감 해제(재오픈)
+    public void revoke() {
+        if (this.confirmed > 0) {
+            this.confirmed--;
+        }
+        this.closed = false;
+    }
 }

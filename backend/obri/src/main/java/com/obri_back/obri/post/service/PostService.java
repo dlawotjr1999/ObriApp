@@ -3,6 +3,7 @@ package com.obri_back.obri.post.service;
 import com.obri_back.obri.application.service.ApplicationService;
 import com.obri_back.obri.global.exception.ForbiddenException;
 import com.obri_back.obri.global.exception.NotFoundException;
+import com.obri_back.obri.notification.NotificationService;
 import com.obri_back.obri.post.dto.PostCreateRequestDTO;
 import com.obri_back.obri.post.dto.PostDetailResponseDTO;
 import com.obri_back.obri.post.dto.PostResponseDTO;
@@ -32,6 +33,7 @@ public class PostService {
     // 단건 조회 시 applicationCount·hasApplied 계산을 위해 Application 도메인 참조
     // (UserController → ApplicationService와 동일한 기존 패턴, CLAUDE.md 개선 백로그 항목)
     private final ApplicationService applicationService;
+    private final NotificationService notificationService;
 
     @Transactional
     public PostResponseDTO createPost(User user, PostCreateRequestDTO request) {
@@ -40,6 +42,8 @@ public class PostService {
                 post.addInstrument(PostInstrument.of(post, item.getInstrument(), item.getPeople()))
         );
         Post saved = postRepository.save(post);
+        // 새 구인글 → 전체 구독자에게 broadcast (발송 실패는 NotificationService에서 격리)
+        notificationService.notifyNewPost(saved.getId(), saved.getTitle());
         return PostResponseDTO.from(saved);
     }
 
@@ -72,6 +76,10 @@ public class PostService {
                 .map(item -> PostInstrument.of(post, item.getInstrument(), item.getPeople()))
                 .collect(Collectors.toList());
         post.replaceInstruments(newInstruments);
+
+        // 구인글 수정 → 대기·수락 지원자에게 알림(거절/취소/철회 제외) — 명세 시나리오 1.8
+        List<String> applicantTokens = applicationService.getActiveApplicantFcmTokens(postId);
+        notificationService.notifyPostUpdated(applicantTokens, post.getId(), post.getTitle());
 
         return PostResponseDTO.from(post);
     }

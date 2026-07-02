@@ -37,6 +37,7 @@ class PostServiceTest {
 
     @Mock private PostRepository postRepository;
     @Mock private ApplicationService applicationService;
+    @Mock private com.obri_back.obri.notification.NotificationService notificationService;
     @InjectMocks private PostService postService;
 
     private User owner;

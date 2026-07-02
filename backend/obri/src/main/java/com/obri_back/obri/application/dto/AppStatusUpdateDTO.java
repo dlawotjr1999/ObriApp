@@ -10,5 +10,11 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class AppStatusUpdateDTO {
     @NotNull(message = "상태값을 입력해주세요")
-    private ApplicationStatus status;  // ACCEPTED / REJECTED / CANCELLED
+    private ApplicationStatus status;  // ACCEPTED / REJECTED / CANCELLED / REVOKED
+
+    public static AppStatusUpdateDTO of(ApplicationStatus status) {
+        AppStatusUpdateDTO dto = new AppStatusUpdateDTO();
+        dto.status = status;
+        return dto;
+    }
 }

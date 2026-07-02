@@ -4,8 +4,10 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.hibernate.annotations.BatchSize;
 import org.hibernate.annotations.CreationTimestamp;
 
+import com.obri_back.obri.global.exception.BadRequestException;
 import com.obri_back.obri.user.entity.User;
 
 import jakarta.persistence.CascadeType;
@@ -46,6 +48,8 @@ public class Post {
     @Column(name = "category", nullable = false)
     private String category;
 
+    // 목록 조회 시 글마다 악기를 개별 로딩(N+1)하지 않도록 IN 절로 한 번에 배치 로딩
+    @BatchSize(size = 100)
     @OneToMany(mappedBy = "post", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private List<PostInstrument> postInstruments = new ArrayList<>();
 
@@ -108,5 +112,42 @@ public class Post {
 
     public void close() {
         this.status = PostStatus.CLOSED;
+    }
+
+    // 지원 수락 시: 해당 악기 확정 인원 증가 후 전체 상태 재계산 (Post 도메인 로직)
+    public void confirmInstrument(String instrumentName) {
+        PostInstrument target = findInstrument(instrumentName);
+        if (Boolean.TRUE.equals(target.getClosed())) {
+            throw new BadRequestException("이미 정원이 마감된 악기입니다");
+        }
+        target.confirm();
+        recomputeStatus();
+    }
+
+    // 수락 철회 시: 해당 악기 확정 인원 감소·마감 해제 후 전체 상태 재계산(재오픈)
+    public void revokeInstrument(String instrumentName) {
+        PostInstrument target = findInstrument(instrumentName);
+        target.revoke();
+        recomputeStatus();
+    }
+
+    private PostInstrument findInstrument(String instrumentName) {
+        return this.postInstruments.stream()
+                .filter(pi -> pi.getInstrument().equals(instrumentName))
+                .findFirst()
+                .orElseThrow(() -> new BadRequestException("구인글에 모집하지 않는 악기입니다"));
+    }
+
+    // 악기별 마감 상태로부터 글 전체 상태를 파생: 전부 마감→CLOSED, 일부→PARTIALLY_CLOSED, 없음→OPEN
+    private void recomputeStatus() {
+        boolean allClosed = this.postInstruments.stream().allMatch(pi -> Boolean.TRUE.equals(pi.getClosed()));
+        boolean anyClosed = this.postInstruments.stream().anyMatch(pi -> Boolean.TRUE.equals(pi.getClosed()));
+        if (allClosed) {
+            this.status = PostStatus.CLOSED;
+        } else if (anyClosed) {
+            this.status = PostStatus.PARTIALLY_CLOSED;
+        } else {
+            this.status = PostStatus.OPEN;
+        }
     }
 }
