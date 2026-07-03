@@ -1,7 +1,7 @@
 // 구인글(Post) 도메인 타입. 노션 API 스펙(GET /api/posts) 기준.
 // 화면·컴포넌트·더미데이터가 공유하는 단일 소스.
 
-export type PostStatus = "OPEN" | "CLOSED";
+export type PostStatus = "OPEN" | "PARTIALLY_CLOSED" | "CLOSED";
 
 export interface PostInstrument {
   instrument: string;
