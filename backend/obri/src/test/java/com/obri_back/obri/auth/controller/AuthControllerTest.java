@@ -4,7 +4,7 @@ import com.google.firebase.auth.FirebaseAuth;
 import com.obri_back.obri.auth.service.AuthService;
 import com.obri_back.obri.global.config.SecurityConfig;
 import com.obri_back.obri.global.security.FirebaseAuthFilter;
-import com.obri_back.obri.user.dto.UserResponseDTO;
+import com.obri_back.obri.auth.dto.RegisterResponseDTO;
 import com.obri_back.obri.user.entity.User;
 import com.obri_back.obri.user.repository.UserRepository;
 import jakarta.servlet.FilterChain;
@@ -83,15 +83,7 @@ class AuthControllerTest {
 
     @Test
     void register_returns200WithUserInfo() throws Exception {
-        UserResponseDTO response = UserResponseDTO.builder()
-                .id(1L)
-                .nickname("tester")
-                .email("test@test.com")
-                .phoneNumber("010-1234-5678")
-                .instrument("바이올린")
-                .school("서울대")
-                .isGraduate(false)
-                .careers(List.of())
+        RegisterResponseDTO response = RegisterResponseDTO.builder()
                 .createdAt(LocalDateTime.of(2024, 1, 1, 0, 0))
                 .build();
 
@@ -115,8 +107,8 @@ class AuthControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value(200))
                 .andExpect(jsonPath("$.message").value("회원가입이 완료되었습니다"))
-                .andExpect(jsonPath("$.data.id").value(1))
-                .andExpect(jsonPath("$.data.nickname").value("tester"));
+                .andExpect(jsonPath("$.data.createdAt").value("2024-01-01T00:00:00"))
+                .andExpect(jsonPath("$.data.nickname").doesNotExist());
     }
 
     @Test

@@ -3,6 +3,7 @@ package com.obri_back.obri.user.service;
 import com.obri_back.obri.global.exception.ConflictException;
 import com.obri_back.obri.global.exception.NotFoundException;
 import com.obri_back.obri.post.dto.PostSummaryResponseDTO;
+import com.obri_back.obri.user.dto.UserPublicProfileDTO;
 import com.obri_back.obri.user.dto.UserResponseDTO;
 import com.obri_back.obri.user.dto.UserUpdateRequestDTO;
 import com.obri_back.obri.user.entity.Career;
@@ -46,15 +47,16 @@ public class UserService {
 
     /*
      * 타인 프로필 조회
+     * 공개 프로필이므로 email·phoneNumber는 노출하지 않음
      *
      * @param nickname 조회할 유저의 닉네임
-     * @return 유저 정보
+     * @return 공개용 유저 정보
      */
     @Transactional(readOnly = true)
-    public UserResponseDTO getUserProfile(String nickname) {
+    public UserPublicProfileDTO getUserProfile(String nickname) {
         User user = userRepository.findByNickname(nickname)
                 .orElseThrow(() -> new NotFoundException("유저를 찾을 수 없습니다"));
-        return UserResponseDTO.from(user);
+        return UserPublicProfileDTO.from(user);
     }
 
     /*

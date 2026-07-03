@@ -2,6 +2,7 @@ package com.obri_back.obri.user.controller;
 
 import com.obri_back.obri.global.config.SecurityConfig;
 import com.obri_back.obri.global.security.FirebaseAuthFilter;
+import com.obri_back.obri.user.dto.UserPublicProfileDTO;
 import com.obri_back.obri.user.dto.UserResponseDTO;
 import com.obri_back.obri.user.entity.User;
 import com.obri_back.obri.user.service.UserService;
@@ -101,10 +102,8 @@ class UserControllerTest {
 
     @Test
     void getUserProfile_returns200WithUserInfo() throws Exception {
-        UserResponseDTO response = UserResponseDTO.builder()
-                .id(2L)
+        UserPublicProfileDTO response = UserPublicProfileDTO.builder()
                 .nickname("other")
-                .email("other@test.com")
                 .instrument("첼로")
                 .school("연세대")
                 .isGraduate(true)
@@ -118,7 +117,9 @@ class UserControllerTest {
                         .with(authentication(auth)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value(200))
-                .andExpect(jsonPath("$.data.nickname").value("other"));
+                .andExpect(jsonPath("$.data.nickname").value("other"))
+                .andExpect(jsonPath("$.data.email").doesNotExist())
+                .andExpect(jsonPath("$.data.phoneNumber").doesNotExist());
     }
 
     @Test

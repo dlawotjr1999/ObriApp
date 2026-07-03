@@ -44,6 +44,9 @@ public class Application {
     @JoinColumn(name = "post_id", nullable = false)
     private Post post;
 
+    @Column(name = "instrument", nullable = false)
+    private String instrument;
+
     @Column(name = "status", nullable = false)
     private ApplicationStatus status;
 

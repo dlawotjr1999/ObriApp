@@ -5,6 +5,7 @@ import com.obri_back.obri.application.dto.AppResponseDTO;
 import com.obri_back.obri.application.dto.AppStatusUpdateDTO;
 import com.obri_back.obri.application.service.ApplicationService;
 import com.obri_back.obri.global.common.APIResponse;
+import com.obri_back.obri.global.common.PageResponse;
 import com.obri_back.obri.user.entity.User;
 
 import jakarta.validation.Valid;
@@ -65,13 +66,13 @@ public class ApplicationController {
     // 구인글별 지원자 목록 (구인자용)
     // PostController 이동 시 PostController → ApplicationService cross-domain 의존이 생기므로 여기에 유지
     @GetMapping("/post/{postId}")
-    public ResponseEntity<APIResponse<Page<AppResponseDTO>>> getApplicationsByPostId(
+    public ResponseEntity<APIResponse<PageResponse<AppResponseDTO>>> getApplicationsByPostId(
         @AuthenticationPrincipal User user,
         @PathVariable Long postId,
         @PageableDefault(size = 10, sort = "createdAt",
                 direction = Sort.Direction.DESC) Pageable pageable
     ) {
         Page<AppResponseDTO> response = applicationService.getApplicationsByPostId(postId, user, pageable);
-        return ResponseEntity.ok(APIResponse.ok("지원자 목록 조회 성공", response));
+        return ResponseEntity.ok(APIResponse.ok("지원자 목록 조회 성공", PageResponse.from(response)));
     }
 }
