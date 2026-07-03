@@ -3,7 +3,7 @@ import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { colors } from "@/constants/theme";
 import { PostSummary } from "@/types/post";
-import { formatEventDateTime } from "@/utils/datetime";
+import { formatEventDateTime, getDday } from "@/utils/datetime";
 import IconText from "@/components/common/IconText";
 
 interface PostCardProps {
@@ -11,15 +11,9 @@ interface PostCardProps {
   onPress?: (id: number) => void;
 }
 
-// instruments 배열을 "바이올린 2명 · 첼로 1명" 형태의 한 줄로 변환.
-function formatInstruments(instruments: PostSummary["instruments"]): string {
-  if (instruments.length === 0) return "악기 미정";
-  return instruments
-    .map(({ instrument, people }) => `${instrument} ${people}명`)
-    .join(" · ");
-}
-
 export default function PostCard({ post, onPress }: PostCardProps) {
+  const dday = getDday(post.eventAt);
+
   return (
     <TouchableOpacity
       style={styles.card}
@@ -33,13 +27,34 @@ export default function PostCard({ post, onPress }: PostCardProps) {
 
       {/* 우측 정보 */}
       <View style={styles.info}>
-        <Text style={styles.title} numberOfLines={1}>
-          {post.title}
-        </Text>
+        <View style={styles.titleRow}>
+          <Text style={styles.title} numberOfLines={1}>
+            {post.title}
+          </Text>
+          {dday.label ? (
+            <Text
+              style={[
+                styles.dday,
+                dday.urgent && styles.ddayUrgent,
+                dday.expired && styles.ddayExpired,
+              ]}
+            >
+              {dday.label}
+            </Text>
+          ) : null}
+        </View>
         <View style={styles.metaList}>
           <IconText icon="calendar-outline" text={formatEventDateTime(post.eventAt)} />
           <IconText icon="location-outline" text={post.location} />
-          <IconText icon="musical-notes-outline" text={formatInstruments(post.instruments)} />
+        </View>
+        <View style={styles.instrumentRow}>
+          {post.instruments.map(({ instrument, currentPeople, people }) => (
+            <View key={instrument} style={styles.instrumentChip}>
+              <Text style={styles.instrumentText}>
+                {instrument} {currentPeople}/{people}
+              </Text>
+            </View>
+          ))}
         </View>
       </View>
     </TouchableOpacity>
@@ -47,8 +62,26 @@ export default function PostCard({ post, onPress }: PostCardProps) {
 }
 
 const styles = StyleSheet.create({
+  titleRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  dday: {
+    fontSize: 11,
+    fontWeight: "600",
+    color: colors.textMuted,
+    flexShrink: 0,
+  },
+  ddayUrgent: {
+    color: "#C0392B",
+  },
+  ddayExpired: {
+    color: colors.placeholder,
+  },
   card: {
     flexDirection: "row",
+    alignItems: "center",
     backgroundColor: colors.surface,
     borderRadius: 14,
     borderWidth: StyleSheet.hairlineWidth,
@@ -76,5 +109,23 @@ const styles = StyleSheet.create({
   },
   metaList: {
     gap: 4,
+  },
+  instrumentRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    flexWrap: "wrap",
+    gap: 6,
+  },
+  instrumentChip: {
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+    backgroundColor: colors.background,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.border,
+  },
+  instrumentText: {
+    fontSize: 12,
+    color: colors.textSecondary,
   },
 });

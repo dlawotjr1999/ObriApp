@@ -1,5 +1,24 @@
 // 날짜/시간 포맷 유틸. 순수 함수만 모음 (외부 의존 없음).
 
+/**
+ * ISO 8601 문자열을 받아 오늘 기준 D-day 문자열 반환.
+ * D-day → "D-day" / D-3 → "D-3" / 지난 날짜 → "D+1"
+ */
+export function getDday(iso: string): { label: string; urgent: boolean; expired: boolean } {
+  const event = new Date(iso);
+  if (Number.isNaN(event.getTime())) return { label: "", urgent: false, expired: false };
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  event.setHours(0, 0, 0, 0);
+
+  const diff = Math.round((event.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+
+  if (diff === 0) return { label: "D-day", urgent: true, expired: false };
+  if (diff > 0) return { label: `D-${diff}`, urgent: diff <= 3, expired: false };
+  return { label: `D+${Math.abs(diff)}`, urgent: false, expired: true };
+}
+
 const WEEKDAYS = ["일", "월", "화", "수", "목", "금", "토"];
 
 const pad = (n: number) => String(n).padStart(2, "0");

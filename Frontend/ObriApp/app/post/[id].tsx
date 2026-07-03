@@ -99,7 +99,7 @@ export default function PostDetailScreen() {
         <Section title="모집 악기">
           <View style={styles.tagRow}>
             {post.instruments.map((it) => (
-              <Tag key={it.instrument} label={`${it.instrument} ${it.people}명`} />
+              <Tag key={it.instrument} label={`${it.instrument} ${it.currentPeople}/${it.people}`} />
             ))}
           </View>
         </Section>

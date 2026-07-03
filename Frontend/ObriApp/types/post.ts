@@ -5,6 +5,7 @@ export type PostStatus = "OPEN" | "CLOSED";
 
 export interface PostInstrument {
   instrument: string;
+  currentPeople: number;
   people: number;
 }
 
