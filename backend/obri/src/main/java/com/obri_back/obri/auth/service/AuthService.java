@@ -5,9 +5,9 @@ import com.google.firebase.auth.FirebaseAuthException;
 import com.google.firebase.auth.FirebaseToken;
 import com.obri_back.obri.auth.dto.FCMTokenUpdateRequestDTO;
 import com.obri_back.obri.auth.dto.RegisterRequestDTO;
+import com.obri_back.obri.auth.dto.RegisterResponseDTO;
 import com.obri_back.obri.global.exception.ConflictException;
 import com.obri_back.obri.global.exception.NotFoundException;
-import com.obri_back.obri.user.dto.UserResponseDTO;
 import com.obri_back.obri.user.entity.Career;
 import com.obri_back.obri.user.entity.User;
 import com.obri_back.obri.user.repository.CareerRepository;
@@ -40,10 +40,10 @@ public class AuthService {
      *
      * @param idToken Firebase ID Token (Authorization 헤더에서 추출)
      * @param request 회원가입 요청 DTO
-     * @return 저장된 유저 정보
+     * @return 가입 시각(createdAt)만 포함한 응답
      */
     @Transactional
-    public UserResponseDTO register(String idToken, RegisterRequestDTO request) {
+    public RegisterResponseDTO register(String idToken, RegisterRequestDTO request) {
         FirebaseToken decodedToken;
 
         try {
@@ -59,6 +59,11 @@ public class AuthService {
         // 이미 가입된 유저인지 확인
         if (userRepository.existsByFirebaseUid(firebaseUid)) {
             throw new ConflictException("이미 가입된 계정입니다");
+        }
+
+        // 이미 가입된 이메일인지 확인
+        if (userRepository.existsByEmail(email)) {
+            throw new ConflictException("이미 가입된 이메일입니다");
         }
 
         // 닉네임 중복 확인
@@ -101,7 +106,7 @@ public class AuthService {
             careerRepository.saveAll(careers);
         }
 
-        return UserResponseDTO.from(user);
+        return RegisterResponseDTO.from(user);
     }
 
     /*

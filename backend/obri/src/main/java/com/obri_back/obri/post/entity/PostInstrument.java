@@ -9,7 +9,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
-
+import jakarta.persistence.Version;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
@@ -31,11 +31,24 @@ public class PostInstrument {
     @Column(name = "people", nullable = false)
     private Integer people;
 
+    @Column(name = "confirmed", nullable = false)
+    private Integer confirmed;
+
+    @Column(name = "closed", nullable = false)
+    private Boolean closed;
+
+    // 낙관적 락: 같은 Post 내 다른 악기끼리는 경합하지 않도록 악기 단위로 버전 관리
+    @Version
+    @Column(name = "version")
+    private Long version;
+
     public static PostInstrument of(Post post, String instrument, int people) {
         PostInstrument pi = new PostInstrument();
         pi.post = post;
         pi.instrument = instrument;
         pi.people = people;
+        pi.confirmed = 0;
+        pi.closed = false;
         return pi;
     }
 }

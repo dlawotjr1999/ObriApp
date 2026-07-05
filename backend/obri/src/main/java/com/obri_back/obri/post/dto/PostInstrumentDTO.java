@@ -8,15 +8,19 @@ import lombok.Getter;
 @Builder
 public class PostInstrumentDTO {
 
-    private Long id;          
+    private Long id;
     private String instrument;
     private Integer people;
+    private Integer confirmed;
+    private Boolean closed;
 
     public static PostInstrumentDTO from(PostInstrument postInstrument) {
         return PostInstrumentDTO.builder()
                 .id(postInstrument.getId())
                 .instrument(postInstrument.getInstrument())
                 .people(postInstrument.getPeople())
+                .confirmed(postInstrument.getConfirmed())
+                .closed(postInstrument.getClosed())
                 .build();
     }
 }

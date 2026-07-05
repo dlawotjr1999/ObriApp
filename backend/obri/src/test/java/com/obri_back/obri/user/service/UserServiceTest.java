@@ -2,6 +2,7 @@ package com.obri_back.obri.user.service;
 
 import com.obri_back.obri.global.exception.ConflictException;
 import com.obri_back.obri.global.exception.NotFoundException;
+import com.obri_back.obri.user.dto.UserPublicProfileDTO;
 import com.obri_back.obri.user.dto.UserResponseDTO;
 import com.obri_back.obri.user.dto.UserUpdateRequestDTO;
 import com.obri_back.obri.user.entity.User;
@@ -70,7 +71,7 @@ class UserServiceTest {
     void getUserProfile_returnsUserWhenExists() {
         given(userRepository.findByNickname("tester")).willReturn(Optional.of(mockUser));
 
-        UserResponseDTO result = userService.getUserProfile("tester");
+        UserPublicProfileDTO result = userService.getUserProfile("tester");
 
         assertThat(result.getNickname()).isEqualTo("tester");
     }
