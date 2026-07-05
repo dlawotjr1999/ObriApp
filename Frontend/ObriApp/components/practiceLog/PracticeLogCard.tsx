@@ -6,29 +6,20 @@ import { formatDate, formatDuration } from "@/utils/datetime";
 
 interface PracticeLogCardProps {
   log: PracticeLog;
-  onPress?: (id: number) => void;
+  onPress?: () => void;
 }
 
 export default function PracticeLogCard({ log, onPress }: PracticeLogCardProps) {
   return (
-    <TouchableOpacity
-      style={styles.card}
-      activeOpacity={0.8}
-      onPress={() => onPress?.(log.id)}
-    >
+    <TouchableOpacity style={styles.card} activeOpacity={0.8} onPress={onPress}>
       <View style={styles.topRow}>
         <Text style={styles.date}>{formatDate(log.practicedAt)}</Text>
         <View style={styles.durationBadge}>
           <Text style={styles.durationText}>{formatDuration(log.durationMinutes)}</Text>
         </View>
       </View>
-
       <Text style={styles.title} numberOfLines={1}>
         {log.title}
-      </Text>
-
-      <Text style={styles.content} numberOfLines={2}>
-        {log.content}
       </Text>
     </TouchableOpacity>
   );
@@ -38,7 +29,8 @@ const styles = StyleSheet.create({
   card: {
     backgroundColor: colors.surface,
     borderRadius: 12,
-    padding: 16,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: colors.border,
   },
@@ -46,7 +38,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 8,
+    marginBottom: 6,
   },
   date: {
     fontSize: 12,
@@ -69,11 +61,5 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: "600",
     color: colors.primary,
-    marginBottom: 6,
-  },
-  content: {
-    fontSize: 13,
-    color: colors.textMuted,
-    lineHeight: 19,
   },
 });
