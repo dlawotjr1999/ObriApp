@@ -1,21 +1,19 @@
 import React, { useState, useMemo } from "react";
-import { View, FlatList, StyleSheet, TouchableOpacity, Text, Image, useWindowDimensions } from "react-native";
+import { View, FlatList, StyleSheet, TouchableOpacity, Text } from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { colors } from "@/constants/theme";
 import { MOCK_POSTS } from "@/mocks/posts";
+import AppHeader from "@/components/common/AppHeader";
 import EmptyState from "@/components/common/EmptyState";
 import PostCard from "@/components/post/PostCard";
 import FilterBar from "@/components/post/FilterBar";
 import FilterSheet from "@/components/post/FilterSheet";
 import { PostFilter, DEFAULT_FILTER } from "@/types/filter";
 
-const headerImg = require("@/assets/images/header-img.png");
-
 export default function ObriScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { width: screenWidth } = useWindowDimensions();
 
   const [filter, setFilter] = useState<PostFilter>(DEFAULT_FILTER);
   const [sheetVisible, setSheetVisible] = useState(false);
@@ -50,13 +48,7 @@ export default function ObriScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={["top"]}>
-      <View style={styles.header}>
-        <Image
-          source={headerImg}
-          style={{ width: screenWidth * 0.65, height: 90 }}
-          resizeMode="contain"
-        />
-      </View>
+      <AppHeader />
 
       <FilterBar
         filter={filter}
@@ -112,14 +104,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.background,
-  },
-  header: {
-    height: 64,
-    overflow: "hidden",
-    alignItems: "center",
-    justifyContent: "center",
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: colors.border,
   },
   resultRow: {
     paddingHorizontal: 16,

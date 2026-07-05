@@ -13,6 +13,7 @@ import { colors } from "@/constants/theme";
 import { INSTRUMENTS, REGIONS, STATUS_LABELS } from "@/constants/filterOptions";
 import { PostFilter } from "@/types/filter";
 import { PostStatus } from "@/types/post";
+import Chip from "@/components/common/Chip";
 
 const STATUSES: PostStatus[] = ["OPEN", "PARTIALLY_CLOSED", "CLOSED"];
 
@@ -126,25 +127,20 @@ function ChipGroup({
   labelMap?: Record<string, string>;
 }) {
   return (
-    <View style={chipStyles.group}>
-      {options.map((opt) => {
-        const active = selected.includes(opt);
-        return (
-          <TouchableOpacity
-            key={opt}
-            style={[chipStyles.chip, active && chipStyles.chipActive]}
-            onPress={() => onToggle(opt)}
-            activeOpacity={0.7}
-          >
-            <Text style={[chipStyles.text, active && chipStyles.textActive]}>
-              {labelMap ? labelMap[opt] : opt}
-            </Text>
-          </TouchableOpacity>
-        );
-      })}
+    <View style={chipGroupStyle}>
+      {options.map((opt) => (
+        <Chip
+          key={opt}
+          label={labelMap ? labelMap[opt] : opt}
+          active={selected.includes(opt)}
+          onPress={() => onToggle(opt)}
+        />
+      ))}
     </View>
   );
 }
+
+const chipGroupStyle = { flexDirection: "row" as const, flexWrap: "wrap" as const, gap: 8 };
 
 const styles = StyleSheet.create({
   backdrop: {
@@ -216,30 +212,3 @@ const sectionStyles = StyleSheet.create({
   },
 });
 
-const chipStyles = StyleSheet.create({
-  group: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 8,
-  },
-  chip: {
-    paddingHorizontal: 14,
-    paddingVertical: 7,
-    borderRadius: 20,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.border,
-    backgroundColor: colors.surface,
-  },
-  chipActive: {
-    backgroundColor: colors.primary,
-    borderColor: colors.primary,
-  },
-  text: {
-    fontSize: 13,
-    color: colors.textSecondary,
-  },
-  textActive: {
-    color: colors.background,
-    fontWeight: "600",
-  },
-});

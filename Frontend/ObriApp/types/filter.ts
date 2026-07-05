@@ -16,10 +16,3 @@ export const DEFAULT_FILTER: PostFilter = {
   status: [],
 };
 
-export function activeAdvancedCount(filter: PostFilter): number {
-  return (
-    filter.instruments.length +
-    filter.regions.length +
-    filter.status.length
-  );
-}
