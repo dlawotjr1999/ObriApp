@@ -2,7 +2,6 @@ package com.obri_back.obri.application.service;
 
 import com.obri_back.obri.application.dto.AppRequestDTO;
 import com.obri_back.obri.application.dto.AppResponseDTO;
-import com.obri_back.obri.application.dto.AppStatusUpdateDTO;
 import com.obri_back.obri.application.entity.Application;
 import com.obri_back.obri.application.entity.ApplicationStatus;
 import com.obri_back.obri.application.repository.ApplicationRepository;
@@ -10,6 +9,7 @@ import com.obri_back.obri.global.exception.BadRequestException;
 import com.obri_back.obri.global.exception.ConflictException;
 import com.obri_back.obri.global.exception.ForbiddenException;
 import com.obri_back.obri.global.exception.NotFoundException;
+import com.obri_back.obri.notification.NotificationService;
 import com.obri_back.obri.post.entity.Post;
 import com.obri_back.obri.post.entity.PostStatus;
 import com.obri_back.obri.post.repository.PostRepository;
@@ -21,6 +21,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import lombok.RequiredArgsConstructor;
+
+import java.util.List;
 
 /*
 Application 관련 비즈니스 로직
@@ -37,6 +39,7 @@ public class ApplicationService {
 
     private final ApplicationRepository applicationRepository;
     private final PostRepository postRepository;
+    private final NotificationService notificationService;
 
     // 지원서 제출
     @Transactional
@@ -69,6 +72,9 @@ public class ApplicationService {
             .build();
 
         applicationRepository.save(application);
+
+        // 지원 도착 → 구인자(글 작성자)에게 단건 push (발송 실패는 NotificationService에서 격리)
+        notificationService.notifyNewApplication(post.getUser().getFcmToken(), post.getId(), post.getTitle());
 
         return AppResponseDTO.from(application, user);
     }
@@ -113,26 +119,79 @@ public class ApplicationService {
         return AppResponseDTO.from(application, application.getUser());
     }
 
-    // 지원서 상태 업데이트 (승인/거절/취소)
-    // CANCELLED: 지원자만 / ACCEPTED·REJECTED: 구인자만 — 역할이 다르므로 분기 처리
+    // ── 상태 전이 (명세 Application §2.4) ────────────────────────────
+    // 전이별 행위자·출발 상태가 하나로 고정 → 엔드포인트/메서드 단위로 인가를 명확히 강제
+    // 수락/철회 시 해당 악기 확정 인원·마감은 Post 도메인에 위임
+    // 지원 결과(수락/거절)만 지원자에게 단건 push. 발송 실패는 NotificationService에서 격리
+
+    // 수락 (구인자, PENDING → ACCEPTED)
     @Transactional
-    public void updateApplicationStatus(User user, Long id, AppStatusUpdateDTO statusUpdateDto) {
-        Application application = applicationRepository.findById(id)
-                .orElseThrow(() -> new NotFoundException("지원서를 찾을 수 없습니다"));
+    public void accept(User user, Long id) {
+        Application application = findApplicationOrThrow(id);
+        requireRecruiter(user, application, "구인자만 수락 또는 거절할 수 있습니다");
+        requirePending(application);
+        application.getPost().confirmInstrument(application.getInstrument());
+        application.updateStatus(ApplicationStatus.ACCEPTED);
+        notificationService.notifyResult(application.getUser().getFcmToken(), true);
+    }
 
-        ApplicationStatus newStatus = statusUpdateDto.getStatus();
-        boolean isApplicant = application.getUser().getId().equals(user.getId());
-        boolean isRecruiter = application.getPost().getUser().getId().equals(user.getId());
+    // 거절 (구인자, PENDING → REJECTED)
+    @Transactional
+    public void reject(User user, Long id) {
+        Application application = findApplicationOrThrow(id);
+        requireRecruiter(user, application, "구인자만 수락 또는 거절할 수 있습니다");
+        requirePending(application);
+        application.updateStatus(ApplicationStatus.REJECTED);
+        notificationService.notifyResult(application.getUser().getFcmToken(), false);
+    }
 
-        if (newStatus == ApplicationStatus.CANCELLED) {
-            if (!isApplicant) throw new ForbiddenException("지원자만 지원을 취소할 수 있습니다");
-        } else if (newStatus == ApplicationStatus.ACCEPTED || newStatus == ApplicationStatus.REJECTED) {
-            if (!isRecruiter) throw new ForbiddenException("구인자만 수락 또는 거절할 수 있습니다");
-        } else {
-            throw new BadRequestException("유효하지 않은 상태 값입니다");
+    // 취소 (지원자, PENDING → CANCELLED). 결과 알림 없음
+    @Transactional
+    public void cancel(User user, Long id) {
+        Application application = findApplicationOrThrow(id);
+        if (!application.getUser().getId().equals(user.getId())) {
+            throw new ForbiddenException("지원자만 지원을 취소할 수 있습니다");
         }
+        if (application.getStatus() != ApplicationStatus.PENDING) {
+            throw new BadRequestException("대기 중인 지원만 취소할 수 있습니다");
+        }
+        application.updateStatus(ApplicationStatus.CANCELLED);
+    }
 
-        application.updateStatus(newStatus);
+    // 철회 (구인자, ACCEPTED → REVOKED; 확정 취소·자리 재오픈). 결과 알림 없음
+    @Transactional
+    public void revoke(User user, Long id) {
+        Application application = findApplicationOrThrow(id);
+        requireRecruiter(user, application, "구인자만 수락을 철회할 수 있습니다");
+        if (application.getStatus() != ApplicationStatus.ACCEPTED) {
+            throw new BadRequestException("수락된 지원만 철회할 수 있습니다");
+        }
+        application.getPost().revokeInstrument(application.getInstrument());
+        application.updateStatus(ApplicationStatus.REVOKED);
+    }
+
+    private Application findApplicationOrThrow(Long id) {
+        return applicationRepository.findById(id)
+                .orElseThrow(() -> new NotFoundException("지원서를 찾을 수 없습니다"));
+    }
+
+    private void requireRecruiter(User user, Application application, String message) {
+        if (!application.getPost().getUser().getId().equals(user.getId())) {
+            throw new ForbiddenException(message);
+        }
+    }
+
+    private void requirePending(Application application) {
+        if (application.getStatus() != ApplicationStatus.PENDING) {
+            throw new BadRequestException("대기 중인 지원서만 처리할 수 있습니다");
+        }
+    }
+
+    // 구인글 수정 알림 대상(PENDING·ACCEPTED 지원자) fcm_token 목록 — Post 도메인에서 호출
+    @Transactional(readOnly = true)
+    public List<String> getActiveApplicantFcmTokens(Long postId) {
+        return applicationRepository.findApplicantFcmTokens(postId,
+                List.of(ApplicationStatus.PENDING, ApplicationStatus.ACCEPTED));
     }
 
     // 구인글 단건 조회(applicationCount)용 — Post 도메인에서 호출

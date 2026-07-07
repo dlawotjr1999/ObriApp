@@ -14,6 +14,8 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.context.annotation.Import;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.http.MediaType;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -87,18 +89,61 @@ class ApplicationControllerTest {
     }
 
     @Test
-    void updateStatus_returns200() throws Exception {
-        doNothing().when(applicationService).updateApplicationStatus(any(), any(), any());
+    void getMyApplications_returns200WithPagedList() throws Exception {
+        AppResponseDTO response = AppResponseDTO.builder()
+                .id(1L)
+                .status(ApplicationStatus.PENDING)
+                .build();
 
-        mockMvc.perform(patch("/api/applications/1/status")
-                        .with(authentication(auth))
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("""
-                                {
-                                  "status": "ACCEPTED"
-                                }
-                                """))
+        when(applicationService.getApplicationsByUserId(any(), any()))
+                .thenReturn(new PageImpl<>(List.of(response), PageRequest.of(0, 10), 1));
+
+        mockMvc.perform(get("/api/applications/me")
+                        .with(authentication(auth)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.status").value(200));
+                .andExpect(jsonPath("$.status").value(200))
+                .andExpect(jsonPath("$.data.content[0].id").value(1))
+                .andExpect(jsonPath("$.data.hasNext").exists());
+    }
+
+    @Test
+    void acceptApplication_returns200() throws Exception {
+        doNothing().when(applicationService).accept(any(), any());
+
+        mockMvc.perform(patch("/api/applications/1/accept")
+                        .with(authentication(auth)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value(200))
+                .andExpect(jsonPath("$.message").value("지원을 수락했습니다"));
+    }
+
+    @Test
+    void rejectApplication_returns200() throws Exception {
+        doNothing().when(applicationService).reject(any(), any());
+
+        mockMvc.perform(patch("/api/applications/1/reject")
+                        .with(authentication(auth)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.message").value("지원을 거절했습니다"));
+    }
+
+    @Test
+    void cancelApplication_returns200() throws Exception {
+        doNothing().when(applicationService).cancel(any(), any());
+
+        mockMvc.perform(patch("/api/applications/1/cancel")
+                        .with(authentication(auth)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.message").value("지원을 취소했습니다"));
+    }
+
+    @Test
+    void revokeApplication_returns200() throws Exception {
+        doNothing().when(applicationService).revoke(any(), any());
+
+        mockMvc.perform(patch("/api/applications/1/revoke")
+                        .with(authentication(auth)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.message").value("수락을 철회했습니다"));
     }
 }

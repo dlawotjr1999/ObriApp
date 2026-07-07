@@ -32,6 +32,14 @@ yarn-error.*
 
 # local env files
 .env*.local
+# Firebase 웹 API 키 등은 보통 .env에 들어가므로 함께 제외 (예시 파일은 허용)
+.env
+.env.*
+!.env.example
+
+# Firebase 모바일 설정 (/ios·/android 무시로 대부분 커버되나 명시적 방어선)
+google-services.json
+GoogleService-Info.plist
 
 # typescript
 *.tsbuildinfo

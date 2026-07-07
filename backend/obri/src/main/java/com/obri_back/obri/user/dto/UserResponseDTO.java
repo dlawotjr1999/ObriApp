@@ -11,6 +11,9 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
+/*
+ * 내 정보 응답 DTO — 본인 조회용이라 email·phoneNumber 등 비공개 필드까지 포함
+ */
 @Getter
 @Builder
 @NoArgsConstructor
@@ -26,6 +29,7 @@ public class UserResponseDTO {
     private LocalDateTime createdAt;
     private List<CareerDTO> careers;
 
+    // User 엔티티 → 내 정보 응답 DTO 변환 (경력 포함)
     public static UserResponseDTO from(User user) {
         return UserResponseDTO.builder()
                 .id(user.getId())

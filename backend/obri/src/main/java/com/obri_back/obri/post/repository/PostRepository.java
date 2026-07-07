@@ -11,6 +11,9 @@ import org.springframework.stereotype.Repository;
 import com.obri_back.obri.post.entity.Post;
 import com.obri_back.obri.post.entity.PostStatus;
 
+/*
+ * Post 저장소 — 동적 필터(JpaSpecificationExecutor)·작성자별/상태별 조회 제공
+ */
 @Repository
 public interface PostRepository extends JpaRepository<Post, Long>, JpaSpecificationExecutor<Post> {
     Page<Post> findByUserId(Long userId, Pageable pageable);      // 유저가 작성한 구인글

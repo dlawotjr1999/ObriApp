@@ -5,6 +5,8 @@ import com.obri_back.obri.user.entity.User;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -47,6 +49,7 @@ public class Application {
     @Column(name = "instrument", nullable = false)
     private String instrument;
 
+    @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false)
     private ApplicationStatus status;
 

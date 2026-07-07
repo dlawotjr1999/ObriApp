@@ -39,6 +39,7 @@ public class PostController {
 
     private final PostService postService;
 
+    // 구인글 등록 (등록 성공 시 전체 broadcast 알림)
     @PostMapping
     public ResponseEntity<APIResponse<PostResponseDTO>> createPost(
             @AuthenticationPrincipal User user,
@@ -47,6 +48,7 @@ public class PostController {
         return ResponseEntity.ok(APIResponse.ok("구인글이 등록되었습니다", response));
     }
 
+    // 구인글 전체 조회 (카테고리·악기·지역·기간·상태 필터 + 무한스크롤)
     @GetMapping
     public ResponseEntity<APIResponse<PageResponse<PostSummaryResponseDTO>>> getPosts(
             @RequestParam(required = false) List<String> category,
@@ -62,6 +64,20 @@ public class PostController {
         return ResponseEntity.ok(APIResponse.ok("구인글 목록 조회 성공", PageResponse.from(response)));
     }
 
+    /**
+     * 내가 올린 구인글 목록 (마이페이지)
+     * 변수 경로 /{id}보다 위에 선언해 라우팅 충돌 방지
+     */
+    @GetMapping("/me")
+    public ResponseEntity<APIResponse<PageResponse<PostSummaryResponseDTO>>> getMyPosts(
+            @AuthenticationPrincipal User user,
+            @PageableDefault(size = 10, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
+
+        Page<PostSummaryResponseDTO> response = postService.getMyPosts(user.getId(), pageable);
+        return ResponseEntity.ok(APIResponse.ok("내 구인글 목록 조회 성공", PageResponse.from(response)));
+    }
+
+    // 구인글 단건 조회 (writer·applicationCount·isMine·hasApplied 포함)
     @GetMapping("/{id}")
     public ResponseEntity<APIResponse<PostDetailResponseDTO>> getPost(
             @AuthenticationPrincipal User user,
@@ -71,6 +87,7 @@ public class PostController {
         return ResponseEntity.ok(APIResponse.ok("구인글 조회 성공", response));
     }
 
+    // 구인글 수정 (작성자만). 대기·수락 지원자에게 수정 알림 발송
     @PutMapping("/{id}")
     public ResponseEntity<APIResponse<PostResponseDTO>> updatePost(
             @AuthenticationPrincipal User user,
@@ -81,6 +98,7 @@ public class PostController {
         return ResponseEntity.ok(APIResponse.ok("구인글이 수정되었습니다", response));
     }
 
+    // 구인글 수동 전체 마감 (작성자만)
     @PatchMapping("/{id}/close")
     public ResponseEntity<APIResponse<Void>> closePost(
             @AuthenticationPrincipal User user,
@@ -90,6 +108,7 @@ public class PostController {
         return ResponseEntity.ok(APIResponse.ok("구인글이 마감되었습니다"));
     }
 
+    // 구인글 삭제 (작성자만). 연관 지원서도 함께 삭제
     @DeleteMapping("/{id}")
     public ResponseEntity<APIResponse<Void>> deletePost(
             @AuthenticationPrincipal User user,

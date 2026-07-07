@@ -8,7 +8,6 @@ import com.obri_back.obri.user.dto.UserUpdateRequestDTO;
 import com.obri_back.obri.user.entity.User;
 import com.obri_back.obri.user.repository.CareerRepository;
 import com.obri_back.obri.user.repository.UserRepository;
-import com.obri_back.obri.post.repository.PostRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -28,7 +27,6 @@ class UserServiceTest {
 
     @Mock UserRepository userRepository;
     @Mock CareerRepository careerRepository;
-    @Mock PostRepository postRepository;
 
     @InjectMocks UserService userService;
 

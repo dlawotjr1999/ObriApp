@@ -4,6 +4,7 @@ import com.google.auth.oauth2.GoogleCredentials;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.messaging.FirebaseMessaging;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.io.ClassPathResource;
@@ -55,5 +56,14 @@ public class FirebaseConfig {
     @Bean
     public FirebaseAuth firebaseAuth(FirebaseApp firebaseApp) {
         return FirebaseAuth.getInstance(firebaseApp);
+    }
+
+    /*
+     * FirebaseMessaging 빈 등록
+     * FCM 푸시(신규 구인글 broadcast, 지원 결과 단건 push 등)에 사용
+     */
+    @Bean
+    public FirebaseMessaging firebaseMessaging(FirebaseApp firebaseApp) {
+        return FirebaseMessaging.getInstance(firebaseApp);
     }
 }

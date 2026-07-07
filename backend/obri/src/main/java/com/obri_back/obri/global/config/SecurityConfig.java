@@ -10,6 +10,11 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
+/*
+ * Spring Security 설정 클래스
+ * 세션 없는(STATELESS) 토큰 기반 인증 구성 — FirebaseAuthFilter를 인증 필터로 등록하고
+ * 인증 예외 경로(회원가입·닉네임 체크·Swagger)를 화이트리스트로 개방
+ */
 @Configuration
 @EnableWebSecurity
 @RequiredArgsConstructor
@@ -17,6 +22,11 @@ public class SecurityConfig {
 
     private final FirebaseAuthFilter firebaseAuthFilter;
 
+    /*
+     * SecurityFilterChain 빈 등록
+     * CSRF 비활성화·세션 STATELESS 설정 후 경로별 인가 규칙을 지정하고
+     * FirebaseAuthFilter를 UsernamePasswordAuthenticationFilter 앞에 삽입
+     */
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
