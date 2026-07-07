@@ -62,6 +62,19 @@ public class PostController {
         return ResponseEntity.ok(APIResponse.ok("구인글 목록 조회 성공", PageResponse.from(response)));
     }
 
+    /**
+     * 내가 올린 구인글 목록 (마이페이지)
+     * 변수 경로 /{id}보다 위에 선언해 라우팅 충돌 방지
+     */
+    @GetMapping("/me")
+    public ResponseEntity<APIResponse<PageResponse<PostSummaryResponseDTO>>> getMyPosts(
+            @AuthenticationPrincipal User user,
+            @PageableDefault(size = 10, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
+
+        Page<PostSummaryResponseDTO> response = postService.getMyPosts(user.getId(), pageable);
+        return ResponseEntity.ok(APIResponse.ok("내 구인글 목록 조회 성공", PageResponse.from(response)));
+    }
+
     @GetMapping("/{id}")
     public ResponseEntity<APIResponse<PostDetailResponseDTO>> getPost(
             @AuthenticationPrincipal User user,

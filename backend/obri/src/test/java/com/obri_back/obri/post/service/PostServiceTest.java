@@ -216,4 +216,16 @@ class PostServiceTest {
         assertThat(result.getContent()).hasSize(1);
         assertThat(result.getContent().get(0).getTitle()).isEqualTo("결혼식 바이올린 구인");
     }
+
+    @Test
+    void getMyPosts_returnsSummariesForUser() {
+        Post post = buildPost(owner);
+        given(postRepository.findByUserId(1L, PageRequest.of(0, 10)))
+                .willReturn(new PageImpl<>(List.of(post), PageRequest.of(0, 10), 1));
+
+        var result = postService.getMyPosts(1L, PageRequest.of(0, 10));
+
+        assertThat(result.getContent()).hasSize(1);
+        assertThat(result.getContent().get(0).getTitle()).isEqualTo("결혼식 바이올린 구인");
+    }
 }

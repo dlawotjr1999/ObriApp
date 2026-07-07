@@ -2,7 +2,6 @@ package com.obri_back.obri.application.service;
 
 import com.obri_back.obri.application.dto.AppRequestDTO;
 import com.obri_back.obri.application.dto.AppResponseDTO;
-import com.obri_back.obri.application.dto.AppStatusUpdateDTO;
 import com.obri_back.obri.application.entity.Application;
 import com.obri_back.obri.application.entity.ApplicationStatus;
 import com.obri_back.obri.application.repository.ApplicationRepository;
@@ -120,48 +119,71 @@ public class ApplicationService {
         return AppResponseDTO.from(application, application.getUser());
     }
 
-    // 지원서 상태 업데이트 (수락/거절/취소/철회)
-    // 상태 전이(명세 Application 2.4):
-    //   PENDING  → ACCEPTED/REJECTED (구인자)
-    //   PENDING  → CANCELLED         (지원자)
-    //   ACCEPTED → REVOKED           (구인자; 확정 취소·자리 재오픈)
-    // 수락/철회 시 해당 악기 확정 인원·마감 상태를 Post 도메인에 위임
+    // ── 상태 전이 (명세 Application §2.4) ────────────────────────────
+    // 전이별 행위자·출발 상태가 하나로 고정 → 엔드포인트/메서드 단위로 인가를 명확히 강제
+    // 수락/철회 시 해당 악기 확정 인원·마감은 Post 도메인에 위임
+    // 지원 결과(수락/거절)만 지원자에게 단건 push. 발송 실패는 NotificationService에서 격리
+
+    // 수락 (구인자, PENDING → ACCEPTED)
     @Transactional
-    public void updateApplicationStatus(User user, Long id, AppStatusUpdateDTO statusUpdateDto) {
-        Application application = applicationRepository.findById(id)
-                .orElseThrow(() -> new NotFoundException("지원서를 찾을 수 없습니다"));
+    public void accept(User user, Long id) {
+        Application application = findApplicationOrThrow(id);
+        requireRecruiter(user, application, "구인자만 수락 또는 거절할 수 있습니다");
+        requirePending(application);
+        application.getPost().confirmInstrument(application.getInstrument());
+        application.updateStatus(ApplicationStatus.ACCEPTED);
+        notificationService.notifyResult(application.getUser().getFcmToken(), true);
+    }
 
-        ApplicationStatus newStatus = statusUpdateDto.getStatus();
-        ApplicationStatus current = application.getStatus();
-        boolean isApplicant = application.getUser().getId().equals(user.getId());
-        boolean isRecruiter = application.getPost().getUser().getId().equals(user.getId());
+    // 거절 (구인자, PENDING → REJECTED)
+    @Transactional
+    public void reject(User user, Long id) {
+        Application application = findApplicationOrThrow(id);
+        requireRecruiter(user, application, "구인자만 수락 또는 거절할 수 있습니다");
+        requirePending(application);
+        application.updateStatus(ApplicationStatus.REJECTED);
+        notificationService.notifyResult(application.getUser().getFcmToken(), false);
+    }
 
-        switch (newStatus) {
-            case ACCEPTED, REJECTED -> {
-                if (!isRecruiter) throw new ForbiddenException("구인자만 수락 또는 거절할 수 있습니다");
-                if (current != ApplicationStatus.PENDING) throw new BadRequestException("대기 중인 지원서만 처리할 수 있습니다");
-                if (newStatus == ApplicationStatus.ACCEPTED) {
-                    application.getPost().confirmInstrument(application.getInstrument());
-                }
-            }
-            case CANCELLED -> {
-                if (!isApplicant) throw new ForbiddenException("지원자만 지원을 취소할 수 있습니다");
-                if (current != ApplicationStatus.PENDING) throw new BadRequestException("대기 중인 지원만 취소할 수 있습니다");
-            }
-            case REVOKED -> {
-                if (!isRecruiter) throw new ForbiddenException("구인자만 수락을 철회할 수 있습니다");
-                if (current != ApplicationStatus.ACCEPTED) throw new BadRequestException("수락된 지원만 철회할 수 있습니다");
-                application.getPost().revokeInstrument(application.getInstrument());
-            }
-            default -> throw new BadRequestException("유효하지 않은 상태 값입니다");
+    // 취소 (지원자, PENDING → CANCELLED). 결과 알림 없음
+    @Transactional
+    public void cancel(User user, Long id) {
+        Application application = findApplicationOrThrow(id);
+        if (!application.getUser().getId().equals(user.getId())) {
+            throw new ForbiddenException("지원자만 지원을 취소할 수 있습니다");
         }
+        if (application.getStatus() != ApplicationStatus.PENDING) {
+            throw new BadRequestException("대기 중인 지원만 취소할 수 있습니다");
+        }
+        application.updateStatus(ApplicationStatus.CANCELLED);
+    }
 
-        application.updateStatus(newStatus);
+    // 철회 (구인자, ACCEPTED → REVOKED; 확정 취소·자리 재오픈). 결과 알림 없음
+    @Transactional
+    public void revoke(User user, Long id) {
+        Application application = findApplicationOrThrow(id);
+        requireRecruiter(user, application, "구인자만 수락을 철회할 수 있습니다");
+        if (application.getStatus() != ApplicationStatus.ACCEPTED) {
+            throw new BadRequestException("수락된 지원만 철회할 수 있습니다");
+        }
+        application.getPost().revokeInstrument(application.getInstrument());
+        application.updateStatus(ApplicationStatus.REVOKED);
+    }
 
-        // 지원 결과(수락/거절)만 지원자에게 단건 push (취소/철회 제외). 발송 실패는 NotificationService에서 격리
-        if (newStatus == ApplicationStatus.ACCEPTED || newStatus == ApplicationStatus.REJECTED) {
-            notificationService.notifyResult(application.getUser().getFcmToken(),
-                    newStatus == ApplicationStatus.ACCEPTED);
+    private Application findApplicationOrThrow(Long id) {
+        return applicationRepository.findById(id)
+                .orElseThrow(() -> new NotFoundException("지원서를 찾을 수 없습니다"));
+    }
+
+    private void requireRecruiter(User user, Application application, String message) {
+        if (!application.getPost().getUser().getId().equals(user.getId())) {
+            throw new ForbiddenException(message);
+        }
+    }
+
+    private void requirePending(Application application) {
+        if (application.getStatus() != ApplicationStatus.PENDING) {
+            throw new BadRequestException("대기 중인 지원서만 처리할 수 있습니다");
         }
     }
 

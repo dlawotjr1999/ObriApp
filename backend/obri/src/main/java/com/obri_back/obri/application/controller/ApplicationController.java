@@ -2,7 +2,6 @@ package com.obri_back.obri.application.controller;
 
 import com.obri_back.obri.application.dto.AppRequestDTO;
 import com.obri_back.obri.application.dto.AppResponseDTO;
-import com.obri_back.obri.application.dto.AppStatusUpdateDTO;
 import com.obri_back.obri.application.service.ApplicationService;
 import com.obri_back.obri.global.common.APIResponse;
 import com.obri_back.obri.global.common.PageResponse;
@@ -42,6 +41,17 @@ public class ApplicationController {
         return ResponseEntity.ok(APIResponse.ok("지원서가 제출되었습니다", response));
     }
 
+    // 내 지원 목록 (마이페이지) — 변수 경로 /{id}보다 위에 선언해 라우팅 충돌 방지
+    @GetMapping("/me")
+    public ResponseEntity<APIResponse<PageResponse<AppResponseDTO>>> getMyApplications(
+        @AuthenticationPrincipal User user,
+        @PageableDefault(size = 10, sort = "createdAt",
+                direction = Sort.Direction.DESC) Pageable pageable
+    ) {
+        Page<AppResponseDTO> response = applicationService.getApplicationsByUserId(user.getId(), pageable);
+        return ResponseEntity.ok(APIResponse.ok("내 지원 목록 조회 성공", PageResponse.from(response)));
+    }
+
     // 지원서 단건 조회
     @GetMapping("/{id}")
     public ResponseEntity<APIResponse<AppResponseDTO>> getApplication(
@@ -52,15 +62,44 @@ public class ApplicationController {
         return ResponseEntity.ok(APIResponse.ok("지원서를 조회했습니다", response));
     }
 
-    // 지원 상태 업데이트
-    @PatchMapping("/{id}/status")
-    public ResponseEntity<APIResponse<AppResponseDTO>> updateApplicationStatus(
+    // 지원 수락 (구인자, PENDING → ACCEPTED)
+    @PatchMapping("/{id}/accept")
+    public ResponseEntity<APIResponse<Void>> acceptApplication(
         @AuthenticationPrincipal User user,
-        @PathVariable Long id,
-        @RequestBody @Valid AppStatusUpdateDTO statusUpdateDto
+        @PathVariable Long id
     ) {
-        applicationService.updateApplicationStatus(user, id, statusUpdateDto);
-        return ResponseEntity.ok(APIResponse.ok("지원 상태가 업데이트되었습니다"));
+        applicationService.accept(user, id);
+        return ResponseEntity.ok(APIResponse.ok("지원을 수락했습니다"));
+    }
+
+    // 지원 거절 (구인자, PENDING → REJECTED)
+    @PatchMapping("/{id}/reject")
+    public ResponseEntity<APIResponse<Void>> rejectApplication(
+        @AuthenticationPrincipal User user,
+        @PathVariable Long id
+    ) {
+        applicationService.reject(user, id);
+        return ResponseEntity.ok(APIResponse.ok("지원을 거절했습니다"));
+    }
+
+    // 지원 취소 (지원자, PENDING → CANCELLED)
+    @PatchMapping("/{id}/cancel")
+    public ResponseEntity<APIResponse<Void>> cancelApplication(
+        @AuthenticationPrincipal User user,
+        @PathVariable Long id
+    ) {
+        applicationService.cancel(user, id);
+        return ResponseEntity.ok(APIResponse.ok("지원을 취소했습니다"));
+    }
+
+    // 수락 철회 (구인자, ACCEPTED → REVOKED; 확정 취소·자리 재오픈)
+    @PatchMapping("/{id}/revoke")
+    public ResponseEntity<APIResponse<Void>> revokeApplication(
+        @AuthenticationPrincipal User user,
+        @PathVariable Long id
+    ) {
+        applicationService.revoke(user, id);
+        return ResponseEntity.ok(APIResponse.ok("수락을 철회했습니다"));
     }
 
     // 구인글별 지원자 목록 (구인자용)

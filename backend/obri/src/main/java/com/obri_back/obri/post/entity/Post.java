@@ -115,8 +115,12 @@ public class Post {
     }
 
     // 지원 수락 시: 해당 악기 확정 인원 증가 후 전체 상태 재계산 (Post 도메인 로직)
+    // 지원자 전공이 모집 목록에 없으면 자리 미반영·상태만 수락 허용(시나리오 1.4) → 조용히 무동작
     public void confirmInstrument(String instrumentName) {
         PostInstrument target = findInstrument(instrumentName);
+        if (target == null) {
+            return; // 모집하지 않는 악기: 자리 카운트 미반영, 상태만 ACCEPTED
+        }
         if (Boolean.TRUE.equals(target.getClosed())) {
             throw new BadRequestException("이미 정원이 마감된 악기입니다");
         }
@@ -125,17 +129,22 @@ public class Post {
     }
 
     // 수락 철회 시: 해당 악기 확정 인원 감소·마감 해제 후 전체 상태 재계산(재오픈)
+    // 미반영 수락(모집 목록에 없는 악기)의 철회는 되돌릴 자리가 없으므로 무동작
     public void revokeInstrument(String instrumentName) {
         PostInstrument target = findInstrument(instrumentName);
+        if (target == null) {
+            return; // 자리 미반영 수락의 철회: 변동 없음
+        }
         target.revoke();
         recomputeStatus();
     }
 
+    // 모집 목록에 해당 악기가 없으면 null (호출부에서 "미반영" 케이스로 처리)
     private PostInstrument findInstrument(String instrumentName) {
         return this.postInstruments.stream()
                 .filter(pi -> pi.getInstrument().equals(instrumentName))
                 .findFirst()
-                .orElseThrow(() -> new BadRequestException("구인글에 모집하지 않는 악기입니다"));
+                .orElse(null);
     }
 
     // 악기별 마감 상태로부터 글 전체 상태를 파생: 전부 마감→CLOSED, 일부→PARTIALLY_CLOSED, 없음→OPEN

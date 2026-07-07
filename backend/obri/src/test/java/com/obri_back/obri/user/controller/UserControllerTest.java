@@ -6,7 +6,6 @@ import com.obri_back.obri.user.dto.UserPublicProfileDTO;
 import com.obri_back.obri.user.dto.UserResponseDTO;
 import com.obri_back.obri.user.entity.User;
 import com.obri_back.obri.user.service.UserService;
-import com.obri_back.obri.application.service.ApplicationService;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletRequest;
 import jakarta.servlet.ServletResponse;
@@ -36,7 +35,6 @@ class UserControllerTest {
 
     @Autowired MockMvc mockMvc;
     @MockitoBean UserService userService;
-    @MockitoBean ApplicationService applicationService;
     @MockitoBean FirebaseAuthFilter firebaseAuthFilter;
 
     private Authentication auth;

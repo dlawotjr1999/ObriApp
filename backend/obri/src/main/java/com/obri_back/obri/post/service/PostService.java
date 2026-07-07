@@ -54,6 +54,12 @@ public class PostService {
         return postRepository.findAll(spec, pageable).map(PostSummaryResponseDTO::from);
     }
 
+    // 내가 올린 구인글 목록(마이페이지) — 카드 리스트용 요약. 정렬은 컨트롤러 Pageable에서 결정
+    @Transactional(readOnly = true)
+    public Page<PostSummaryResponseDTO> getMyPosts(Long userId, Pageable pageable) {
+        return postRepository.findByUserId(userId, pageable).map(PostSummaryResponseDTO::from);
+    }
+
     @Transactional(readOnly = true)
     public PostDetailResponseDTO getPost(Long postId, User user) {
         Post post = findPostOrThrow(postId);

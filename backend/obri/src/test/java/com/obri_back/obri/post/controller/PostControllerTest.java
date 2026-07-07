@@ -162,6 +162,34 @@ class PostControllerTest {
     }
 
     @Test
+    void getMyPosts_returns200WithPagedList() throws Exception {
+        PostSummaryResponseDTO summary = PostSummaryResponseDTO.builder()
+                .id(1L)
+                .title("결혼식 바이올린 구인")
+                .category("결혼")
+                .eventAt(LocalDateTime.of(2024, 5, 1, 14, 0))
+                .location("서울 강남구 OO웨딩홀")
+                .instruments(List.of(
+                        PostInstrumentDTO.builder().instrument("바이올린").people(2).confirmed(0).closed(false).build()
+                ))
+                .timetable("리허설 1회")
+                .pay(150000)
+                .status(PostStatus.OPEN)
+                .build();
+
+        when(postService.getMyPosts(anyLong(), any()))
+                .thenReturn(new PageImpl<>(List.of(summary), PageRequest.of(0, 10), 1));
+
+        mockMvc.perform(get("/api/posts/me")
+                        .with(authentication(auth)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value(200))
+                .andExpect(jsonPath("$.data.content[0].id").value(1))
+                .andExpect(jsonPath("$.data.hasNext").exists())
+                .andExpect(jsonPath("$.data.currentPage").exists());
+    }
+
+    @Test
     void getPost_returns200WithDetail() throws Exception {
         PostDetailResponseDTO response = PostDetailResponseDTO.builder()
                 .id(1L)

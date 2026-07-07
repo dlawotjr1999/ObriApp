@@ -66,16 +66,16 @@ jobs:
       - name: Firebase 서비스 계정 키 생성
         run: |
           echo '${{ secrets.FIREBASE_SERVICE_ACCOUNT_KEY }}' \
-          > backend/src/main/resources/firebase-service-account.json
+          > backend/obri/src/main/resources/firebase-service-account.json
 
       # 5. Gradle 실행 권한 부여
       - name: Gradle 실행 권한 부여
-        run: chmod +x backend/gradlew
+        run: chmod +x backend/obri/gradlew
 
       # 6. 테스트 실행
       # ./gradlew test는 src/test/ 안의 모든 테스트를 실행
       - name: 테스트 실행
-        working-directory: backend
+        working-directory: backend/obri
         run: ./gradlew test
         env:
           SPRING_DATASOURCE_URL: jdbc:mysql://localhost:3306/obri_test?serverTimezone=Asia/Seoul&characterEncoding=UTF-8
@@ -89,5 +89,5 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: test-results
-          path: backend/build/reports/tests/
+          path: backend/obri/build/reports/tests/
           retention-days: 7

@@ -2,7 +2,6 @@ package com.obri_back.obri.user.service;
 
 import com.obri_back.obri.global.exception.ConflictException;
 import com.obri_back.obri.global.exception.NotFoundException;
-import com.obri_back.obri.post.dto.PostSummaryResponseDTO;
 import com.obri_back.obri.user.dto.UserPublicProfileDTO;
 import com.obri_back.obri.user.dto.UserResponseDTO;
 import com.obri_back.obri.user.dto.UserUpdateRequestDTO;
@@ -10,10 +9,7 @@ import com.obri_back.obri.user.entity.Career;
 import com.obri_back.obri.user.entity.User;
 import com.obri_back.obri.user.repository.CareerRepository;
 import com.obri_back.obri.user.repository.UserRepository;
-import com.obri_back.obri.post.repository.PostRepository;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -30,7 +26,6 @@ public class UserService {
 
     private final UserRepository userRepository;
     private final CareerRepository careerRepository;
-    private final PostRepository postRepository;
 
     /*
      * 내 정보 조회
@@ -121,19 +116,5 @@ public class UserService {
     @Transactional(readOnly = true)
     public boolean checkNickname(String nickname) {
         return userRepository.existsByNickname(nickname);
-    }
-
-    /*
-     * 내가 올린 구인글 목록 조회
-     * 요약 정보만 반환 (카드 리스트용)
-     *
-     * @param userId   현재 로그인한 유저의 내부 ID
-     * @param pageable 페이지네이션 정보
-     * @return 구인글 요약 목록
-     */
-    @Transactional(readOnly = true)
-    public Page<PostSummaryResponseDTO> getMyPosts(Long userId, Pageable pageable) {
-        return postRepository.findByUserId(userId, pageable)
-                .map(PostSummaryResponseDTO::from);
     }
 }
