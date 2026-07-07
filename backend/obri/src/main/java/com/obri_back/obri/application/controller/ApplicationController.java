@@ -25,6 +25,14 @@ import org.springframework.web.bind.annotation.RestController;
 
 import lombok.RequiredArgsConstructor;
 
+/*
+ * 지원(Application) 관련 API 컨트롤러
+ * POST  /api/applications/submit                        — 지원서 제출
+ * GET   /api/applications/me                            — 내 지원 목록 (마이페이지)
+ * GET   /api/applications/{id}                          — 지원서 단건 조회
+ * PATCH /api/applications/{id}/{accept|reject|cancel|revoke} — 상태 변경 (의도별 분리)
+ * GET   /api/applications/post/{postId}                 — 구인글별 지원자 목록 (구인자용)
+ */
 @RestController
 @RequestMapping("/api/applications")
 @RequiredArgsConstructor

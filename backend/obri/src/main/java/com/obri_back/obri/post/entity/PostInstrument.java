@@ -13,6 +13,11 @@ import jakarta.persistence.Version;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+/*
+ * 구인글 모집 악기 엔티티 (Post 종속, 양방향 1:N의 자식)
+ * 악기별 모집 인원(people)·확정 인원(confirmed)·마감 여부(closed)를 추적하며,
+ * 악기 단위 @Version 낙관적 락으로 동시 수락 경합을 방지
+ */
 @Getter
 @Entity
 @NoArgsConstructor
@@ -42,6 +47,7 @@ public class PostInstrument {
     @Column(name = "version")
     private Long version;
 
+    // 모집 악기 생성 (확정 인원 0, 미마감 상태로 초기화)
     public static PostInstrument of(Post post, String instrument, int people) {
         PostInstrument pi = new PostInstrument();
         pi.post = post;

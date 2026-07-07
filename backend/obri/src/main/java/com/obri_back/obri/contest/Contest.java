@@ -12,6 +12,10 @@ import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+/*
+ * 콩쿠르 엔티티 (독립 도메인)
+ * 외부 사이트 크롤링으로 수집한 콩쿠르 일정 저장 — 향후 기능 스캐폴딩
+ */
 @Getter
 @NoArgsConstructor
 @Entity

@@ -23,6 +23,11 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.ArrayList;
 
+/*
+ * 유저 엔티티
+ * 내부 식별자(id)와 Firebase 외부 식별자(firebaseUid)를 분리 관리하며,
+ * 계정 고유성 앵커는 phoneNumber(UNIQUE)·firebaseUid(UNIQUE). Career와 1:N 소유
+ */
 @Getter
 @NoArgsConstructor
 @AllArgsConstructor
@@ -65,18 +70,19 @@ public class User {
     @Column(name = "created_at")
     private LocalDateTime createdAt;
 
-    // User와 Career는 1:N 관계
-    // career 필드를 통해 조회를 
+    // User-Career 양방향 1:N (부모 저장/수정 시 cascade·orphanRemoval로 함께 처리)
     @Builder.Default
     @OneToMany(mappedBy = "user", fetch = FetchType.LAZY,
         cascade = CascadeType.ALL, orphanRemoval = true
     )
     private List<Career> careers = new ArrayList<>();
 
+    // FCM 토큰 갱신 (앱 실행 시 최신 토큰 반영)
     public void updateFcmToken(String fcmToken) {
         this.fcmToken = fcmToken;
     }
 
+    // 내 정보 수정: null이 아닌 필드만 선택적으로 반영
     public void updateInfo(UserUpdateRequestDTO request) {
         if (request.getNickname() != null) this.nickname = request.getNickname();
         if (request.getPhoneNumber() != null) this.phoneNumber = request.getPhoneNumber();

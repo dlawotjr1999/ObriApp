@@ -29,6 +29,11 @@ import com.obri_back.obri.post.dto.PostCreateRequestDTO;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+/*
+ * 구인글 엔티티
+ * 작성자(User)를 단방향 참조하고 PostInstrument와 양방향 1:N 소유.
+ * 악기 확정·마감·글 전체 상태(OPEN/PARTIALLY_CLOSED/CLOSED) 전이를 도메인 메서드로 관리
+ */
 @Getter
 @NoArgsConstructor
 @Entity
@@ -78,6 +83,7 @@ public class Post {
     @Column(name = "created_at")
     private LocalDateTime createdAt;
 
+    // 구인글 생성 (악기 목록은 호출부에서 addInstrument로 추가). 초기 상태 OPEN
     public static Post create(User user, PostCreateRequestDTO dto) {
         Post post = new Post();
         post.user = user;
@@ -91,10 +97,12 @@ public class Post {
         return post;
     }
 
+    // 모집 악기 1건 추가 (양방향 연관의 부모 쪽 편의 메서드)
     public void addInstrument(PostInstrument instrument) {
         this.postInstruments.add(instrument);
     }
 
+    // 글 본문 정보 수정 (악기 목록 교체는 replaceInstruments에서 별도 처리)
     public void updateInfo(PostCreateRequestDTO dto) {
         this.category = dto.getCategory();
         this.title = dto.getTitle();
@@ -110,6 +118,7 @@ public class Post {
         newInstruments.forEach(this::addInstrument);
     }
 
+    // 수동 전체 마감 — 상태를 CLOSED로 전환
     public void close() {
         this.status = PostStatus.CLOSED;
     }

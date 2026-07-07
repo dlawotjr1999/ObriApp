@@ -11,6 +11,9 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
+/*
+ * 구인글 등록/수정 응답 DTO (생성·갱신 결과 반환용)
+ */
 @Getter
 @Builder
 @NoArgsConstructor
@@ -28,6 +31,7 @@ public class PostResponseDTO {
     private List<PostInstrumentDTO> instruments;
     private LocalDateTime createdAt;
 
+    // Post 엔티티 → 응답 DTO 변환
     public static PostResponseDTO from(Post post) {
         return PostResponseDTO.builder()
                 .id(post.getId())

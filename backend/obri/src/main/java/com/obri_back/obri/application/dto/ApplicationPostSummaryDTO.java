@@ -8,6 +8,9 @@ import lombok.Getter;
 
 import java.time.LocalDateTime;
 
+/*
+ * 지원서 응답에 중첩되는 구인글 요약 DTO (지원자가 소비)
+ */
 @Getter
 @Builder
 public class ApplicationPostSummaryDTO {
@@ -18,6 +21,7 @@ public class ApplicationPostSummaryDTO {
     private String location;
     private PostStatus status;
 
+    // Post 엔티티 → 지원서용 글 요약 변환
     public static ApplicationPostSummaryDTO from(Post post) {
         return ApplicationPostSummaryDTO.builder()
                 .id(post.getId())

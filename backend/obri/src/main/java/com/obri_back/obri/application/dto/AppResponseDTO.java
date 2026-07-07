@@ -9,6 +9,10 @@ import lombok.Getter;
 
 import java.time.LocalDateTime;
 
+/*
+ * 지원서 응답 DTO — 전 엔드포인트 공통(글 요약 post + 지원자 요약 applicant 중첩)
+ * 구인자는 applicant를, 지원자는 post를 소비 (관점별 비대칭 없이 단일 DTO로 통일)
+ */
 @Getter
 @Builder
 public class AppResponseDTO {
@@ -20,6 +24,7 @@ public class AppResponseDTO {
     private ApplicationStatus status;
     private LocalDateTime createdAt;
 
+    // Application 엔티티 + 지원자 → 응답 DTO 변환 (글·지원자 요약 중첩)
     public static AppResponseDTO from(Application application, User user) {
         return AppResponseDTO.builder()
                 .id(application.getId())

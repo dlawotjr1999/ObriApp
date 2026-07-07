@@ -6,6 +6,10 @@ import lombok.NoArgsConstructor;
 
 import java.util.List;
 
+/*
+ * 내 정보 수정 요청 바디 (PUT /api/users/me)
+ * null 필드는 미변경, careers는 전체 교체
+ */
 @Getter
 @NoArgsConstructor
 public class UserUpdateRequestDTO {

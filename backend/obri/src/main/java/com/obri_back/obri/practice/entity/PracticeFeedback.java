@@ -16,6 +16,10 @@ import java.time.LocalDateTime;
 
 import com.obri_back.obri.user.entity.User;
 
+/*
+ * 연습 피드백 엔티티 (User 종속)
+ * 기간별 연습 기록에 대한 LLM 피드백 저장용 — 향후 기능 스캐폴딩
+ */
 @Getter
 @NoArgsConstructor
 @Entity

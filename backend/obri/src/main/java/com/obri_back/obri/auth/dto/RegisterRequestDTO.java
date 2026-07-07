@@ -8,6 +8,10 @@ import lombok.NoArgsConstructor;
 
 import java.util.List;
 
+/*
+ * 회원가입 요청 바디 (POST /api/auth/register)
+ * Firebase 인증(UID·이메일·전화)은 토큰에서 취하고, 여기서는 추가 프로필만 받음
+ */
 @Getter
 @NoArgsConstructor
 public class RegisterRequestDTO {
