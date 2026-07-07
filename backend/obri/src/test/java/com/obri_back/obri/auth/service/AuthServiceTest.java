@@ -6,19 +6,23 @@ import com.obri_back.obri.auth.dto.FCMTokenUpdateRequestDTO;
 import com.obri_back.obri.auth.dto.RegisterRequestDTO;
 import com.obri_back.obri.global.exception.ConflictException;
 import com.obri_back.obri.global.exception.NotFoundException;
+import com.obri_back.obri.global.exception.BadRequestException;
 import com.obri_back.obri.user.entity.User;
 import com.obri_back.obri.user.repository.CareerRepository;
 import com.obri_back.obri.user.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.Optional;
+import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.lenient;
@@ -40,12 +44,16 @@ class AuthServiceTest {
         mockToken = mock(FirebaseToken.class);
         lenient().when(mockToken.getUid()).thenReturn("test-uid");
         lenient().when(mockToken.getEmail()).thenReturn("test@test.com");
+        lenient().when(mockToken.getClaims())
+                .thenReturn(Map.of("phone_number", "010-1234-5678"));
     }
 
     @Test
     void register_savesUserWhenValid() throws Exception {
         given(firebaseAuth.verifyIdToken("valid-token")).willReturn(mockToken);
         given(userRepository.existsByFirebaseUid("test-uid")).willReturn(false);
+        given(userRepository.existsByEmail("test@test.com")).willReturn(false);
+        given(userRepository.existsByPhoneNumber("010-1234-5678")).willReturn(false);
         given(userRepository.existsByNickname(any())).willReturn(false);
         given(userRepository.save(any(User.class))).willAnswer(inv -> inv.getArgument(0));
 
@@ -55,7 +63,9 @@ class AuthServiceTest {
 
         authService.register("valid-token", request);
 
-        verify(userRepository, times(1)).save(any(User.class));
+        ArgumentCaptor<User> captor = ArgumentCaptor.forClass(User.class);
+        verify(userRepository, times(1)).save(captor.capture());
+        assertThat(captor.getValue().getPhoneNumber()).isEqualTo("010-1234-5678");
     }
 
     @Test
@@ -84,6 +94,36 @@ class AuthServiceTest {
         assertThatThrownBy(() -> authService.register("valid-token", request))
                 .isInstanceOf(ConflictException.class)
                 .hasMessage("이미 사용 중인 닉네임입니다");
+
+        verify(userRepository, never()).save(any());
+    }
+
+    @Test
+    void register_throwsBadRequestWhenPhoneNumberClaimMissing() throws Exception {
+        given(firebaseAuth.verifyIdToken("valid-token")).willReturn(mockToken);
+        given(mockToken.getClaims()).willReturn(Map.of());
+
+        RegisterRequestDTO request = mock(RegisterRequestDTO.class);
+
+        assertThatThrownBy(() -> authService.register("valid-token", request))
+                .isInstanceOf(BadRequestException.class)
+                .hasMessage("휴대폰 인증 정보가 없습니다");
+
+        verify(userRepository, never()).save(any());
+    }
+
+    @Test
+    void register_throwsConflictWhenPhoneNumberExists() throws Exception {
+        given(firebaseAuth.verifyIdToken("valid-token")).willReturn(mockToken);
+        given(userRepository.existsByFirebaseUid("test-uid")).willReturn(false);
+        given(userRepository.existsByEmail("test@test.com")).willReturn(false);
+        given(userRepository.existsByPhoneNumber("010-1234-5678")).willReturn(true);
+
+        RegisterRequestDTO request = mock(RegisterRequestDTO.class);
+
+        assertThatThrownBy(() -> authService.register("valid-token", request))
+                .isInstanceOf(ConflictException.class)
+                .hasMessage("이미 가입된 전화번호입니다");
 
         verify(userRepository, never()).save(any());
     }

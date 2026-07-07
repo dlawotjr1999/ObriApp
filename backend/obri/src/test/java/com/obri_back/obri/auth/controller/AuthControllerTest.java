@@ -95,7 +95,6 @@ class AuthControllerTest {
                         .content("""
                                 {
                                   "nickname": "tester",
-                                  "phoneNumber": "010-1234-5678",
                                   "instrument": "바이올린",
                                   "school": "서울대",
                                   "isGraduate": false,
@@ -118,7 +117,6 @@ class AuthControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {
-                                  "phoneNumber": "010-1234-5678",
                                   "instrument": "바이올린",
                                   "school": "서울대",
                                   "isGraduate": false

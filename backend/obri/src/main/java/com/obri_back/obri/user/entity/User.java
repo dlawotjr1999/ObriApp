@@ -47,7 +47,7 @@ public class User {
     @Column(name = "firebase_uid", nullable = false, unique = true)
     private String firebaseUid;
 
-    @Column(name = "phone_number", nullable = false)
+    @Column(name = "phone_number", nullable = false, unique = true)
     private String phoneNumber;
 
     @Column(name = "nickname", nullable = false)
@@ -82,10 +82,9 @@ public class User {
         this.fcmToken = fcmToken;
     }
 
-    // 내 정보 수정: null이 아닌 필드만 선택적으로 반영
+    // 내 정보 수정: null이 아닌 필드만 선택적으로 반영 (phoneNumber는 전용 인증 엔드포인트로 이관되어 여기서 다루지 않음)
     public void updateInfo(UserUpdateRequestDTO request) {
         if (request.getNickname() != null) this.nickname = request.getNickname();
-        if (request.getPhoneNumber() != null) this.phoneNumber = request.getPhoneNumber();
         if (request.getInstrument() != null) this.instrument = request.getInstrument();
         if (request.getSchool() != null) this.school = request.getSchool();
         if (request.getIsGraduate() != null) this.isGraduate = request.getIsGraduate();

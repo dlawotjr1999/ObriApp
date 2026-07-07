@@ -19,7 +19,6 @@ public class RegisterRequestDTO {
     @Size(min = 2, max = 20, message = "닉네임은 2~20자 사이여야 합니다")
     private String nickname;
 
-    private String phoneNumber;
     private String instrument;
     private String school;
     private Boolean isGraduate;

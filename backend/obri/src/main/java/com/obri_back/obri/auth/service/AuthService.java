@@ -6,6 +6,7 @@ import com.google.firebase.auth.FirebaseToken;
 import com.obri_back.obri.auth.dto.FCMTokenUpdateRequestDTO;
 import com.obri_back.obri.auth.dto.RegisterRequestDTO;
 import com.obri_back.obri.auth.dto.RegisterResponseDTO;
+import com.obri_back.obri.global.exception.BadRequestException;
 import com.obri_back.obri.global.exception.ConflictException;
 import com.obri_back.obri.global.exception.NotFoundException;
 import com.obri_back.obri.user.entity.Career;
@@ -56,6 +57,13 @@ public class AuthService {
         String firebaseUid = decodedToken.getUid();
         String email = decodedToken.getEmail();
 
+        // 전화번호는 클라이언트가 인증한 값이 아니라 검증된 ID Token의 phone_number claim만 신뢰
+        Object phoneClaim = decodedToken.getClaims().get("phone_number");
+        if (phoneClaim == null) {
+            throw new BadRequestException("휴대폰 인증 정보가 없습니다");
+        }
+        String phoneNumber = phoneClaim.toString();
+
         // 이미 가입된 유저인지 확인
         if (userRepository.existsByFirebaseUid(firebaseUid)) {
             throw new ConflictException("이미 가입된 계정입니다");
@@ -64,6 +72,11 @@ public class AuthService {
         // 이미 가입된 이메일인지 확인
         if (userRepository.existsByEmail(email)) {
             throw new ConflictException("이미 가입된 이메일입니다");
+        }
+
+        // 이미 가입된 전화번호인지 확인 (계정 고유성 앵커)
+        if (userRepository.existsByPhoneNumber(phoneNumber)) {
+            throw new ConflictException("이미 가입된 전화번호입니다");
         }
 
         // 닉네임 중복 확인
@@ -76,7 +89,7 @@ public class AuthService {
                 .firebaseUid(firebaseUid)
                 .email(email)
                 .nickname(request.getNickname())
-                .phoneNumber(request.getPhoneNumber())
+                .phoneNumber(phoneNumber)
                 .instrument(request.getInstrument())
                 .school(request.getSchool())
                 .isGraduate(request.getIsGraduate())
