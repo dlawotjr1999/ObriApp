@@ -2,9 +2,8 @@ import React from "react";
 import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
 import { colors } from "@/constants/theme";
 import { ContestSummary } from "@/types/contest";
-import { getDday, formatDate } from "@/utils/datetime";
+import { getDday } from "@/utils/datetime";
 import Tag from "@/components/common/Tag";
-import IconText from "@/components/common/IconText";
 
 interface ContestCardProps {
   contest: ContestSummary;
@@ -36,11 +35,6 @@ export default function ContestCard({ contest, onPress }: ContestCardProps) {
       <View style={styles.badgeRow}>
         <Tag label={contest.category} />
         <Tag label={contest.targetInstrument} />
-      </View>
-
-      <View style={styles.metaList}>
-        <IconText icon="business-outline" text={contest.organizer} />
-        <IconText icon="calendar-outline" text={`${formatDate(contest.startDate)} 시작`} />
       </View>
     </TouchableOpacity>
   );
@@ -81,8 +75,5 @@ const styles = StyleSheet.create({
   badgeRow: {
     flexDirection: "row",
     gap: 6,
-  },
-  metaList: {
-    gap: 4,
   },
 });

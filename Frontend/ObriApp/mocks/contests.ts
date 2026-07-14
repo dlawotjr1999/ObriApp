@@ -1,4 +1,6 @@
-// 임시 더미 데이터. 콩쿠르 API(GET /api/contests, /api/contests/{id}) 연동 시 제거.
+// 임시 더미 데이터. 콩쿠르 API(GET /api/contests) 연동 시 제거.
+// 크롤링 기반 데이터라 목록 응답에 상세 정보(ContestDetail)가 모두 포함될
+// 가능성이 있음 — 별도 상세조회(GET /api/contests/{id})는 백엔드 설계 확정 후 필요 여부 판단.
 import { ContestDetail } from "@/types/contest";
 
 export const MOCK_CONTESTS: ContestDetail[] = [
