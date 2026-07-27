@@ -30,6 +30,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.authentication;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
@@ -138,5 +139,17 @@ class AuthControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value(200))
                 .andExpect(jsonPath("$.message").value("FCM 토큰이 갱신되었습니다"));
+    }
+
+    @Test
+    void updatePhoneNumber_returns200() throws Exception {
+        mockMvc.perform(patch("/api/auth/phone-number")
+                        .with(authentication(auth))
+                        .header("Authorization", "Bearer test-token"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value(200))
+                .andExpect(jsonPath("$.message").value("전화번호가 변경되었습니다"));
+
+        verify(authService).updatePhoneNumber("test-uid", "test-token");
     }
 }

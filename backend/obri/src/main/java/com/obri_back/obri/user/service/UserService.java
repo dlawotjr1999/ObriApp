@@ -1,7 +1,8 @@
 package com.obri_back.obri.user.service;
 
-import com.obri_back.obri.global.exception.ConflictException;
+import com.obri_back.obri.global.exception.ConflictGuard;
 import com.obri_back.obri.global.exception.NotFoundException;
+import com.obri_back.obri.user.dto.SchoolEmailUpdateRequestDTO;
 import com.obri_back.obri.user.dto.UserPublicProfileDTO;
 import com.obri_back.obri.user.dto.UserResponseDTO;
 import com.obri_back.obri.user.dto.UserUpdateRequestDTO;
@@ -69,10 +70,9 @@ public class UserService {
                 .orElseThrow(() -> new NotFoundException("유저를 찾을 수 없습니다"));
 
         // 닉네임 변경 시 중복 체크
-        if (request.getNickname() != null
-                && !request.getNickname().equals(user.getNickname())
-                && userRepository.existsByNickname(request.getNickname())) {
-            throw new ConflictException("이미 사용 중인 닉네임입니다");
+        if (request.getNickname() != null && !request.getNickname().equals(user.getNickname())) {
+            ConflictGuard.requireUnique(
+                    userRepository.existsByNickname(request.getNickname()), "이미 사용 중인 닉네임입니다");
         }
 
         // 유저 정보 수정
@@ -105,6 +105,30 @@ public class UserService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new NotFoundException("유저를 찾을 수 없습니다"));
         userRepository.delete(user);
+    }
+
+    /*
+     * 학교 이메일 등록/변경
+     * 소속(학적) 증명 목적 — 저장만 하고 미인증 상태(schoolEmailVerified=false)로 둠
+     * 현재 값과 같으면 아무 것도 하지 않음
+     *
+     * @param userId  현재 로그인한 유저의 내부 ID
+     * @param request 학교 이메일 요청 DTO
+     */
+    @Transactional
+    public void updateSchoolEmail(Long userId, SchoolEmailUpdateRequestDTO request) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new NotFoundException("유저를 찾을 수 없습니다"));
+
+        String schoolEmail = request.getSchoolEmail();
+        if (schoolEmail.equals(user.getSchoolEmail())) {
+            return;
+        }
+
+        ConflictGuard.requireUnique(
+                userRepository.existsBySchoolEmail(schoolEmail), "이미 등록된 학교 이메일입니다");
+
+        user.updateSchoolEmail(schoolEmail);
     }
 
     /*

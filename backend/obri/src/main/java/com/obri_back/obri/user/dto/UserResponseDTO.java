@@ -22,6 +22,8 @@ public class UserResponseDTO {
     private Long id;
     private String email;
     private String phoneNumber;
+    private String schoolEmail;
+    private Boolean schoolEmailVerified;
     private String nickname;
     private String instrument;
     private String school;
@@ -35,6 +37,8 @@ public class UserResponseDTO {
                 .id(user.getId())
                 .email(user.getEmail())
                 .phoneNumber(user.getPhoneNumber())
+                .schoolEmail(user.getSchoolEmail())
+                .schoolEmailVerified(user.isSchoolEmailVerified())
                 .nickname(user.getNickname())
                 .instrument(user.getInstrument())
                 .school(user.getSchool())

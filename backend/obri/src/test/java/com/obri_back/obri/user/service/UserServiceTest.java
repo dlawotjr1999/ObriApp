@@ -4,6 +4,7 @@ import com.obri_back.obri.global.exception.ConflictException;
 import com.obri_back.obri.global.exception.NotFoundException;
 import com.obri_back.obri.user.dto.UserPublicProfileDTO;
 import com.obri_back.obri.user.dto.UserResponseDTO;
+import com.obri_back.obri.user.dto.SchoolEmailUpdateRequestDTO;
 import com.obri_back.obri.user.dto.UserUpdateRequestDTO;
 import com.obri_back.obri.user.entity.User;
 import com.obri_back.obri.user.repository.CareerRepository;
@@ -128,6 +129,67 @@ class UserServiceTest {
         given(userRepository.findById(99L)).willReturn(Optional.empty());
 
         assertThatThrownBy(() -> userService.deleteUser(99L))
+                .isInstanceOf(NotFoundException.class)
+                .hasMessage("유저를 찾을 수 없습니다");
+    }
+
+    @Test
+    void updateSchoolEmail_updatesWhenValidAndDifferent() {
+        given(userRepository.findById(1L)).willReturn(Optional.of(mockUser));
+        given(userRepository.existsBySchoolEmail("student@school.ac.kr")).willReturn(false);
+
+        SchoolEmailUpdateRequestDTO request = mock(SchoolEmailUpdateRequestDTO.class);
+        given(request.getSchoolEmail()).willReturn("student@school.ac.kr");
+
+        userService.updateSchoolEmail(1L, request);
+
+        assertThat(mockUser.getSchoolEmail()).isEqualTo("student@school.ac.kr");
+        assertThat(mockUser.isSchoolEmailVerified()).isFalse();
+    }
+
+    @Test
+    void updateSchoolEmail_doesNothingWhenSameAsCurrent() {
+        mockUser = User.builder()
+                .id(1L)
+                .email("test@test.com")
+                .firebaseUid("test-uid")
+                .phoneNumber("010-1234-5678")
+                .schoolEmail("student@school.ac.kr")
+                .nickname("tester")
+                .instrument("바이올린")
+                .school("서울대")
+                .isGraduate(false)
+                .build();
+        given(userRepository.findById(1L)).willReturn(Optional.of(mockUser));
+
+        SchoolEmailUpdateRequestDTO request = mock(SchoolEmailUpdateRequestDTO.class);
+        given(request.getSchoolEmail()).willReturn("student@school.ac.kr");
+
+        userService.updateSchoolEmail(1L, request);
+
+        verify(userRepository, never()).existsBySchoolEmail(any());
+    }
+
+    @Test
+    void updateSchoolEmail_throwsConflictWhenAlreadyExists() {
+        given(userRepository.findById(1L)).willReturn(Optional.of(mockUser));
+        given(userRepository.existsBySchoolEmail("dup@school.ac.kr")).willReturn(true);
+
+        SchoolEmailUpdateRequestDTO request = mock(SchoolEmailUpdateRequestDTO.class);
+        given(request.getSchoolEmail()).willReturn("dup@school.ac.kr");
+
+        assertThatThrownBy(() -> userService.updateSchoolEmail(1L, request))
+                .isInstanceOf(ConflictException.class)
+                .hasMessage("이미 등록된 학교 이메일입니다");
+    }
+
+    @Test
+    void updateSchoolEmail_throwsNotFoundWhenMissing() {
+        given(userRepository.findById(99L)).willReturn(Optional.empty());
+
+        SchoolEmailUpdateRequestDTO request = mock(SchoolEmailUpdateRequestDTO.class);
+
+        assertThatThrownBy(() -> userService.updateSchoolEmail(99L, request))
                 .isInstanceOf(NotFoundException.class)
                 .hasMessage("유저를 찾을 수 없습니다");
     }
