@@ -1,6 +1,7 @@
 package com.obri_back.obri.global.exception;
 
 import com.obri_back.obri.global.common.APIResponse;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.FieldError;
@@ -73,6 +74,18 @@ public class GlobalExceptionHandler {
         return ResponseEntity
                 .status(HttpStatus.BAD_REQUEST)
                 .body(APIResponse.error(400, message));
+    }
+
+    /*
+     * 409 Conflict
+     * DB 제약(FK·UNIQUE) 위반 시 — 예: 다른 리소스가 참조 중인 유저 삭제, 중복 전화번호 저장
+     */
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ResponseEntity<APIResponse<Void>> handleDataIntegrityViolationException(
+            DataIntegrityViolationException e) {
+        return ResponseEntity
+                .status(HttpStatus.CONFLICT)
+                .body(APIResponse.error(409, "연관된 데이터가 있어 처리할 수 없습니다"));
     }
 
     /*
