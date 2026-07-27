@@ -127,6 +127,51 @@ class AuthControllerTest {
     }
 
     @Test
+    void register_returns400WhenInstrumentMissing() throws Exception {
+        mockMvc.perform(post("/api/auth/register")
+                        .header("Authorization", "Bearer test-token")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "nickname": "tester",
+                                  "school": "서울대",
+                                  "isGraduate": false
+                                }
+                                """))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void register_returns400WhenSchoolMissing() throws Exception {
+        mockMvc.perform(post("/api/auth/register")
+                        .header("Authorization", "Bearer test-token")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "nickname": "tester",
+                                  "instrument": "바이올린",
+                                  "isGraduate": false
+                                }
+                                """))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void register_returns400WhenIsGraduateMissing() throws Exception {
+        mockMvc.perform(post("/api/auth/register")
+                        .header("Authorization", "Bearer test-token")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "nickname": "tester",
+                                  "instrument": "바이올린",
+                                  "school": "서울대"
+                                }
+                                """))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
     void updateFcmToken_returns200() throws Exception {
         mockMvc.perform(patch("/api/auth/fcm-token")
                         .with(authentication(auth))

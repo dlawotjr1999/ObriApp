@@ -90,6 +90,14 @@ class UserControllerTest {
     }
 
     @Test
+    void getMyInfo_returns401WhenUnauthenticated() throws Exception {
+        mockMvc.perform(get("/api/users/me"))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.status").value(401))
+                .andExpect(jsonPath("$.message").value("인증이 필요합니다"));
+    }
+
+    @Test
     void checkNickname_returns200WithResult() throws Exception {
         when(userService.checkNickname("tester")).thenReturn(true);
 
