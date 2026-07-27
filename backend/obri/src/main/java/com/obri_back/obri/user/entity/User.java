@@ -15,6 +15,7 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import org.hibernate.annotations.BatchSize;
 import org.hibernate.annotations.CreationTimestamp;
 
 import com.obri_back.obri.user.dto.UserUpdateRequestDTO;
@@ -78,7 +79,9 @@ public class User {
     private LocalDateTime createdAt;
 
     // User-Career 양방향 1:N (부모 저장/수정 시 cascade·orphanRemoval로 함께 처리)
+    // @BatchSize: 지원자 목록 등에서 여러 User의 careers를 순회 조회할 때 N+1 방지
     @Builder.Default
+    @BatchSize(size = 100)
     @OneToMany(mappedBy = "user", fetch = FetchType.LAZY,
         cascade = CascadeType.ALL, orphanRemoval = true
     )

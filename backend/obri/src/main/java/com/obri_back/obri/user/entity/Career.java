@@ -38,4 +38,13 @@ public class Career {
 
     @Column(name = "contexts")
     private String contexts;
+
+    // 경력 생성 — register()·updateMyInfo()에서 공통으로 쓰는 DTO→엔티티 매핑 중복 제거용
+    public static Career of(User user, String organization, String contexts) {
+        return Career.builder()
+                .user(user)
+                .organization(organization)
+                .contexts(contexts)
+                .build();
+    }
 }

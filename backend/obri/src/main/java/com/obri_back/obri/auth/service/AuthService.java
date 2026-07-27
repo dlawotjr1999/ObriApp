@@ -9,6 +9,7 @@ import com.obri_back.obri.auth.dto.RegisterResponseDTO;
 import com.obri_back.obri.global.exception.BadRequestException;
 import com.obri_back.obri.global.exception.ConflictGuard;
 import com.obri_back.obri.global.exception.NotFoundException;
+import com.obri_back.obri.global.exception.UnauthorizedException;
 import com.obri_back.obri.user.entity.Career;
 import com.obri_back.obri.user.entity.User;
 import com.obri_back.obri.user.repository.CareerRepository;
@@ -54,8 +55,11 @@ public class AuthService {
 
         ConflictGuard.requireUnique(
                 userRepository.existsByFirebaseUid(firebaseUid), "이미 가입된 계정입니다");
-        ConflictGuard.requireUnique(
-                userRepository.existsByEmail(email), "이미 가입된 이메일입니다");
+        // email은 선택 필드(§3.1) — null이면 existsByEmail(null)이 SQL상 항상 false로 무력화되므로 의미 없는 호출을 스킵
+        if (email != null) {
+            ConflictGuard.requireUnique(
+                    userRepository.existsByEmail(email), "이미 가입된 이메일입니다");
+        }
         // 전화번호 중복 확인 (계정 고유성 앵커)
         ConflictGuard.requireUnique(
                 userRepository.existsByPhoneNumber(phoneNumber), "이미 가입된 전화번호입니다");
@@ -88,11 +92,7 @@ public class AuthService {
         // 경력 저장
         if (request.getCareers() != null && !request.getCareers().isEmpty()) {
             List<Career> careers = request.getCareers().stream()
-                    .map(dto -> Career.builder()
-                            .user(user)
-                            .organization(dto.getOrganization())
-                            .contexts(dto.getContexts())
-                            .build())
+                    .map(dto -> Career.of(user, dto.getOrganization(), dto.getContexts()))
                     .collect(Collectors.toList());
             careerRepository.saveAll(careers);
         }
@@ -141,12 +141,12 @@ public class AuthService {
         user.updatePhoneNumber(phoneNumber);
     }
 
-    // Firebase 토큰 검증 및 디코딩 (실패 시 401로 매핑되는 IllegalArgumentException)
+    // Firebase 토큰 검증 및 디코딩
     private FirebaseToken verifyToken(String idToken) {
         try {
             return firebaseAuth.verifyIdToken(idToken);
         } catch (FirebaseAuthException e) {
-            throw new IllegalArgumentException("유효하지 않은 Firebase 토큰입니다");
+            throw new UnauthorizedException("유효하지 않은 Firebase 토큰입니다");
         }
     }
 

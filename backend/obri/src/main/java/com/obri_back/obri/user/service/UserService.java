@@ -82,11 +82,7 @@ public class UserService {
         if (request.getCareers() != null) {
             careerRepository.deleteByUserId(userId);
             List<Career> careers = request.getCareers().stream()
-                    .map(dto -> Career.builder()
-                            .user(user)
-                            .organization(dto.getOrganization())
-                            .contexts(dto.getContexts())
-                            .build())
+                    .map(dto -> Career.of(user, dto.getOrganization(), dto.getContexts()))
                     .collect(Collectors.toList());
             careerRepository.saveAll(careers);
         }

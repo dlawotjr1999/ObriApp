@@ -1,12 +1,14 @@
 package com.obri_back.obri.auth.service;
 
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseAuthException;
 import com.google.firebase.auth.FirebaseToken;
 import com.obri_back.obri.auth.dto.FCMTokenUpdateRequestDTO;
 import com.obri_back.obri.auth.dto.RegisterRequestDTO;
 import com.obri_back.obri.global.exception.ConflictException;
 import com.obri_back.obri.global.exception.NotFoundException;
 import com.obri_back.obri.global.exception.BadRequestException;
+import com.obri_back.obri.global.exception.UnauthorizedException;
 import com.obri_back.obri.user.entity.User;
 import com.obri_back.obri.user.repository.CareerRepository;
 import com.obri_back.obri.user.repository.UserRepository;
@@ -69,6 +71,20 @@ class AuthServiceTest {
     }
 
     @Test
+    void register_throwsUnauthorizedWhenTokenInvalid() throws Exception {
+        given(firebaseAuth.verifyIdToken("invalid-token"))
+                .willThrow(mock(FirebaseAuthException.class));
+
+        RegisterRequestDTO request = mock(RegisterRequestDTO.class);
+
+        assertThatThrownBy(() -> authService.register("invalid-token", request))
+                .isInstanceOf(UnauthorizedException.class)
+                .hasMessage("유효하지 않은 Firebase 토큰입니다");
+
+        verify(userRepository, never()).save(any());
+    }
+
+    @Test
     void register_throwsConflictWhenUidExists() throws Exception {
         given(firebaseAuth.verifyIdToken("valid-token")).willReturn(mockToken);
         given(userRepository.existsByFirebaseUid("test-uid")).willReturn(true);
@@ -80,6 +96,25 @@ class AuthServiceTest {
                 .hasMessage("이미 가입된 계정입니다");
 
         verify(userRepository, never()).save(any());
+    }
+
+    @Test
+    void register_skipsEmailCheckWhenEmailIsNull() throws Exception {
+        given(mockToken.getEmail()).willReturn(null);
+        given(firebaseAuth.verifyIdToken("valid-token")).willReturn(mockToken);
+        given(userRepository.existsByFirebaseUid("test-uid")).willReturn(false);
+        given(userRepository.existsByPhoneNumber("010-1234-5678")).willReturn(false);
+        given(userRepository.existsByNickname(any())).willReturn(false);
+        given(userRepository.save(any(User.class))).willAnswer(inv -> inv.getArgument(0));
+
+        RegisterRequestDTO request = mock(RegisterRequestDTO.class);
+        given(request.getNickname()).willReturn("tester");
+        given(request.getCareers()).willReturn(null);
+
+        authService.register("valid-token", request);
+
+        verify(userRepository, never()).existsByEmail(any());
+        verify(userRepository, times(1)).save(any(User.class));
     }
 
     @Test
@@ -206,6 +241,18 @@ class AuthServiceTest {
                 .hasMessage("이미 가입된 전화번호입니다");
 
         verify(user, never()).updatePhoneNumber(any());
+    }
+
+    @Test
+    void updatePhoneNumber_throwsUnauthorizedWhenTokenInvalid() throws Exception {
+        given(firebaseAuth.verifyIdToken("invalid-token"))
+                .willThrow(mock(FirebaseAuthException.class));
+
+        assertThatThrownBy(() -> authService.updatePhoneNumber("test-uid", "invalid-token"))
+                .isInstanceOf(UnauthorizedException.class)
+                .hasMessage("유효하지 않은 Firebase 토큰입니다");
+
+        verify(userRepository, never()).findByFirebaseUid(any());
     }
 
     @Test
