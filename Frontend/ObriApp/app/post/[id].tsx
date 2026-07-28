@@ -3,7 +3,6 @@ import {
   View,
   Text,
   ScrollView,
-  TouchableOpacity,
   StyleSheet,
 } from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
@@ -17,6 +16,7 @@ import ScreenHeader from "@/components/common/ScreenHeader";
 import EmptyState from "@/components/common/EmptyState";
 import IconText from "@/components/common/IconText";
 import Tag from "@/components/common/Tag";
+import ThemedButton from "@/components/common/ThemedButton";
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
@@ -119,18 +119,14 @@ export default function PostDetailScreen() {
 
       {/* 하단 고정: 지원하기 (우측) */}
       <View style={[styles.footer, { paddingBottom: insets.bottom + 12 }]}>
-        <TouchableOpacity
-          style={[styles.applyButton, isClosed && styles.applyButtonDisabled]}
-          activeOpacity={0.85}
+        <ThemedButton
+          title={isClosed ? "마감된 구인글" : "지원하기"}
           disabled={isClosed}
+          style={styles.applyButton}
           onPress={() => {
             // TODO: 오브리 지원 API(POST /api/posts/{id}/applications) 연동
           }}
-        >
-          <Text style={styles.applyButtonText}>
-            {isClosed ? "마감된 구인글" : "지원하기"}
-          </Text>
-        </TouchableOpacity>
+        />
       </View>
     </SafeAreaView>
   );
@@ -237,17 +233,5 @@ const styles = StyleSheet.create({
     height: 48,
     paddingHorizontal: 40,
     borderRadius: 24,
-    backgroundColor: colors.primary,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  applyButtonDisabled: {
-    backgroundColor: colors.placeholder,
-  },
-  applyButtonText: {
-    fontSize: 15,
-    fontWeight: "600",
-    color: colors.background,
-    letterSpacing: 1,
   },
 });

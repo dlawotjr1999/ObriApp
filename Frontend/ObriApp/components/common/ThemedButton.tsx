@@ -4,6 +4,8 @@ import {
   Text,
   StyleSheet,
   ActivityIndicator,
+  StyleProp,
+  ViewStyle,
 } from "react-native";
 import { colors } from "@/constants/theme";
 
@@ -13,6 +15,7 @@ interface ThemedButtonProps {
   variant?: "primary" | "outline";
   loading?: boolean;
   disabled?: boolean;
+  style?: StyleProp<ViewStyle>;
 }
 
 export default function ThemedButton({
@@ -21,6 +24,7 @@ export default function ThemedButton({
   variant = "primary",
   loading = false,
   disabled = false,
+  style,
 }: ThemedButtonProps) {
   const isPrimary = variant === "primary";
 
@@ -30,6 +34,7 @@ export default function ThemedButton({
         styles.base,
         isPrimary ? styles.primary : styles.outline,
         disabled && styles.disabled,
+        style,
       ]}
       onPress={onPress}
       disabled={disabled || loading}
