@@ -1,10 +1,7 @@
 package com.obri_back.obri.user.controller;
 
 import com.obri_back.obri.global.common.APIResponse;
-import com.obri_back.obri.global.common.PageResponse;
-import com.obri_back.obri.application.dto.AppResponseDTO;
-import com.obri_back.obri.application.service.ApplicationService;
-import com.obri_back.obri.post.dto.PostSummaryResponseDTO;
+import com.obri_back.obri.user.dto.SchoolEmailUpdateRequestDTO;
 import com.obri_back.obri.user.dto.UserPublicProfileDTO;
 import com.obri_back.obri.user.dto.UserResponseDTO;
 import com.obri_back.obri.user.dto.UserUpdateRequestDTO;
@@ -12,10 +9,6 @@ import com.obri_back.obri.user.entity.User;
 import com.obri_back.obri.user.service.UserService;
 
 import jakarta.validation.Valid;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
-import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
@@ -28,11 +21,11 @@ import java.util.Map;
  * 유저 관련 API 컨트롤러
  * GET    /api/users/me                — 내 정보 조회
  * PUT    /api/users/me                — 내 정보 수정
+ * PATCH  /api/users/me/school-email   — 학교 이메일 등록/변경
  * DELETE /api/users/me                — 회원 탈퇴
  * GET    /api/users/check/{nickname}  — 닉네임 중복 체크
  * GET    /api/users/{nickname}        — 타인 프로필 조회
- * GET    /api/users/me/posts          — 내가 올린 구인글 목록
- * GET    /api/users/me/applications   — 내 지원 목록
+ * (내 구인글/지원 목록은 GET /api/posts/me · GET /api/applications/me 로 각 도메인이 소유)
  */
 @RestController
 @RequestMapping("/api/users")
@@ -40,7 +33,6 @@ import java.util.Map;
 public class UserController {
 
     private final UserService userService;
-    private final ApplicationService applicationService;
 
       /**
      * 내 정보 조회
@@ -65,6 +57,19 @@ public class UserController {
 
         UserResponseDTO response = userService.updateMyInfo(user.getId(), request);
         return ResponseEntity.ok(APIResponse.ok("내 정보가 수정되었습니다.", response));
+    }
+
+    /**
+     * 학교 이메일 등록/변경
+     * 소속(학적) 증명 목적 — 저장만 하고 미인증 상태로 둠 (인증은 별도 엔드포인트)
+     */
+    @PatchMapping("/me/school-email")
+    public ResponseEntity<APIResponse<Void>> updateSchoolEmail(
+            @AuthenticationPrincipal User user,
+            @RequestBody @Valid SchoolEmailUpdateRequestDTO request) {
+
+        userService.updateSchoolEmail(user.getId(), request);
+        return ResponseEntity.ok(APIResponse.ok("학교 이메일이 등록되었습니다. 인증이 필요합니다."));
     }
 
     /**
@@ -101,35 +106,5 @@ public class UserController {
 
         UserPublicProfileDTO response = userService.getUserProfile(nickname);
         return ResponseEntity.ok(APIResponse.ok("유저 프로필 조회 성공", response));
-    }
-
-    /**
-     * 내가 올린 구인글 목록 조회
-     * 카드 리스트용 요약 정보 반환
-     * 기본 정렬: 최신순(createdAt DESC)
-     */
-    @GetMapping("/me/posts")
-    public ResponseEntity<APIResponse<PageResponse<PostSummaryResponseDTO>>> getMyPosts(
-            @AuthenticationPrincipal User user,
-            @PageableDefault(size = 10, sort = "createdAt",
-                    direction = Sort.Direction.DESC) Pageable pageable) {
-
-        Page<PostSummaryResponseDTO> response = userService.getMyPosts(user.getId(), pageable);
-        return ResponseEntity.ok(APIResponse.ok("유저가 올린 구인글 목록 조회 성공", PageResponse.from(response)));
-    }
-
-    /**
-     * 내가 지원한 구인글 목록 조회
-     * ApplicationService에서 처리되는 URL 구조임
-     * 추후 ApplicationController에서 동일한 로직을 처리함
-     */
-    @GetMapping("/me/applications")
-    public ResponseEntity<APIResponse<PageResponse<AppResponseDTO>>> getMyApplications(
-            @AuthenticationPrincipal User user,
-            @PageableDefault(size = 10, sort = "createdAt",
-                    direction = Sort.Direction.DESC) Pageable pageable) {
-
-        Page<AppResponseDTO> response = applicationService.getApplicationsByUserId(user.getId(), pageable);
-        return ResponseEntity.ok(APIResponse.ok("구인글 목록 조회 성공", PageResponse.from(response)));
     }
 }

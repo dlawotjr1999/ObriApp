@@ -21,6 +21,7 @@ public class ApplicantResponseDTO {
     private String phoneNumber;
     private List<CareerDTO> careers;
 
+    // User 엔티티 → 지원자 프로필 DTO 변환 (email 제외, phoneNumber 포함)
     public static ApplicantResponseDTO from(User user) {
         return ApplicantResponseDTO.builder()
                 .nickname(user.getNickname())

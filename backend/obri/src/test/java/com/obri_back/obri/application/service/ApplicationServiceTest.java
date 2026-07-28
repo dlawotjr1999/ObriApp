@@ -2,6 +2,7 @@ package com.obri_back.obri.application.service;
 
 import com.obri_back.obri.application.dto.AppRequestDTO;
 import com.obri_back.obri.application.entity.Application;
+import com.obri_back.obri.application.entity.ApplicationStatus;
 import com.obri_back.obri.application.repository.ApplicationRepository;
 import com.obri_back.obri.global.exception.BadRequestException;
 import com.obri_back.obri.global.exception.ForbiddenException;
@@ -21,6 +22,7 @@ import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.*;
 
@@ -29,6 +31,7 @@ class ApplicationServiceTest {
 
     @Mock ApplicationRepository applicationRepository;
     @Mock PostRepository postRepository;
+    @Mock com.obri_back.obri.notification.NotificationService notificationService;
 
     @InjectMocks ApplicationService applicationService;
 
@@ -63,6 +66,8 @@ class ApplicationServiceTest {
         applicationService.submitApplication(applicant, request);
 
         verify(applicationRepository, times(1)).save(any(Application.class));
+        // 지원 도착 시 구인자에게 알림 발송 위임
+        verify(notificationService, times(1)).notifyNewApplication(any(), any(), any());
     }
 
     @Test
@@ -103,5 +108,88 @@ class ApplicationServiceTest {
         assertThatThrownBy(() -> applicationService.submitApplication(applicant, request))
                 .isInstanceOf(NotFoundException.class)
                 .hasMessage("게시글을 찾을 수 없습니다");
+    }
+
+    // ── 상태 변경 ──────────────────────────────────
+
+    private Application buildApplication(ApplicationStatus status) {
+        return Application.builder()
+                .id(100L)
+                .user(applicant)
+                .post(post)
+                .instrument("바이올린")
+                .status(status)
+                .build();
+    }
+
+    @Test
+    void accept_confirmsInstrumentAndNotifiesWhenRecruiter() {
+        Application app = buildApplication(ApplicationStatus.PENDING);
+        given(applicationRepository.findById(100L)).willReturn(Optional.of(app));
+        given(post.getUser()).willReturn(recruiter);
+
+        applicationService.accept(recruiter, 100L);
+
+        verify(post, times(1)).confirmInstrument("바이올린");
+        verify(notificationService, times(1)).notifyResult(any(), eq(true));
+        org.assertj.core.api.Assertions.assertThat(app.getStatus()).isEqualTo(ApplicationStatus.ACCEPTED);
+    }
+
+    @Test
+    void reject_setsRejectedAndNotifiesWhenRecruiter() {
+        Application app = buildApplication(ApplicationStatus.PENDING);
+        given(applicationRepository.findById(100L)).willReturn(Optional.of(app));
+        given(post.getUser()).willReturn(recruiter);
+
+        applicationService.reject(recruiter, 100L);
+
+        verify(notificationService, times(1)).notifyResult(any(), eq(false));
+        verify(post, never()).confirmInstrument(any());
+        org.assertj.core.api.Assertions.assertThat(app.getStatus()).isEqualTo(ApplicationStatus.REJECTED);
+    }
+
+    @Test
+    void revoke_releasesInstrumentWhenRecruiterAndAccepted() {
+        Application app = buildApplication(ApplicationStatus.ACCEPTED);
+        given(applicationRepository.findById(100L)).willReturn(Optional.of(app));
+        given(post.getUser()).willReturn(recruiter);
+
+        applicationService.revoke(recruiter, 100L);
+
+        verify(post, times(1)).revokeInstrument("바이올린");
+        org.assertj.core.api.Assertions.assertThat(app.getStatus()).isEqualTo(ApplicationStatus.REVOKED);
+    }
+
+    @Test
+    void accept_throwsForbiddenWhenApplicant() {
+        Application app = buildApplication(ApplicationStatus.PENDING);
+        given(applicationRepository.findById(100L)).willReturn(Optional.of(app));
+        given(post.getUser()).willReturn(recruiter);
+
+        assertThatThrownBy(() -> applicationService.accept(applicant, 100L))
+                .isInstanceOf(ForbiddenException.class);
+
+        verify(post, never()).confirmInstrument(any());
+    }
+
+    @Test
+    void cancel_throwsBadRequestWhenNonPending() {
+        Application app = buildApplication(ApplicationStatus.ACCEPTED);
+        given(applicationRepository.findById(100L)).willReturn(Optional.of(app));
+
+        assertThatThrownBy(() -> applicationService.cancel(applicant, 100L))
+                .isInstanceOf(BadRequestException.class);
+    }
+
+    @Test
+    void revoke_throwsBadRequestWhenNonAccepted() {
+        Application app = buildApplication(ApplicationStatus.PENDING);
+        given(applicationRepository.findById(100L)).willReturn(Optional.of(app));
+        given(post.getUser()).willReturn(recruiter);
+
+        assertThatThrownBy(() -> applicationService.revoke(recruiter, 100L))
+                .isInstanceOf(BadRequestException.class);
+
+        verify(post, never()).revokeInstrument(any());
     }
 }

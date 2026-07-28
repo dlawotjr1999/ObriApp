@@ -13,6 +13,10 @@ import lombok.NoArgsConstructor;
 import java.time.LocalDateTime;
 import java.util.List;
 
+/*
+ * 구인글 등록/수정 요청 바디 (POST·PUT /api/posts)
+ * 모집 악기는 중첩 InstrumentItem 리스트로 받음
+ */
 @Getter
 @Builder
 @NoArgsConstructor
@@ -42,6 +46,7 @@ public class PostCreateRequestDTO {
     @Valid
     private List<InstrumentItem> instruments;
 
+    // 모집 악기 1건 (악기명 + 모집 인원)
     @Getter
     @Builder
     @NoArgsConstructor

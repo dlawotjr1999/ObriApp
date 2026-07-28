@@ -11,6 +11,9 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
+/*
+ * 타인 공개 프로필 DTO — email·phoneNumber 등 연락처는 제외
+ */
 @Getter
 @Builder
 @NoArgsConstructor
@@ -23,6 +26,7 @@ public class UserPublicProfileDTO {
     private LocalDateTime createdAt;
     private List<CareerDTO> careers;
 
+    // User 엔티티 → 공개 프로필 DTO 변환 (연락처 제외)
     public static UserPublicProfileDTO from(User user) {
         return UserPublicProfileDTO.builder()
                 .nickname(user.getNickname())

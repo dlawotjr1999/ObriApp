@@ -1,4 +1,26 @@
 docs/*
 CLAUDE.md
 AGENTS.md
-.vscode/settings.json
+BACKLOG.md
+
+### OS ###
+.DS_Store
+Thumbs.db
+
+### Editor ###
+.vscode/
+.idea/
+
+### Node (루트 임시 설치물) ###
+node_modules/
+
+### 비밀/환경 (하위 프로젝트에도 각각 존재하나 모노레포 공통 방어선) ###
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+firebase-service-account.json
+application-local.properties
+application-local.yml
+application-local.yaml

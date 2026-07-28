@@ -6,8 +6,10 @@ import com.google.firebase.auth.FirebaseToken;
 import com.obri_back.obri.auth.dto.FCMTokenUpdateRequestDTO;
 import com.obri_back.obri.auth.dto.RegisterRequestDTO;
 import com.obri_back.obri.auth.dto.RegisterResponseDTO;
-import com.obri_back.obri.global.exception.ConflictException;
+import com.obri_back.obri.global.exception.BadRequestException;
+import com.obri_back.obri.global.exception.ConflictGuard;
 import com.obri_back.obri.global.exception.NotFoundException;
+import com.obri_back.obri.global.exception.UnauthorizedException;
 import com.obri_back.obri.user.entity.Career;
 import com.obri_back.obri.user.entity.User;
 import com.obri_back.obri.user.repository.CareerRepository;
@@ -44,39 +46,32 @@ public class AuthService {
      */
     @Transactional
     public RegisterResponseDTO register(String idToken, RegisterRequestDTO request) {
-        FirebaseToken decodedToken;
-
-        try {
-            // Firebase 토큰 검증 및 디코딩
-            decodedToken = firebaseAuth.verifyIdToken(idToken);
-        } catch (FirebaseAuthException e) {
-            throw new IllegalArgumentException("유효하지 않은 Firebase 토큰입니다");
-        }
+        FirebaseToken decodedToken = verifyToken(idToken);
 
         String firebaseUid = decodedToken.getUid();
         String email = decodedToken.getEmail();
+        // 전화번호는 클라이언트가 인증한 값이 아니라 검증된 ID Token의 phone_number claim만 신뢰
+        String phoneNumber = extractPhoneNumberClaim(decodedToken);
 
-        // 이미 가입된 유저인지 확인
-        if (userRepository.existsByFirebaseUid(firebaseUid)) {
-            throw new ConflictException("이미 가입된 계정입니다");
+        ConflictGuard.requireUnique(
+                userRepository.existsByFirebaseUid(firebaseUid), "이미 가입된 계정입니다");
+        // email은 선택 필드(§3.1) — null이면 existsByEmail(null)이 SQL상 항상 false로 무력화되므로 의미 없는 호출을 스킵
+        if (email != null) {
+            ConflictGuard.requireUnique(
+                    userRepository.existsByEmail(email), "이미 가입된 이메일입니다");
         }
-
-        // 이미 가입된 이메일인지 확인
-        if (userRepository.existsByEmail(email)) {
-            throw new ConflictException("이미 가입된 이메일입니다");
-        }
-
-        // 닉네임 중복 확인
-        if (userRepository.existsByNickname(request.getNickname())) {
-            throw new ConflictException("이미 사용 중인 닉네임입니다");
-        }
+        // 전화번호 중복 확인 (계정 고유성 앵커)
+        ConflictGuard.requireUnique(
+                userRepository.existsByPhoneNumber(phoneNumber), "이미 가입된 전화번호입니다");
+        ConflictGuard.requireUnique(
+                userRepository.existsByNickname(request.getNickname()), "이미 사용 중인 닉네임입니다");
 
         // User 엔티티 생성 및 저장
         User user = User.builder()
                 .firebaseUid(firebaseUid)
                 .email(email)
                 .nickname(request.getNickname())
-                .phoneNumber(request.getPhoneNumber())
+                .phoneNumber(phoneNumber)
                 .instrument(request.getInstrument())
                 .school(request.getSchool())
                 .isGraduate(request.getIsGraduate())
@@ -97,11 +92,7 @@ public class AuthService {
         // 경력 저장
         if (request.getCareers() != null && !request.getCareers().isEmpty()) {
             List<Career> careers = request.getCareers().stream()
-                    .map(dto -> Career.builder()
-                            .user(user)
-                            .organization(dto.getOrganization())
-                            .contexts(dto.getContexts())
-                            .build())
+                    .map(dto -> Career.of(user, dto.getOrganization(), dto.getContexts()))
                     .collect(Collectors.toList());
             careerRepository.saveAll(careers);
         }
@@ -122,5 +113,49 @@ public class AuthService {
                 .orElseThrow(() -> new NotFoundException("유저를 찾을 수 없습니다"));
 
         user.updateFcmToken(request.getFcmToken());
+    }
+
+    /*
+     * 전화번호 갱신
+     * register()와 동일하게 Authorization 헤더의 Firebase ID Token을 재검증해
+     * 그 안의 phone_number claim만 신뢰(요청 바디는 받지 않음). 현재 번호와 같으면 아무 것도 하지 않음
+     *
+     * @param firebaseUid 현재 로그인한 유저의 Firebase UID
+     * @param idToken     Firebase ID Token (Authorization 헤더에서 추출)
+     */
+    @Transactional
+    public void updatePhoneNumber(String firebaseUid, String idToken) {
+        FirebaseToken decodedToken = verifyToken(idToken);
+        String phoneNumber = extractPhoneNumberClaim(decodedToken);
+
+        User user = userRepository.findByFirebaseUid(firebaseUid)
+                .orElseThrow(() -> new NotFoundException("유저를 찾을 수 없습니다"));
+
+        if (phoneNumber.equals(user.getPhoneNumber())) {
+            return;
+        }
+
+        ConflictGuard.requireUnique(
+                userRepository.existsByPhoneNumber(phoneNumber), "이미 가입된 전화번호입니다");
+
+        user.updatePhoneNumber(phoneNumber);
+    }
+
+    // Firebase 토큰 검증 및 디코딩
+    private FirebaseToken verifyToken(String idToken) {
+        try {
+            return firebaseAuth.verifyIdToken(idToken);
+        } catch (FirebaseAuthException e) {
+            throw new UnauthorizedException("유효하지 않은 Firebase 토큰입니다");
+        }
+    }
+
+    // 검증된 토큰에서 phone_number claim 추출 (Firebase Admin SDK에 전용 getter 없어 claims map에서 직접 조회)
+    private String extractPhoneNumberClaim(FirebaseToken decodedToken) {
+        Object phoneClaim = decodedToken.getClaims().get("phone_number");
+        if (phoneClaim == null) {
+            throw new BadRequestException("휴대폰 인증 정보가 없습니다");
+        }
+        return phoneClaim.toString();
     }
 }

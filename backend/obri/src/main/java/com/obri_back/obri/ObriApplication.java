@@ -3,9 +3,13 @@ package com.obri_back.obri;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
+/*
+ * Obri 백엔드 애플리케이션 진입점 (Spring Boot 부트스트랩)
+ */
 @SpringBootApplication
 public class ObriApplication {
 
+	// 애플리케이션 실행
 	public static void main(String[] args) {
 		SpringApplication.run(ObriApplication.class, args);
 	}

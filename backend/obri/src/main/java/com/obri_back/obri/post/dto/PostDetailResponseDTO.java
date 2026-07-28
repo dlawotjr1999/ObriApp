@@ -31,6 +31,7 @@ public class PostDetailResponseDTO {
     private List<PostInstrumentDTO> instruments;
     private LocalDateTime createdAt;
 
+    // Post 엔티티 + 계산값(지원자 수·본인 여부·지원 여부) → 상세 DTO 변환
     public static PostDetailResponseDTO from(Post post, long applicationCount, boolean isMine, boolean hasApplied) {
         return PostDetailResponseDTO.builder()
                 .id(post.getId())
@@ -52,12 +53,14 @@ public class PostDetailResponseDTO {
                 .build();
     }
 
+    // 작성자 요약 정보 (닉네임·전공 악기만 노출)
     @Getter
     @Builder
     public static class Writer {
         private String nickname;
         private String instrument;
 
+        // User 엔티티 → 작성자 요약 변환
         public static Writer from(User user) {
             return Writer.builder()
                     .nickname(user.getNickname())
