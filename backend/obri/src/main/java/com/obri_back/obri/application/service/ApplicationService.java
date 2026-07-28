@@ -46,7 +46,7 @@ public class ApplicationService {
     @Transactional
     public AppResponseDTO submitApplication(User user, AppRequestDTO requestDto) {
         Post post = postRepository.findById(requestDto.getPostId())
-            .orElseThrow(() -> new NotFoundException("게시글을 찾을 수 없습니다"));
+            .orElseThrow(() -> new NotFoundException("구인글을 찾을 수 없습니다"));
 
         // 마감된 구인글 체크
         if (post.getStatus() == PostStatus.CLOSED) {

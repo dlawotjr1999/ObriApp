@@ -125,7 +125,7 @@ class ApplicationServiceTest {
 
         assertThatThrownBy(() -> applicationService.submitApplication(applicant, request))
                 .isInstanceOf(NotFoundException.class)
-                .hasMessage("게시글을 찾을 수 없습니다");
+                .hasMessage("구인글을 찾을 수 없습니다");
     }
 
     // ── 상태 변경 ──────────────────────────────────
