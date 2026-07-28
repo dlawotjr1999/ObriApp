@@ -1,5 +1,5 @@
 import React from "react";
-import { View, Text, TouchableOpacity, StyleSheet, Modal, Linking } from "react-native";
+import { View, Text, TouchableOpacity, StyleSheet, Modal, Linking, Alert } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { colors } from "@/constants/theme";
 import { ContestDetail } from "@/types/contest";
@@ -14,6 +14,15 @@ interface ContestDetailModalProps {
 }
 
 export default function ContestDetailModal({ contest, onClose }: ContestDetailModalProps) {
+  const handleApply = async () => {
+    if (!contest) return;
+    try {
+      await Linking.openURL(contest.sourceUrl);
+    } catch {
+      Alert.alert("링크를 열 수 없어요", "잠시 후 다시 시도해주세요.");
+    }
+  };
+
   return (
     <Modal visible={!!contest} transparent animationType="fade" onRequestClose={onClose}>
       {/* 전체 래퍼: 반투명 배경 + 중앙 정렬 */}
@@ -65,10 +74,7 @@ export default function ContestDetailModal({ contest, onClose }: ContestDetailMo
 
               <View style={styles.divider} />
 
-              <ThemedButton
-                title="지원하기"
-                onPress={() => contest && Linking.openURL(contest.sourceUrl)}
-              />
+              <ThemedButton title="지원하기" onPress={handleApply} />
             </View>
           </View>
         </View>
