@@ -1,6 +1,7 @@
 package com.obri_back.obri.user.controller;
 
 import com.obri_back.obri.global.common.APIResponse;
+import com.obri_back.obri.user.dto.SchoolEmailUpdateRequestDTO;
 import com.obri_back.obri.user.dto.UserPublicProfileDTO;
 import com.obri_back.obri.user.dto.UserResponseDTO;
 import com.obri_back.obri.user.dto.UserUpdateRequestDTO;
@@ -20,6 +21,7 @@ import java.util.Map;
  * 유저 관련 API 컨트롤러
  * GET    /api/users/me                — 내 정보 조회
  * PUT    /api/users/me                — 내 정보 수정
+ * PATCH  /api/users/me/school-email   — 학교 이메일 등록/변경
  * DELETE /api/users/me                — 회원 탈퇴
  * GET    /api/users/check/{nickname}  — 닉네임 중복 체크
  * GET    /api/users/{nickname}        — 타인 프로필 조회
@@ -55,6 +57,19 @@ public class UserController {
 
         UserResponseDTO response = userService.updateMyInfo(user.getId(), request);
         return ResponseEntity.ok(APIResponse.ok("내 정보가 수정되었습니다.", response));
+    }
+
+    /**
+     * 학교 이메일 등록/변경
+     * 소속(학적) 증명 목적 — 저장만 하고 미인증 상태로 둠 (인증은 별도 엔드포인트)
+     */
+    @PatchMapping("/me/school-email")
+    public ResponseEntity<APIResponse<Void>> updateSchoolEmail(
+            @AuthenticationPrincipal User user,
+            @RequestBody @Valid SchoolEmailUpdateRequestDTO request) {
+
+        userService.updateSchoolEmail(user.getId(), request);
+        return ResponseEntity.ok(APIResponse.ok("학교 이메일이 등록되었습니다. 인증이 필요합니다."));
     }
 
     /**

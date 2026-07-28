@@ -23,6 +23,23 @@ const WEEKDAYS = ["일", "월", "화", "수", "목", "금", "토"];
 
 const pad = (n: number) => String(n).padStart(2, "0");
 
+export function formatDate(iso: string): string {
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return iso;
+  const y = date.getFullYear();
+  const m = pad(date.getMonth() + 1);
+  const d = pad(date.getDate());
+  const weekday = WEEKDAYS[date.getDay()];
+  return `${y}.${m}.${d} (${weekday})`;
+}
+
+export function formatDuration(minutes: number): string {
+  if (minutes < 60) return `${minutes}분`;
+  const h = Math.floor(minutes / 60);
+  const rem = minutes % 60;
+  return rem > 0 ? `${h}시간 ${rem}분` : `${h}시간`;
+}
+
 /**
  * ISO 8601 문자열을 "YYYY.MM.DD (요일) HH:mm" 형태로 포맷.
  * 예: "2024-05-01T14:00:00" -> "2024.05.01 (수) 14:00"

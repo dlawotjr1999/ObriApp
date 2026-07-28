@@ -1,5 +1,7 @@
 export const CATEGORIES = ["결혼", "행사", "추모", "레코딩", "기타"];
 
+export const CONTEST_CATEGORIES = ["피아노", "현악", "관악", "성악", "타악", "기타"];
+
 export const INSTRUMENTS = [
   "바이올린", "비올라", "첼로", "더블베이스",
   "플루트", "오보에", "클라리넷", "바순",

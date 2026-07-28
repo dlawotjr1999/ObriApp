@@ -9,7 +9,6 @@ import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
-import org.springframework.stereotype.Repository;
 
 import com.obri_back.obri.application.entity.Application;
 import com.obri_back.obri.application.entity.ApplicationStatus;
@@ -17,7 +16,6 @@ import com.obri_back.obri.application.entity.ApplicationStatus;
 /*
  * Application 저장소 — 지원자별/구인글별 조회, 중복 지원 체크, 알림 대상 토큰 조회 제공
  */
-@Repository
 public interface ApplicationRepository extends JpaRepository<Application, Long> {
 
     // 구인글 수정 알림 대상(지정 상태) 지원자의 fcm_token 조회 — 토큰 없는 유저는 제외

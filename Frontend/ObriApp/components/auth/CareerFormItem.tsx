@@ -2,11 +2,7 @@ import React from "react";
 import { View, TextInput, TouchableOpacity, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { colors } from "@/constants/theme";
-
-export interface CareerEntry {
-  organization: string;
-  contexts: string;
-}
+import { CareerEntry } from "@/types/user";
 
 interface CareerFormItemProps {
   value: CareerEntry;

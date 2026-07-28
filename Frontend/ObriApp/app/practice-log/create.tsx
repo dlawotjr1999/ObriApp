@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import {
   View,
   Text,
@@ -15,18 +15,25 @@ import { Ionicons } from "@expo/vector-icons";
 import { colors } from "@/constants/theme";
 import ThemedButton from "@/components/common/ThemedButton";
 
-export default function PostCreateScreen() {
+export default function PracticeLogCreateScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
 
+  const [title, setTitle] = useState("");
+  const [date, setDate] = useState("");
+  const [durationMinutes, setDurationMinutes] = useState("");
+  const [content, setContent] = useState("");
+
   return (
     <SafeAreaView style={styles.container} edges={["top"]}>
-      {/* 헤더 */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+        <TouchableOpacity
+          onPress={() => router.back()}
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+        >
           <Ionicons name="arrow-back" size={22} color={colors.primary} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>구인글 작성</Text>
+        <Text style={styles.headerTitle}>연습일지 작성</Text>
         <View style={{ width: 22 }} />
       </View>
 
@@ -39,44 +46,61 @@ export default function PostCreateScreen() {
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
-          {/* TODO: 구인글 작성 폼 — 추후 구현 */}
-          <View style={styles.placeholderArea}>
-            <Ionicons name="create-outline" size={48} color={colors.placeholder} />
-            <Text style={styles.placeholderTitle}>구인글 작성</Text>
-            <Text style={styles.placeholderDesc}>
-              제목, 카테고리, 공연 일시, 장소, 페이, 모집 악기 등{"\n"}세부 항목은 추후 추가될 예정이에요.
-            </Text>
-          </View>
-
-          {/* 제목 입력 (샘플) */}
           <View style={styles.fieldGroup}>
             <Text style={styles.label}>제목</Text>
             <TextInput
               style={styles.input}
-              placeholder="구인글 제목을 입력하세요"
+              placeholder="연습한 곡이나 주제를 입력하세요"
               placeholderTextColor={colors.placeholder}
+              value={title}
+              onChangeText={setTitle}
             />
+          </View>
+
+          <View style={styles.row}>
+            <View style={[styles.fieldGroup, styles.rowField]}>
+              <Text style={styles.label}>날짜</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="2026-07-07"
+                placeholderTextColor={colors.placeholder}
+                value={date}
+                onChangeText={setDate}
+              />
+            </View>
+            <View style={[styles.fieldGroup, styles.rowField]}>
+              <Text style={styles.label}>연습 시간(분)</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="90"
+                placeholderTextColor={colors.placeholder}
+                value={durationMinutes}
+                onChangeText={setDurationMinutes}
+                keyboardType="number-pad"
+              />
+            </View>
           </View>
 
           <View style={styles.fieldGroup}>
             <Text style={styles.label}>내용</Text>
             <TextInput
               style={[styles.input, styles.textArea]}
-              placeholder="공연 정보, 조건 등을 자유롭게 작성해주세요"
+              placeholder="오늘 연습한 내용, 잘 된 점과 보완할 점을 자유롭게 기록해보세요"
               placeholderTextColor={colors.placeholder}
+              value={content}
+              onChangeText={setContent}
               multiline
-              numberOfLines={6}
+              numberOfLines={10}
               textAlignVertical="top"
             />
           </View>
         </ScrollView>
 
-        {/* 하단 등록 버튼 */}
         <View style={[styles.footer, { paddingBottom: insets.bottom + 12 }]}>
           <ThemedButton
             title="등록하기"
             onPress={() => {
-              // TODO: 구인글 등록 API(POST /api/posts) 연동
+              // TODO: 연습일지 등록 API(POST /api/practice-logs) 연동
               router.back();
             }}
           />
@@ -109,21 +133,12 @@ const styles = StyleSheet.create({
     padding: 24,
     gap: 24,
   },
-  placeholderArea: {
-    alignItems: "center",
-    paddingVertical: 32,
+  row: {
+    flexDirection: "row",
     gap: 12,
   },
-  placeholderTitle: {
-    fontSize: 18,
-    fontWeight: "600",
-    color: colors.primary,
-  },
-  placeholderDesc: {
-    fontSize: 13,
-    color: colors.textMuted,
-    textAlign: "center",
-    lineHeight: 20,
+  rowField: {
+    flex: 1,
   },
   fieldGroup: {
     gap: 8,
@@ -144,7 +159,7 @@ const styles = StyleSheet.create({
     color: colors.textPrimary,
   },
   textArea: {
-    height: 140,
+    height: 220,
     paddingTop: 12,
   },
   footer: {

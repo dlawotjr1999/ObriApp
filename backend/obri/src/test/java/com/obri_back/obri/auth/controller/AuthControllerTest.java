@@ -30,6 +30,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.authentication;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
@@ -95,7 +96,6 @@ class AuthControllerTest {
                         .content("""
                                 {
                                   "nickname": "tester",
-                                  "phoneNumber": "010-1234-5678",
                                   "instrument": "바이올린",
                                   "school": "서울대",
                                   "isGraduate": false,
@@ -118,10 +118,54 @@ class AuthControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {
-                                  "phoneNumber": "010-1234-5678",
                                   "instrument": "바이올린",
                                   "school": "서울대",
                                   "isGraduate": false
+                                }
+                                """))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void register_returns400WhenInstrumentMissing() throws Exception {
+        mockMvc.perform(post("/api/auth/register")
+                        .header("Authorization", "Bearer test-token")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "nickname": "tester",
+                                  "school": "서울대",
+                                  "isGraduate": false
+                                }
+                                """))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void register_returns400WhenSchoolMissing() throws Exception {
+        mockMvc.perform(post("/api/auth/register")
+                        .header("Authorization", "Bearer test-token")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "nickname": "tester",
+                                  "instrument": "바이올린",
+                                  "isGraduate": false
+                                }
+                                """))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void register_returns400WhenIsGraduateMissing() throws Exception {
+        mockMvc.perform(post("/api/auth/register")
+                        .header("Authorization", "Bearer test-token")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "nickname": "tester",
+                                  "instrument": "바이올린",
+                                  "school": "서울대"
                                 }
                                 """))
                 .andExpect(status().isBadRequest());
@@ -140,5 +184,17 @@ class AuthControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value(200))
                 .andExpect(jsonPath("$.message").value("FCM 토큰이 갱신되었습니다"));
+    }
+
+    @Test
+    void updatePhoneNumber_returns200() throws Exception {
+        mockMvc.perform(patch("/api/auth/phone-number")
+                        .with(authentication(auth))
+                        .header("Authorization", "Bearer test-token"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value(200))
+                .andExpect(jsonPath("$.message").value("전화번호가 변경되었습니다"));
+
+        verify(authService).updatePhoneNumber("test-uid", "test-token");
     }
 }
