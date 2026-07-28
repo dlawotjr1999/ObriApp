@@ -15,6 +15,7 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import org.hibernate.annotations.BatchSize;
 import org.hibernate.annotations.CreationTimestamp;
 
 import com.obri_back.obri.user.dto.UserUpdateRequestDTO;
@@ -47,8 +48,15 @@ public class User {
     @Column(name = "firebase_uid", nullable = false, unique = true)
     private String firebaseUid;
 
-    @Column(name = "phone_number", nullable = false)
+    @Column(name = "phone_number", nullable = false, unique = true)
     private String phoneNumber;
+
+    // 소속(학적) 증명용 학교 이메일 — 계정 고유성 앵커는 아니지만 UNIQUE로 부가 방어. 선택 필드
+    @Column(name = "school_email", unique = true)
+    private String schoolEmail;
+
+    @Column(name = "school_email_verified", nullable = false)
+    private boolean schoolEmailVerified;
 
     @Column(name = "nickname", nullable = false)
     private String nickname;
@@ -71,7 +79,9 @@ public class User {
     private LocalDateTime createdAt;
 
     // User-Career 양방향 1:N (부모 저장/수정 시 cascade·orphanRemoval로 함께 처리)
+    // @BatchSize: 지원자 목록 등에서 여러 User의 careers를 순회 조회할 때 N+1 방지
     @Builder.Default
+    @BatchSize(size = 100)
     @OneToMany(mappedBy = "user", fetch = FetchType.LAZY,
         cascade = CascadeType.ALL, orphanRemoval = true
     )
@@ -82,10 +92,20 @@ public class User {
         this.fcmToken = fcmToken;
     }
 
-    // 내 정보 수정: null이 아닌 필드만 선택적으로 반영
+    // 전화번호 갱신 (PATCH /api/auth/phone-number — Firebase ID Token의 phone_number claim만 신뢰)
+    public void updatePhoneNumber(String phoneNumber) {
+        this.phoneNumber = phoneNumber;
+    }
+
+    // 학교 이메일 등록/변경 — 값이 바뀌면 재인증이 필요하므로 인증 상태를 리셋
+    public void updateSchoolEmail(String schoolEmail) {
+        this.schoolEmail = schoolEmail;
+        this.schoolEmailVerified = false;
+    }
+
+    // 내 정보 수정: null이 아닌 필드만 선택적으로 반영 (phoneNumber는 전용 인증 엔드포인트로 이관되어 여기서 다루지 않음)
     public void updateInfo(UserUpdateRequestDTO request) {
         if (request.getNickname() != null) this.nickname = request.getNickname();
-        if (request.getPhoneNumber() != null) this.phoneNumber = request.getPhoneNumber();
         if (request.getInstrument() != null) this.instrument = request.getInstrument();
         if (request.getSchool() != null) this.school = request.getSchool();
         if (request.getIsGraduate() != null) this.isGraduate = request.getIsGraduate();

@@ -15,8 +15,9 @@ import org.springframework.web.bind.annotation.*;
 /**
  * 인증 관련 API 컨트롤러
  * Firebase Authentication과 연동해 회원가입 및 FCM 토큰 관리
- * POST  /api/auth/register   — 회원가입
- * PATCH /api/auth/fcm-token  — FCM 토큰 갱신
+ * POST  /api/auth/register      — 회원가입
+ * PATCH /api/auth/fcm-token     — FCM 토큰 갱신
+ * PATCH /api/auth/phone-number  — 전화번호 갱신
  */
 @RestController
 @RequestMapping("/api/auth")
@@ -63,5 +64,24 @@ public class AuthController {
         authService.updateFcmToken(user.getFirebaseUid(), request);
 
         return ResponseEntity.ok(APIResponse.ok("FCM 토큰이 갱신되었습니다"));
+    }
+
+    /*
+     * 전화번호 갱신
+     * register()와 동일하게 Authorization 헤더의 Firebase ID Token만으로 처리 (요청 바디 없음)
+     *
+     * @param authorization Firebase ID Token (Bearer {token})
+     * @param user          현재 로그인한 유저 (SecurityContext에서 추출)
+     * @return 성공 메시지
+     */
+    @PatchMapping("/phone-number")
+    public ResponseEntity<APIResponse<Void>> updatePhoneNumber(
+            @RequestHeader("Authorization") String authorization,
+            @AuthenticationPrincipal User user) {
+
+        String idToken = authorization.substring(7);
+        authService.updatePhoneNumber(user.getFirebaseUid(), idToken);
+
+        return ResponseEntity.ok(APIResponse.ok("전화번호가 변경되었습니다"));
     }
 }
