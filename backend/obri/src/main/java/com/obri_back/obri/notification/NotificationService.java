@@ -16,6 +16,7 @@ import java.util.List;
  * - 신규 구인글: "new_post" 토픽 broadcast
  * - 지원 결과(수락/거절): fcm_token 단건 push
  * - 구인글 수정: PENDING·ACCEPTED 지원자 multicast
+ * - 구인글 삭제: ACCEPTED 지원자 multicast
  *
  * 규칙(CLAUDE.md 3.8):
  * - notification 테이블 없음. user.fcm_token만 사용
@@ -100,6 +101,27 @@ public class NotificationService {
             firebaseMessaging.sendEachForMulticast(message);
         } catch (Exception e) {
             log.warn("구인글 수정 알림 발송 실패 postId={}", postId, e);
+        }
+    }
+
+    // 구인글 삭제 → 확정(ACCEPTED)된 지원자에게 multicast
+    public void notifyPostDeleted(List<String> fcmTokens, Long postId, String title) {
+        if (fcmTokens == null || fcmTokens.isEmpty()) {
+            return;
+        }
+        MulticastMessage message = MulticastMessage.builder()
+                .addAllTokens(fcmTokens)
+                .setNotification(Notification.builder()
+                        .setTitle("지원했던 구인글이 삭제되었어요")
+                        .setBody(title)
+                        .build())
+                .putData("type", "POST_DELETED")
+                .putData("postId", String.valueOf(postId))
+                .build();
+        try {
+            firebaseMessaging.sendEachForMulticast(message);
+        } catch (Exception e) {
+            log.warn("구인글 삭제 알림 발송 실패 postId={}", postId, e);
         }
     }
 

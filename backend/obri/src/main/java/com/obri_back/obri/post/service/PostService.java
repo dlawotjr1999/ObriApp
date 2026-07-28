@@ -107,14 +107,16 @@ public class PostService {
         post.close();
     }
 
-    // 구인글 삭제 (작성자만) — 연관 지원서를 먼저 정리한 뒤 글 삭제
+    // 구인글 삭제 (작성자만) — 연관 지원서를 먼저 정리한 뒤 글 삭제, ACCEPTED 지원자에게 삭제 알림
     @Transactional
     public void deletePost(Long postId, User user) {
         Post post = findPostOrThrow(postId);
         requireOwner(post, user);
 
+        List<String> acceptedTokens = applicationService.getAcceptedApplicantFcmTokens(postId);
         applicationService.deleteAllByPostId(postId);
         postRepository.delete(post);
+        notificationService.notifyPostDeleted(acceptedTokens, postId, post.getTitle());
     }
 
     // 구인글 조회 공통 헬퍼 — 없으면 404

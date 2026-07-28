@@ -183,14 +183,18 @@ class PostServiceTest {
     }
 
     @Test
-    void deletePost_deletesApplicationsThenPostWhenOwner() {
+    void deletePost_deletesApplicationsThenPostAndNotifiesAcceptedApplicantsWhenOwner() {
         Post post = buildPost(owner);
         given(postRepository.findById(10L)).willReturn(Optional.of(post));
+        given(applicationService.getAcceptedApplicantFcmTokens(10L)).willReturn(List.of("accepted-token"));
 
         postService.deletePost(10L, owner);
 
-        verify(applicationService, times(1)).deleteAllByPostId(10L);
-        verify(postRepository, times(1)).delete(post);
+        org.mockito.InOrder inOrder = inOrder(applicationService, postRepository, notificationService);
+        inOrder.verify(applicationService).getAcceptedApplicantFcmTokens(10L);
+        inOrder.verify(applicationService).deleteAllByPostId(10L);
+        inOrder.verify(postRepository).delete(post);
+        inOrder.verify(notificationService).notifyPostDeleted(List.of("accepted-token"), 10L, post.getTitle());
     }
 
     @Test
@@ -201,6 +205,7 @@ class PostServiceTest {
         assertThatThrownBy(() -> postService.deletePost(10L, other))
                 .isInstanceOf(ForbiddenException.class);
 
+        verify(applicationService, never()).getAcceptedApplicantFcmTokens(any());
         verify(applicationService, never()).deleteAllByPostId(any());
         verify(postRepository, never()).delete(any(Post.class));
     }

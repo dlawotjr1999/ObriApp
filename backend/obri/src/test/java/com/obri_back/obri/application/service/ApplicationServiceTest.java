@@ -18,6 +18,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.time.LocalDateTime;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -57,6 +58,7 @@ class ApplicationServiceTest {
         given(postRepository.findById(10L)).willReturn(Optional.of(post));
         given(post.getId()).willReturn(10L);
         given(post.getStatus()).willReturn(PostStatus.OPEN);
+        given(post.getEventAt()).willReturn(LocalDateTime.now().plusDays(1));
         given(post.getUser()).willReturn(recruiter);
         given(applicationRepository.save(any(Application.class)))
                 .willAnswer(inv -> inv.getArgument(0));
@@ -85,9 +87,25 @@ class ApplicationServiceTest {
     }
 
     @Test
+    void submitApplication_throwsBadRequestWhenEventAtPassed() {
+        given(postRepository.findById(10L)).willReturn(Optional.of(post));
+        given(post.getStatus()).willReturn(PostStatus.OPEN);
+        given(post.getEventAt()).willReturn(LocalDateTime.now().minusDays(1));
+
+        AppRequestDTO request = AppRequestDTO.from(10L, null);
+
+        assertThatThrownBy(() -> applicationService.submitApplication(applicant, request))
+                .isInstanceOf(BadRequestException.class)
+                .hasMessage("이미 종료된 공연에는 지원할 수 없습니다");
+
+        verify(applicationRepository, never()).save(any());
+    }
+
+    @Test
     void submitApplication_throwsForbiddenWhenOwnPost() {
         given(postRepository.findById(10L)).willReturn(Optional.of(post));
         given(post.getStatus()).willReturn(PostStatus.OPEN);
+        given(post.getEventAt()).willReturn(LocalDateTime.now().plusDays(1));
         given(post.getUser()).willReturn(recruiter);
 
         AppRequestDTO request = AppRequestDTO.from(10L, null);

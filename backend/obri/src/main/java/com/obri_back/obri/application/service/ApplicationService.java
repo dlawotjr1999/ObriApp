@@ -22,6 +22,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import lombok.RequiredArgsConstructor;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 /*
@@ -50,6 +51,11 @@ public class ApplicationService {
         // 마감된 구인글 체크
         if (post.getStatus() == PostStatus.CLOSED) {
             throw new BadRequestException("마감된 구인글에는 지원할 수 없습니다");
+        }
+
+        // 공연 날짜가 지난 구인글 체크 (인원이 안 찼어도 날짜가 지나면 지원 불가)
+        if (post.getEventAt().isBefore(LocalDateTime.now())) {
+            throw new BadRequestException("이미 종료된 공연에는 지원할 수 없습니다");
         }
 
         // 본인 글 지원 체크
@@ -204,6 +210,12 @@ public class ApplicationService {
     @Transactional(readOnly = true)
     public boolean hasApplied(Long postId, Long userId) {
         return applicationRepository.existsByPostIdAndUserId(postId, userId);
+    }
+
+    // 구인글 삭제 시 ACCEPTED 지원자에게 알림 발송용 fcm_token 목록 — Post 도메인에서 호출
+    @Transactional(readOnly = true)
+    public List<String> getAcceptedApplicantFcmTokens(Long postId) {
+        return applicationRepository.findApplicantFcmTokens(postId, List.of(ApplicationStatus.ACCEPTED));
     }
 
     // 구인글 삭제 시 연관 지원서 정리용 — Post 도메인에서 호출

@@ -78,4 +78,18 @@ class NotificationServiceTest {
 
         verifyNoInteractions(firebaseMessaging);
     }
+
+    @Test
+    void notifyPostDeleted_skipsWhenNoTokens() {
+        notificationService.notifyPostDeleted(List.of(), 1L, "결혼식 바이올린 구인");
+
+        verifyNoInteractions(firebaseMessaging);
+    }
+
+    @Test
+    void notifyPostDeleted_sendsMulticastWhenTokensPresent() throws Exception {
+        notificationService.notifyPostDeleted(List.of("token-a", "token-b"), 1L, "결혼식 바이올린 구인");
+
+        verify(firebaseMessaging, times(1)).sendEachForMulticast(any());
+    }
 }
