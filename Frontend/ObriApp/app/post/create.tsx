@@ -13,6 +13,7 @@ import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context"
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { colors } from "@/constants/theme";
+import ThemedButton from "@/components/common/ThemedButton";
 
 export default function PostCreateScreen() {
   const router = useRouter();
@@ -72,16 +73,13 @@ export default function PostCreateScreen() {
 
         {/* 하단 등록 버튼 */}
         <View style={[styles.footer, { paddingBottom: insets.bottom + 12 }]}>
-          <TouchableOpacity
-            style={styles.submitButton}
-            activeOpacity={0.85}
+          <ThemedButton
+            title="등록하기"
             onPress={() => {
               // TODO: 구인글 등록 API(POST /api/posts) 연동
               router.back();
             }}
-          >
-            <Text style={styles.submitButtonText}>등록하기</Text>
-          </TouchableOpacity>
+          />
         </View>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -155,18 +153,5 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background,
     borderTopWidth: StyleSheet.hairlineWidth,
     borderTopColor: colors.border,
-  },
-  submitButton: {
-    height: 52,
-    borderRadius: 26,
-    backgroundColor: colors.primary,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  submitButtonText: {
-    fontSize: 15,
-    fontWeight: "600",
-    color: colors.background,
-    letterSpacing: 1,
   },
 });

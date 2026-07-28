@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState } from "react";
-import { CareerEntry } from "@/components/auth/CareerFormItem";
+import { CareerEntry } from "@/types/user";
 
 interface RegisterForm {
   email: string;

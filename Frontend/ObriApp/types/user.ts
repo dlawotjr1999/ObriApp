@@ -1,7 +1,10 @@
-export interface Career {
-  id: number;
+export interface CareerEntry {
   organization: string;
   contexts: string;
+}
+
+export interface Career extends CareerEntry {
+  id: number;
 }
 
 export interface UserProfile {

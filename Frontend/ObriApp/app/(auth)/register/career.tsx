@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useRef, useState } from "react";
 import {
   View,
   Text,
@@ -15,11 +15,19 @@ import { useRegisterForm } from "@/contexts/RegisterContext";
 import ScreenHeader from "@/components/common/ScreenHeader";
 import StepIndicator from "@/components/common/StepIndicator";
 import ThemedButton from "@/components/common/ThemedButton";
-import CareerFormItem, { CareerEntry } from "@/components/auth/CareerFormItem";
+import CareerFormItem from "@/components/auth/CareerFormItem";
+import { CareerEntry } from "@/types/user";
 
 export default function RegisterStep3() {
   const router = useRouter();
   const { form, updateForm } = useRegisterForm();
+
+  // 배열 index는 항목 삭제 시 뒤 요소가 앞으로 당겨져 재사용되므로,
+  // React key로 쓰기 위한 항목별 안정적인 로컬 id를 별도로 관리한다.
+  const keyCounter = useRef(0);
+  const [careerKeys, setCareerKeys] = useState<number[]>(() =>
+    form.careers.map(() => keyCounter.current++)
+  );
 
   const handleChange = (index: number, entry: CareerEntry) => {
     const updated = [...form.careers];
@@ -30,21 +38,23 @@ export default function RegisterStep3() {
   const handleRemove = (index: number) => {
     const updated = form.careers.filter((_, i) => i !== index);
     updateForm({ careers: updated });
+    setCareerKeys((prev) => prev.filter((_, i) => i !== index));
   };
 
   const handleAdd = () => {
     updateForm({
       careers: [...form.careers, { organization: "", contexts: "" }],
     });
+    setCareerKeys((prev) => [...prev, keyCounter.current++]);
   };
 
-  const handleSubmit = () => {
-    // TODO: Firebase 회원가입 → POST /api/auth/register
+  const handleSubmit = (careers: CareerEntry[] = form.careers) => {
+    // TODO: Firebase 회원가입 → POST /api/auth/register (careers를 payload에 포함)
   };
 
   const handleSkip = () => {
     updateForm({ careers: [] });
-    handleSubmit();
+    handleSubmit([]);
   };
 
   return (
@@ -62,7 +72,7 @@ export default function RegisterStep3() {
 
         {form.careers.map((career, index) => (
           <CareerFormItem
-            key={index}
+            key={careerKeys[index]}
             value={career}
             index={index}
             onChange={handleChange}
