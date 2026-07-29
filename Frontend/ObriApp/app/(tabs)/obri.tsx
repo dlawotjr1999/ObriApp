@@ -19,7 +19,8 @@ export default function ObriScreen() {
   const [sheetVisible, setSheetVisible] = useState(false);
 
   const filteredPosts = useMemo(() => {
-    let result = [...MOCK_POSTS];
+    // 공연 날짜가 지난 글은 항상 제외 (백엔드 PostSpecification과 동일한 규칙 — status 필터로도 우회 불가)
+    let result = MOCK_POSTS.filter((p) => new Date(p.eventAt) >= new Date());
 
     if (filter.categories.length > 0) {
       result = result.filter((p) => filter.categories.includes(p.category));

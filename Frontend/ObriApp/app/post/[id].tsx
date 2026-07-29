@@ -10,6 +10,8 @@ import { useLocalSearchParams } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { colors } from "@/constants/theme";
 import { getMockPostById } from "@/mocks/posts";
+import { MY_POST_IDS } from "@/mocks/user";
+import { MOCK_APPLICATIONS } from "@/mocks/applications";
 import { formatEventDateTime } from "@/utils/datetime";
 import { formatKRW } from "@/utils/number";
 import ScreenHeader from "@/components/common/ScreenHeader";
@@ -48,7 +50,27 @@ export default function PostDetailScreen() {
     );
   }
 
+  // 지원하기 버튼 상태는 백엔드 ApplicationService 검증 순서(본인 글 → 지원 이력 → 공연 종료 → 마감)와 동일하게 맞춘다
+  const isMyPost = MY_POST_IDS.includes(post.id);
+  const hasApplied = MOCK_APPLICATIONS.some((a) => a.post.id === post.id);
+  const eventPassed = new Date(post.eventAt) < new Date();
   const isClosed = post.status === "CLOSED";
+
+  let applyLabel = "지원하기";
+  let applyDisabled = false;
+  if (isMyPost) {
+    applyLabel = "내가 등록한 구인글";
+    applyDisabled = true;
+  } else if (hasApplied) {
+    applyLabel = "이미 지원한 구인글";
+    applyDisabled = true;
+  } else if (eventPassed) {
+    applyLabel = "종료된 공연";
+    applyDisabled = true;
+  } else if (isClosed) {
+    applyLabel = "마감된 구인글";
+    applyDisabled = true;
+  }
 
   return (
     <SafeAreaView style={styles.container} edges={["top"]}>
@@ -120,8 +142,8 @@ export default function PostDetailScreen() {
       {/* 하단 고정: 지원하기 (우측) */}
       <View style={[styles.footer, { paddingBottom: insets.bottom + 12 }]}>
         <ThemedButton
-          title={isClosed ? "마감된 구인글" : "지원하기"}
-          disabled={isClosed}
+          title={applyLabel}
+          disabled={applyDisabled}
           style={styles.applyButton}
           onPress={() => {
             // TODO: 오브리 지원 API(POST /api/posts/{id}/applications) 연동
