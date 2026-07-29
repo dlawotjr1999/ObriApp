@@ -12,7 +12,9 @@ import {
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
+import DateTimePicker from "@react-native-community/datetimepicker";
 import { colors } from "@/constants/theme";
+import { formatDate, parseDate, toDateOnly } from "@/utils/datetime";
 import ThemedButton from "@/components/common/ThemedButton";
 
 export default function PracticeLogCreateScreen() {
@@ -20,9 +22,14 @@ export default function PracticeLogCreateScreen() {
   const insets = useSafeAreaInsets();
 
   const [title, setTitle] = useState("");
+  // 백엔드 PracticeLog.logDate가 LocalDate(날짜만)이므로 "YYYY-MM-DD"로 보관
   const [date, setDate] = useState("");
   const [durationMinutes, setDurationMinutes] = useState("");
   const [content, setContent] = useState("");
+  const [showDatePicker, setShowDatePicker] = useState(false);
+
+  // 필수값: 제목·날짜·연습 시간. 내용은 선택
+  const canSubmit = title.trim() !== "" && date !== "" && Number(durationMinutes) > 0;
 
   return (
     <SafeAreaView style={styles.container} edges={["top"]}>
@@ -60,13 +67,15 @@ export default function PracticeLogCreateScreen() {
           <View style={styles.row}>
             <View style={[styles.fieldGroup, styles.rowField]}>
               <Text style={styles.label}>날짜</Text>
-              <TextInput
+              <TouchableOpacity
                 style={styles.input}
-                placeholder="2026-07-07"
-                placeholderTextColor={colors.placeholder}
-                value={date}
-                onChangeText={setDate}
-              />
+                onPress={() => setShowDatePicker(true)}
+                activeOpacity={0.7}
+              >
+                <Text style={[styles.inputText, !date && styles.inputPlaceholder]}>
+                  {date ? formatDate(date) : "날짜 선택"}
+                </Text>
+              </TouchableOpacity>
             </View>
             <View style={[styles.fieldGroup, styles.rowField]}>
               <Text style={styles.label}>연습 시간(분)</Text>
@@ -75,11 +84,25 @@ export default function PracticeLogCreateScreen() {
                 placeholder="90"
                 placeholderTextColor={colors.placeholder}
                 value={durationMinutes}
-                onChangeText={setDurationMinutes}
+                onChangeText={(text) => setDurationMinutes(text.replace(/[^0-9]/g, ""))}
                 keyboardType="number-pad"
               />
             </View>
           </View>
+
+          {showDatePicker && (
+            <DateTimePicker
+              value={date ? parseDate(date) : new Date()}
+              mode="date"
+              maximumDate={new Date()}
+              onChange={(event, selected) => {
+                setShowDatePicker(false);
+                if (event.type === "set" && selected) {
+                  setDate(toDateOnly(selected));
+                }
+              }}
+            />
+          )}
 
           <View style={styles.fieldGroup}>
             <Text style={styles.label}>내용</Text>
@@ -99,8 +122,10 @@ export default function PracticeLogCreateScreen() {
         <View style={[styles.footer, { paddingBottom: insets.bottom + 12 }]}>
           <ThemedButton
             title="등록하기"
+            disabled={!canSubmit}
             onPress={() => {
               // TODO: 연습일지 등록 API(POST /api/practice-logs) 연동
+              // payload: { logDate: date, duration: Number(durationMinutes), content, title }
               router.back();
             }}
           />
@@ -157,6 +182,14 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     fontSize: 14,
     color: colors.textPrimary,
+  },
+  // 날짜 필드는 TextInput이 아닌 TouchableOpacity라 내부 Text에 별도 지정
+  inputText: {
+    fontSize: 14,
+    color: colors.textPrimary,
+  },
+  inputPlaceholder: {
+    color: colors.placeholder,
   },
   textArea: {
     height: 220,
