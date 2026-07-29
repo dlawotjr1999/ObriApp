@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import {
   View,
   Text,
@@ -18,6 +18,9 @@ import ThemedButton from "@/components/common/ThemedButton";
 export default function PostCreateScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+
+  const [title, setTitle] = useState("");
+  const [content, setContent] = useState("");
 
   return (
     <SafeAreaView style={styles.container} edges={["top"]}>
@@ -55,6 +58,8 @@ export default function PostCreateScreen() {
               style={styles.input}
               placeholder="구인글 제목을 입력하세요"
               placeholderTextColor={colors.placeholder}
+              value={title}
+              onChangeText={setTitle}
             />
           </View>
 
@@ -64,6 +69,8 @@ export default function PostCreateScreen() {
               style={[styles.input, styles.textArea]}
               placeholder="공연 정보, 조건 등을 자유롭게 작성해주세요"
               placeholderTextColor={colors.placeholder}
+              value={content}
+              onChangeText={setContent}
               multiline
               numberOfLines={6}
               textAlignVertical="top"
@@ -76,7 +83,7 @@ export default function PostCreateScreen() {
           <ThemedButton
             title="등록하기"
             onPress={() => {
-              // TODO: 구인글 등록 API(POST /api/posts) 연동
+              // TODO: 구인글 등록 API(POST /api/posts) 연동. { title, content }를 payload에 포함
               router.back();
             }}
           />
