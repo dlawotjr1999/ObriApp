@@ -175,6 +175,20 @@ class ApplicationServiceTest {
                 .hasMessage("구인글을 찾을 수 없습니다");
     }
 
+    // ── 지원자 목록 조회 ──────────────────────────────────
+
+    // BACKLOG.md #18: 인라인 비교 대신 requireRecruiter() 헬퍼로 통일
+    @Test
+    void getApplicationsByPostId_throwsForbiddenWhenNotOwner() {
+        given(postRepository.findById(10L)).willReturn(Optional.of(post));
+        given(post.getUser()).willReturn(recruiter);
+
+        assertThatThrownBy(() -> applicationService.getApplicationsByPostId(
+                10L, applicant, org.springframework.data.domain.PageRequest.of(0, 10)))
+                .isInstanceOf(ForbiddenException.class)
+                .hasMessage("구인자만 지원자 목록을 조회할 수 있습니다");
+    }
+
     // ── 상태 변경 ──────────────────────────────────
 
     private Application buildApplication(ApplicationStatus status) {

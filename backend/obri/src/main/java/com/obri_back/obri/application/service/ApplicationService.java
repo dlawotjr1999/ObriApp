@@ -105,9 +105,7 @@ public class ApplicationService {
                 .orElseThrow(() -> new NotFoundException("구인글을 찾을 수 없습니다"));
 
         // 구인자만 조회 가능
-        if (!post.getUser().getId().equals(user.getId())) {
-            throw new ForbiddenException("구인자만 지원자 목록을 조회할 수 있습니다");
-        }
+        requireRecruiter(user, post, "구인자만 지원자 목록을 조회할 수 있습니다");
 
         return applicationRepository.findByPostId(postId, pageable)
                 .map(application -> AppResponseDTO.from(application, application.getUser()));
@@ -195,7 +193,12 @@ public class ApplicationService {
     }
 
     private void requireRecruiter(User user, Application application, String message) {
-        if (!application.getPost().getUser().getId().equals(user.getId())) {
+        requireRecruiter(user, application.getPost(), message);
+    }
+
+    // BACKLOG.md #18: getApplicationsByPostId()의 인라인 비교도 이 헬퍼로 통일
+    private void requireRecruiter(User user, Post post, String message) {
+        if (!post.getUser().getId().equals(user.getId())) {
             throw new ForbiddenException(message);
         }
     }
