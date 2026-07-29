@@ -4,6 +4,7 @@ import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context"
 import { useRouter } from "expo-router";
 import { colors } from "@/constants/theme";
 import { MOCK_POSTS } from "@/mocks/posts";
+import { parseDate } from "@/utils/datetime";
 import AppHeader from "@/components/common/AppHeader";
 import EmptyState from "@/components/common/EmptyState";
 import PostCard from "@/components/post/PostCard";
@@ -19,7 +20,8 @@ export default function ObriScreen() {
   const [sheetVisible, setSheetVisible] = useState(false);
 
   const filteredPosts = useMemo(() => {
-    let result = [...MOCK_POSTS];
+    // 공연 날짜가 지난 글은 항상 제외 (백엔드 PostSpecification과 동일한 규칙 — status 필터로도 우회 불가)
+    let result = MOCK_POSTS.filter((p) => new Date(p.eventAt) >= new Date());
 
     if (filter.categories.length > 0) {
       result = result.filter((p) => filter.categories.includes(p.category));
@@ -34,8 +36,20 @@ export default function ObriScreen() {
         filter.regions.some((r) => p.location.includes(r))
       );
     }
+    if (filter.startDate) {
+      const start = parseDate(filter.startDate);
+      result = result.filter((p) => new Date(p.eventAt) >= start);
+    }
+    if (filter.endDate) {
+      const end = parseDate(filter.endDate);
+      end.setHours(23, 59, 59, 999);
+      result = result.filter((p) => new Date(p.eventAt) <= end);
+    }
     if (filter.status.length > 0) {
       result = result.filter((p) => filter.status.includes(p.status));
+    } else {
+      // 백엔드 기본 노출 규칙과 동일: status 미지정 시 CLOSED는 제외(명시적 필터로만 조회 가능)
+      result = result.filter((p) => p.status !== "CLOSED");
     }
     if (filter.sort === "latest") {
       result = [...result].sort(

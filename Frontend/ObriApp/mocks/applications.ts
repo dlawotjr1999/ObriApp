@@ -30,12 +30,12 @@ export const MOCK_APPLICATIONS: ApplicationSummary[] = [
   {
     id: 3,
     post: {
-      id: 1,
-      title: "결혼식 바이올린 구인",
+      id: 5,
+      title: "부산 결혼식 트리오 구인",
       category: "결혼",
-      eventAt: "2026-08-01T14:00:00",
-      location: "서울 강남구 OO웨딩홀",
-      status: "OPEN",
+      eventAt: "2026-08-22T15:00:00",
+      location: "부산 해운대구 OO웨딩",
+      status: "PARTIALLY_CLOSED",
     },
     status: "REJECTED",
     createdAt: "2026-06-30T08:00:00",

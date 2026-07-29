@@ -16,6 +16,9 @@ export default function SettingsSection({
   onLogout,
   onWithdraw,
 }: SettingsSectionProps) {
+  const handleComingSoon = () =>
+    Alert.alert("준비 중입니다", "곧 추가될 예정이에요.");
+
   return (
     <View style={styles.settingsSection}>
       <View style={styles.settingsRow}>
@@ -32,7 +35,7 @@ export default function SettingsSection({
       </View>
       <View style={styles.divider} />
 
-      <TouchableOpacity style={styles.settingsRow} activeOpacity={0.7}>
+      <TouchableOpacity style={styles.settingsRow} onPress={handleComingSoon} activeOpacity={0.7}>
         <View style={styles.settingsLeft}>
           <Ionicons name="document-text-outline" size={16} color={colors.textSecondary} />
           <Text style={styles.settingsText}>이용약관</Text>
@@ -41,7 +44,7 @@ export default function SettingsSection({
       </TouchableOpacity>
       <View style={styles.divider} />
 
-      <TouchableOpacity style={styles.settingsRow} activeOpacity={0.7}>
+      <TouchableOpacity style={styles.settingsRow} onPress={handleComingSoon} activeOpacity={0.7}>
         <View style={styles.settingsLeft}>
           <Ionicons name="lock-closed-outline" size={16} color={colors.textSecondary} />
           <Text style={styles.settingsText}>개인정보처리방침</Text>

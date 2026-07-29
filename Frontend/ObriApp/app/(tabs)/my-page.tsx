@@ -67,8 +67,12 @@ export default function MyPageScreen() {
         <SettingsSection
           notifEnabled={notifEnabled}
           onToggleNotif={setNotifEnabled}
-          onLogout={() => {}}
-          onWithdraw={() => {}}
+          onLogout={() => {
+            // TODO: Firebase 로그아웃 처리 후 (auth)/login으로 이동
+          }}
+          onWithdraw={() => {
+            // TODO: 회원탈퇴 API(DELETE /api/users/me) 연동 후 (auth)/login으로 이동
+          }}
         />
 
         <Text style={styles.versionText}>v0.1.0</Text>

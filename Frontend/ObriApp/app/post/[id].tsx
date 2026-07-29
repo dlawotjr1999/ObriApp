@@ -10,6 +10,8 @@ import { useLocalSearchParams } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { colors } from "@/constants/theme";
 import { getMockPostById } from "@/mocks/posts";
+import { MOCK_USER, MY_POST_IDS } from "@/mocks/user";
+import { MOCK_APPLICATIONS } from "@/mocks/applications";
 import { formatEventDateTime } from "@/utils/datetime";
 import { formatKRW } from "@/utils/number";
 import ScreenHeader from "@/components/common/ScreenHeader";
@@ -37,7 +39,7 @@ export default function PostDetailScreen() {
     return (
       <SafeAreaView style={styles.container} edges={["top"]}>
         <View style={styles.headerArea}>
-          <ScreenHeader title="" />
+          <ScreenHeader />
         </View>
         <EmptyState
           icon="alert-circle-outline"
@@ -48,12 +50,41 @@ export default function PostDetailScreen() {
     );
   }
 
+  // 지원 대상 악기는 선택형이 아니라 내 프로필 악기(user.getInstrument())로 서버가 자동 판정한다
+  // (AppRequestDTO엔 postId/additionalInfo뿐, 악기 필드 없음 — 별도 선택 UI 불필요)
+  const myInstrumentSlot = post.instruments.find((it) => it.instrument === MOCK_USER.instrument);
+  const instrumentClosed = !!myInstrumentSlot && myInstrumentSlot.currentPeople >= myInstrumentSlot.people;
+
+  const isMyPost = MY_POST_IDS.includes(post.id);
+  const hasApplied = MOCK_APPLICATIONS.some((a) => a.post.id === post.id);
+  const eventPassed = new Date(post.eventAt) < new Date();
   const isClosed = post.status === "CLOSED";
+
+  // 버튼 비활성 우선순위는 ApplicationService.submitApplication의 검증 순서와 동일하게 맞춘다:
+  // 마감글 → 공연종료 → 내 악기 정원마감 → 본인 글 → 중복 지원
+  let applyLabel = "지원하기";
+  let applyDisabled = false;
+  if (isClosed) {
+    applyLabel = "마감된 구인글";
+    applyDisabled = true;
+  } else if (eventPassed) {
+    applyLabel = "종료된 공연";
+    applyDisabled = true;
+  } else if (instrumentClosed) {
+    applyLabel = "정원이 마감된 악기";
+    applyDisabled = true;
+  } else if (isMyPost) {
+    applyLabel = "내가 등록한 구인글";
+    applyDisabled = true;
+  } else if (hasApplied) {
+    applyLabel = "이미 지원한 구인글";
+    applyDisabled = true;
+  }
 
   return (
     <SafeAreaView style={styles.container} edges={["top"]}>
       <View style={styles.headerArea}>
-        <ScreenHeader title="" />
+        <ScreenHeader />
       </View>
 
       <ScrollView
@@ -95,11 +126,15 @@ export default function PostDetailScreen() {
           </View>
         </Section>
 
-        {/* 모집 악기 */}
+        {/* 모집 악기 — 내 프로필 악기와 일치하는 항목을 강조 표시 */}
         <Section title="모집 악기">
           <View style={styles.tagRow}>
             {post.instruments.map((it) => (
-              <Tag key={it.instrument} label={`${it.instrument} ${it.currentPeople}/${it.people}`} />
+              <Tag
+                key={it.instrument}
+                label={`${it.instrument} ${it.currentPeople}/${it.people}`}
+                variant={it.instrument === MOCK_USER.instrument ? "filled" : "outline"}
+              />
             ))}
           </View>
         </Section>
@@ -120,8 +155,8 @@ export default function PostDetailScreen() {
       {/* 하단 고정: 지원하기 (우측) */}
       <View style={[styles.footer, { paddingBottom: insets.bottom + 12 }]}>
         <ThemedButton
-          title={isClosed ? "마감된 구인글" : "지원하기"}
-          disabled={isClosed}
+          title={applyLabel}
+          disabled={applyDisabled}
           style={styles.applyButton}
           onPress={() => {
             // TODO: 오브리 지원 API(POST /api/posts/{id}/applications) 연동

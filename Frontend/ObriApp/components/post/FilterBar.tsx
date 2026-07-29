@@ -15,7 +15,10 @@ interface FilterBarProps {
 
 export default function FilterBar({ filter, onChange, onOpenSheet, onReset }: FilterBarProps) {
   const advancedCount =
-    filter.instruments.length + filter.regions.length + filter.status.length;
+    filter.instruments.length +
+    filter.regions.length +
+    filter.status.length +
+    (filter.startDate || filter.endDate ? 1 : 0);
   const hasAnyFilter =
     filter.sort !== "default" || filter.categories.length > 0 || advancedCount > 0;
 

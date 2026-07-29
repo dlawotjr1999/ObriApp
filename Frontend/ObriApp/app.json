@@ -11,7 +11,6 @@
     "ios": {
       "supportsTablet": true,
       "keyboardDisplayRequiresUserAction": false
-
     },
     "android": {
       "adaptiveIcon": {
@@ -41,7 +40,8 @@
             "backgroundColor": "#000000"
           }
         }
-      ]
+      ],
+      "@react-native-community/datetimepicker"
     ],
     "experiments": {
       "typedRoutes": true,
