@@ -8,6 +8,10 @@ import com.obri_back.obri.application.repository.ApplicationRepository;
 import com.obri_back.obri.global.exception.BadRequestException;
 import com.obri_back.obri.global.exception.ForbiddenException;
 import com.obri_back.obri.global.exception.NotFoundException;
+import com.obri_back.obri.notification.event.ApplicationResultNotificationEvent;
+import com.obri_back.obri.notification.event.NewApplicationNotificationEvent;
+import com.obri_back.obri.notification.event.PostDeletedNotificationEvent;
+import com.obri_back.obri.notification.event.PostUpdatedNotificationEvent;
 import com.obri_back.obri.post.entity.Post;
 import com.obri_back.obri.post.entity.PostStatus;
 import com.obri_back.obri.post.repository.PostRepository;
@@ -19,13 +23,13 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.ApplicationEventPublisher;
 
 import java.time.LocalDateTime;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.*;
 
@@ -35,7 +39,7 @@ class ApplicationServiceTest {
     @Mock ApplicationRepository applicationRepository;
     @Mock PostRepository postRepository;
     @Mock UserService userService;
-    @Mock com.obri_back.obri.notification.NotificationService notificationService;
+    @Mock ApplicationEventPublisher eventPublisher;
 
     @InjectMocks ApplicationService applicationService;
 
@@ -72,8 +76,8 @@ class ApplicationServiceTest {
         applicationService.submitApplication(applicant, request);
 
         verify(applicationRepository, times(1)).save(any(Application.class));
-        // 지원 도착 시 구인자에게 알림 발송 위임
-        verify(notificationService, times(1)).notifyNewApplication(any(), any(), any());
+        // 지원 도착 시 구인자에게 알림 발송 위임 — BACKLOG.md #15: AFTER_COMMIT까지 미루기 위해 이벤트로 발행
+        verify(eventPublisher, times(1)).publishEvent(any(NewApplicationNotificationEvent.class));
     }
 
     // BACKLOG.md #1: user는 FirebaseAuthFilter가 조회한 detached 엔티티라 careers(LAZY) 접근 시
@@ -210,7 +214,7 @@ class ApplicationServiceTest {
         applicationService.accept(recruiter, 100L);
 
         verify(post, times(1)).confirmInstrument("바이올린");
-        verify(notificationService, times(1)).notifyResult(any(), eq(true));
+        verify(eventPublisher, times(1)).publishEvent(new ApplicationResultNotificationEvent(null, true));
         org.assertj.core.api.Assertions.assertThat(app.getStatus()).isEqualTo(ApplicationStatus.ACCEPTED);
     }
 
@@ -222,7 +226,7 @@ class ApplicationServiceTest {
 
         applicationService.reject(recruiter, 100L);
 
-        verify(notificationService, times(1)).notifyResult(any(), eq(false));
+        verify(eventPublisher, times(1)).publishEvent(new ApplicationResultNotificationEvent(null, false));
         verify(post, never()).confirmInstrument(any());
         org.assertj.core.api.Assertions.assertThat(app.getStatus()).isEqualTo(ApplicationStatus.REJECTED);
     }
@@ -283,8 +287,8 @@ class ApplicationServiceTest {
 
         applicationService.notifyApplicantsOfPostUpdate(10L, "수정된 제목");
 
-        verify(notificationService, times(1))
-                .notifyPostUpdated(java.util.List.of("token-a", "token-b"), 10L, "수정된 제목");
+        verify(eventPublisher, times(1)).publishEvent(
+                new PostUpdatedNotificationEvent(java.util.List.of("token-a", "token-b"), 10L, "수정된 제목"));
     }
 
     @Test
@@ -294,9 +298,10 @@ class ApplicationServiceTest {
 
         applicationService.handlePostDeletion(10L, "결혼식 바이올린 구인");
 
-        org.mockito.InOrder inOrder = inOrder(applicationRepository, notificationService);
+        org.mockito.InOrder inOrder = inOrder(applicationRepository, eventPublisher);
         inOrder.verify(applicationRepository).findApplicantFcmTokens(10L, java.util.List.of(ApplicationStatus.ACCEPTED));
         inOrder.verify(applicationRepository).deleteByPostId(10L);
-        inOrder.verify(notificationService).notifyPostDeleted(java.util.List.of("accepted-token"), 10L, "결혼식 바이올린 구인");
+        inOrder.verify(eventPublisher).publishEvent(
+                new PostDeletedNotificationEvent(java.util.List.of("accepted-token"), 10L, "결혼식 바이올린 구인"));
     }
 }
