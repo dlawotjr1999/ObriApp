@@ -193,6 +193,25 @@ public class ApplicationService {
         }
     }
 
+    // 구인글 수정 알림 — Post 도메인에서 호출. 대기·수락 지원자에게 알릴지 여부까지 이 도메인이 결정
+    // TODO: 수정 알림의 실제 필요성은 추후 재검토 대상(우선순위 낮음, 논의 2026-07-29)
+    @Transactional(readOnly = true)
+    public void notifyApplicantsOfPostUpdate(Long postId, String title) {
+        List<String> tokens = applicationRepository.findApplicantFcmTokens(postId,
+                List.of(ApplicationStatus.PENDING, ApplicationStatus.ACCEPTED));
+        notificationService.notifyPostUpdated(tokens, postId, title);
+    }
+
+    // 구인글 삭제 처리 — Post 도메인에서 호출(Post row 삭제 전 반드시 먼저 호출, FK 순서 보장)
+    // ACCEPTED 지원자 토큰 확보 → 지원서 정리 → 삭제 알림까지 전담
+    // TODO: 삭제 알림의 실제 필요성은 추후 재검토 대상(우선순위 낮음, 논의 2026-07-29)
+    @Transactional
+    public void handlePostDeletion(Long postId, String title) {
+        List<String> acceptedTokens = applicationRepository.findApplicantFcmTokens(postId, List.of(ApplicationStatus.ACCEPTED));
+        applicationRepository.deleteByPostId(postId);
+        notificationService.notifyPostDeleted(acceptedTokens, postId, title);
+    }
+
     // 구인글 수정 알림 대상(PENDING·ACCEPTED 지원자) fcm_token 목록 — Post 도메인에서 호출
     @Transactional(readOnly = true)
     public List<String> getActiveApplicantFcmTokens(Long postId) {

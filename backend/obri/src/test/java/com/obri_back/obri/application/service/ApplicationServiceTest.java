@@ -210,4 +210,32 @@ class ApplicationServiceTest {
 
         verify(post, never()).revokeInstrument(any());
     }
+
+    // ── Post 도메인에서 호출하는 굵은 단위 메서드 (BACKLOG.md #12) ──────────────────────
+    // Post는 "무슨 일이 있었는지"만 알리고, 지원자에게 어떤 의미인지·알릴지는 이 도메인이 결정
+
+    @Test
+    void notifyApplicantsOfPostUpdate_sendsToPendingAndAcceptedApplicants() {
+        given(applicationRepository.findApplicantFcmTokens(10L,
+                java.util.List.of(ApplicationStatus.PENDING, ApplicationStatus.ACCEPTED)))
+                .willReturn(java.util.List.of("token-a", "token-b"));
+
+        applicationService.notifyApplicantsOfPostUpdate(10L, "수정된 제목");
+
+        verify(notificationService, times(1))
+                .notifyPostUpdated(java.util.List.of("token-a", "token-b"), 10L, "수정된 제목");
+    }
+
+    @Test
+    void handlePostDeletion_deletesApplicationsThenNotifiesAcceptedApplicantsInOrder() {
+        given(applicationRepository.findApplicantFcmTokens(10L, java.util.List.of(ApplicationStatus.ACCEPTED)))
+                .willReturn(java.util.List.of("accepted-token"));
+
+        applicationService.handlePostDeletion(10L, "결혼식 바이올린 구인");
+
+        org.mockito.InOrder inOrder = inOrder(applicationRepository, notificationService);
+        inOrder.verify(applicationRepository).findApplicantFcmTokens(10L, java.util.List.of(ApplicationStatus.ACCEPTED));
+        inOrder.verify(applicationRepository).deleteByPostId(10L);
+        inOrder.verify(notificationService).notifyPostDeleted(java.util.List.of("accepted-token"), 10L, "결혼식 바이올린 구인");
+    }
 }
