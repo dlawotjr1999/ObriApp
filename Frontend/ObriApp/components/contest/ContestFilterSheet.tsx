@@ -3,7 +3,7 @@ import { Modal, View, Text, TouchableOpacity, ScrollView, StyleSheet } from "rea
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { colors } from "@/constants/theme";
-import { INSTRUMENTS } from "@/constants/filterOptions";
+import { CONTEST_INSTRUMENTS } from "@/constants/filterOptions";
 import { ContestFilter } from "@/types/contestFilter";
 import Chip from "@/components/common/Chip";
 
@@ -65,7 +65,7 @@ export default function ContestFilterSheet({
         <ScrollView showsVerticalScrollIndicator={false}>
           <Text style={styles.sectionTitle}>악기</Text>
           <View style={styles.chipGroup}>
-            {INSTRUMENTS.map((inst) => (
+            {CONTEST_INSTRUMENTS.map((inst) => (
               <Chip
                 key={inst}
                 label={inst}

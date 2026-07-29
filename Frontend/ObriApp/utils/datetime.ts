@@ -1,11 +1,27 @@
 // 날짜/시간 포맷 유틸. 순수 함수만 모음 (외부 의존 없음).
 
+const DATE_ONLY_RE = /^\d{4}-\d{2}-\d{2}$/;
+
+// "YYYY-MM-DD"(시간 없는 순수 날짜)는 new Date()가 UTC 자정으로 해석한다
+// (ECMA-262 date-only 규칙). UTC보다 느린 타임존(미주 등)에서는 이 때문에
+// 하루 전날로 밀려 보인다. 반면 이 파일의 다른 필드(eventAt, practicedAt 등)는
+// 타임존 없는 전체 datetime("...T10:00:00")이라 로컬로 파싱돼 문제가 없다.
+// 콩쿠르 deadline/startDate/endDate처럼 순수 날짜 문자열만 로컬 자정으로
+// 명시 파싱해 두 포맷이 같은 함수를 타도 동일하게 동작하도록 맞춘다.
+function parseDate(iso: string): Date {
+  if (DATE_ONLY_RE.test(iso)) {
+    const [y, m, d] = iso.split("-").map(Number);
+    return new Date(y, m - 1, d);
+  }
+  return new Date(iso);
+}
+
 /**
  * ISO 8601 문자열을 받아 오늘 기준 D-day 문자열 반환.
  * D-day → "D-day" / D-3 → "D-3" / 지난 날짜 → "D+1"
  */
 export function getDday(iso: string): { label: string; urgent: boolean; expired: boolean } {
-  const event = new Date(iso);
+  const event = parseDate(iso);
   if (Number.isNaN(event.getTime())) return { label: "", urgent: false, expired: false };
 
   const today = new Date();
@@ -24,7 +40,7 @@ const WEEKDAYS = ["일", "월", "화", "수", "목", "금", "토"];
 const pad = (n: number) => String(n).padStart(2, "0");
 
 export function formatDate(iso: string): string {
-  const date = new Date(iso);
+  const date = parseDate(iso);
   if (Number.isNaN(date.getTime())) return iso;
   const y = date.getFullYear();
   const m = pad(date.getMonth() + 1);
