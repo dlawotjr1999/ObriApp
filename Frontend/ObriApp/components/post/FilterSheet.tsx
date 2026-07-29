@@ -9,10 +9,12 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
+import DateTimePicker from "@react-native-community/datetimepicker";
 import { colors } from "@/constants/theme";
 import { INSTRUMENTS, REGIONS, STATUS_LABELS } from "@/constants/filterOptions";
 import { PostFilter } from "@/types/filter";
 import { PostStatus } from "@/types/post";
+import { formatDate, parseDate, toDateOnly } from "@/utils/datetime";
 import Chip from "@/components/common/Chip";
 
 const STATUSES: PostStatus[] = ["OPEN", "PARTIALLY_CLOSED", "CLOSED"];
@@ -27,6 +29,8 @@ interface FilterSheetProps {
 export default function FilterSheet({ visible, filter, onApply, onClose }: FilterSheetProps) {
   const insets = useSafeAreaInsets();
   const [draft, setDraft] = useState<PostFilter>(filter);
+  const [showStartPicker, setShowStartPicker] = useState(false);
+  const [showEndPicker, setShowEndPicker] = useState(false);
 
   function toggle<T>(arr: T[], val: T): T[] {
     return arr.includes(val) ? arr.filter((v) => v !== val) : [...arr, val];
@@ -38,7 +42,7 @@ export default function FilterSheet({ visible, filter, onApply, onClose }: Filte
   }
 
   function handleReset() {
-    setDraft({ ...filter, instruments: [], regions: [], status: [] });
+    setDraft({ ...filter, instruments: [], regions: [], status: [], startDate: undefined, endDate: undefined });
   }
 
   // 모달이 열릴 때마다 draft를 현재 filter로 동기화
@@ -80,6 +84,57 @@ export default function FilterSheet({ visible, filter, onApply, onClose }: Filte
               selected={draft.regions}
               onToggle={(v) => setDraft({ ...draft, regions: toggle(draft.regions, v) })}
             />
+          </Section>
+
+          <Section title="기간">
+            <View style={dateStyles.row}>
+              <TouchableOpacity style={dateStyles.field} onPress={() => setShowStartPicker(true)}>
+                <Text style={dateStyles.fieldLabel}>시작일</Text>
+                <Text style={[dateStyles.fieldValue, !draft.startDate && dateStyles.fieldPlaceholder]}>
+                  {draft.startDate ? formatDate(draft.startDate) : "선택 안 함"}
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={dateStyles.field} onPress={() => setShowEndPicker(true)}>
+                <Text style={dateStyles.fieldLabel}>종료일</Text>
+                <Text style={[dateStyles.fieldValue, !draft.endDate && dateStyles.fieldPlaceholder]}>
+                  {draft.endDate ? formatDate(draft.endDate) : "선택 안 함"}
+                </Text>
+              </TouchableOpacity>
+            </View>
+            {(draft.startDate || draft.endDate) && (
+              <TouchableOpacity
+                style={dateStyles.clearButton}
+                onPress={() => setDraft({ ...draft, startDate: undefined, endDate: undefined })}
+              >
+                <Text style={dateStyles.clearText}>기간 초기화</Text>
+              </TouchableOpacity>
+            )}
+            {showStartPicker && (
+              <DateTimePicker
+                value={draft.startDate ? parseDate(draft.startDate) : new Date()}
+                mode="date"
+                maximumDate={draft.endDate ? parseDate(draft.endDate) : undefined}
+                onChange={(event, selected) => {
+                  setShowStartPicker(false);
+                  if (event.type === "set" && selected) {
+                    setDraft({ ...draft, startDate: toDateOnly(selected) });
+                  }
+                }}
+              />
+            )}
+            {showEndPicker && (
+              <DateTimePicker
+                value={draft.endDate ? parseDate(draft.endDate) : new Date()}
+                mode="date"
+                minimumDate={draft.startDate ? parseDate(draft.startDate) : undefined}
+                onChange={(event, selected) => {
+                  setShowEndPicker(false);
+                  if (event.type === "set" && selected) {
+                    setDraft({ ...draft, endDate: toDateOnly(selected) });
+                  }
+                }}
+              />
+            )}
           </Section>
 
           <Section title="상태">
@@ -209,6 +264,43 @@ const sectionStyles = StyleSheet.create({
     color: colors.textMuted,
     letterSpacing: 1,
     marginBottom: 12,
+  },
+});
+
+const dateStyles = StyleSheet.create({
+  row: {
+    flexDirection: "row",
+    gap: 12,
+  },
+  field: {
+    flex: 1,
+    backgroundColor: colors.surface,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.border,
+    borderRadius: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    gap: 4,
+  },
+  fieldLabel: {
+    fontSize: 11,
+    color: colors.textMuted,
+  },
+  fieldValue: {
+    fontSize: 14,
+    color: colors.textPrimary,
+  },
+  fieldPlaceholder: {
+    color: colors.placeholder,
+  },
+  clearButton: {
+    alignSelf: "flex-start",
+    marginTop: 10,
+  },
+  clearText: {
+    fontSize: 12,
+    color: colors.textMuted,
+    textDecorationLine: "underline",
   },
 });
 

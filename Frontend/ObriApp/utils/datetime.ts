@@ -8,7 +8,7 @@ const DATE_ONLY_RE = /^\d{4}-\d{2}-\d{2}$/;
 // 타임존 없는 전체 datetime("...T10:00:00")이라 로컬로 파싱돼 문제가 없다.
 // 콩쿠르 deadline/startDate/endDate처럼 순수 날짜 문자열만 로컬 자정으로
 // 명시 파싱해 두 포맷이 같은 함수를 타도 동일하게 동작하도록 맞춘다.
-function parseDate(iso: string): Date {
+export function parseDate(iso: string): Date {
   if (DATE_ONLY_RE.test(iso)) {
     const [y, m, d] = iso.split("-").map(Number);
     return new Date(y, m - 1, d);
@@ -38,6 +38,14 @@ export function getDday(iso: string): { label: string; urgent: boolean; expired:
 const WEEKDAYS = ["일", "월", "화", "수", "목", "금", "토"];
 
 const pad = (n: number) => String(n).padStart(2, "0");
+
+// Date → "YYYY-MM-DD" (parseDate의 역변환, 날짜 선택 UI 등에서 사용)
+export function toDateOnly(date: Date): string {
+  const y = date.getFullYear();
+  const m = pad(date.getMonth() + 1);
+  const d = pad(date.getDate());
+  return `${y}-${m}-${d}`;
+}
 
 export function formatDate(iso: string): string {
   const date = parseDate(iso);

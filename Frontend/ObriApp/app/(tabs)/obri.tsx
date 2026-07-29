@@ -4,6 +4,7 @@ import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context"
 import { useRouter } from "expo-router";
 import { colors } from "@/constants/theme";
 import { MOCK_POSTS } from "@/mocks/posts";
+import { parseDate } from "@/utils/datetime";
 import AppHeader from "@/components/common/AppHeader";
 import EmptyState from "@/components/common/EmptyState";
 import PostCard from "@/components/post/PostCard";
@@ -34,6 +35,15 @@ export default function ObriScreen() {
       result = result.filter((p) =>
         filter.regions.some((r) => p.location.includes(r))
       );
+    }
+    if (filter.startDate) {
+      const start = parseDate(filter.startDate);
+      result = result.filter((p) => new Date(p.eventAt) >= start);
+    }
+    if (filter.endDate) {
+      const end = parseDate(filter.endDate);
+      end.setHours(23, 59, 59, 999);
+      result = result.filter((p) => new Date(p.eventAt) <= end);
     }
     if (filter.status.length > 0) {
       result = result.filter((p) => filter.status.includes(p.status));
