@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useRef, useState } from "react";
 import {
   View,
   Text,
@@ -13,14 +13,48 @@ import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context"
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { colors } from "@/constants/theme";
+import { CATEGORIES } from "@/constants/filterOptions";
 import ThemedButton from "@/components/common/ThemedButton";
+import ChipSelect from "@/components/common/ChipSelect";
+import PostInstrumentFormItem, {
+  PostInstrumentDraft,
+} from "@/components/post/PostInstrumentFormItem";
 
 export default function PostCreateScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
 
+  const [category, setCategory] = useState("");
   const [title, setTitle] = useState("");
-  const [content, setContent] = useState("");
+  const [eventDate, setEventDate] = useState("");
+  const [eventTime, setEventTime] = useState("");
+  const [location, setLocation] = useState("");
+  const [pay, setPay] = useState("");
+  const [timetable, setTimetable] = useState("");
+
+  // 배열 index는 항목 삭제 시 뒤 요소가 앞으로 당겨져 재사용되므로,
+  // React key로 쓰기 위한 항목별 안정적인 로컬 id를 별도로 관리한다.
+  const keyCounter = useRef(0);
+  const [instrumentKeys, setInstrumentKeys] = useState<number[]>(() => [keyCounter.current++]);
+  const [instruments, setInstruments] = useState<PostInstrumentDraft[]>([
+    { instrument: "", people: "" },
+  ]);
+
+  const handleInstrumentChange = (index: number, entry: PostInstrumentDraft) => {
+    const updated = [...instruments];
+    updated[index] = entry;
+    setInstruments(updated);
+  };
+
+  const handleInstrumentRemove = (index: number) => {
+    setInstruments((prev) => prev.filter((_, i) => i !== index));
+    setInstrumentKeys((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const handleInstrumentAdd = () => {
+    setInstruments((prev) => [...prev, { instrument: "", people: "" }]);
+    setInstrumentKeys((prev) => [...prev, keyCounter.current++]);
+  };
 
   return (
     <SafeAreaView style={styles.container} edges={["top"]}>
@@ -42,16 +76,13 @@ export default function PostCreateScreen() {
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
-          {/* TODO: 구인글 작성 폼 — 추후 구현 */}
-          <View style={styles.placeholderArea}>
-            <Ionicons name="create-outline" size={48} color={colors.placeholder} />
-            <Text style={styles.placeholderTitle}>구인글 작성</Text>
-            <Text style={styles.placeholderDesc}>
-              제목, 카테고리, 공연 일시, 장소, 페이, 모집 악기 등{"\n"}세부 항목은 추후 추가될 예정이에요.
-            </Text>
-          </View>
+          <ChipSelect
+            label="카테고리"
+            options={CATEGORIES}
+            selected={category}
+            onSelect={setCategory}
+          />
 
-          {/* 제목 입력 (샘플) */}
           <View style={styles.fieldGroup}>
             <Text style={styles.label}>제목</Text>
             <TextInput
@@ -63,18 +94,82 @@ export default function PostCreateScreen() {
             />
           </View>
 
+          <View style={styles.row}>
+            <View style={[styles.fieldGroup, styles.rowField]}>
+              <Text style={styles.label}>공연 날짜</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="2026-08-01"
+                placeholderTextColor={colors.placeholder}
+                value={eventDate}
+                onChangeText={setEventDate}
+              />
+            </View>
+            <View style={[styles.fieldGroup, styles.rowField]}>
+              <Text style={styles.label}>공연 시간</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="14:00"
+                placeholderTextColor={colors.placeholder}
+                value={eventTime}
+                onChangeText={setEventTime}
+              />
+            </View>
+          </View>
+
           <View style={styles.fieldGroup}>
-            <Text style={styles.label}>내용</Text>
+            <Text style={styles.label}>장소</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="예: 서울 강남구 OO웨딩홀"
+              placeholderTextColor={colors.placeholder}
+              value={location}
+              onChangeText={setLocation}
+            />
+          </View>
+
+          <View style={styles.fieldGroup}>
+            <Text style={styles.label}>페이</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="150000"
+              placeholderTextColor={colors.placeholder}
+              value={pay}
+              onChangeText={(text) => setPay(text.replace(/[^0-9]/g, ""))}
+              keyboardType="number-pad"
+            />
+          </View>
+
+          <View style={styles.fieldGroup}>
+            <Text style={styles.label}>시간표</Text>
             <TextInput
               style={[styles.input, styles.textArea]}
-              placeholder="공연 정보, 조건 등을 자유롭게 작성해주세요"
+              placeholder="예: 리허설 1회 (13:00), 본식 (14:00)"
               placeholderTextColor={colors.placeholder}
-              value={content}
-              onChangeText={setContent}
+              value={timetable}
+              onChangeText={setTimetable}
               multiline
-              numberOfLines={6}
+              numberOfLines={4}
               textAlignVertical="top"
             />
+          </View>
+
+          <View style={styles.fieldGroup}>
+            <Text style={styles.label}>모집 악기</Text>
+            {instruments.map((it, index) => (
+              <PostInstrumentFormItem
+                key={instrumentKeys[index]}
+                value={it}
+                index={index}
+                onChange={handleInstrumentChange}
+                onRemove={handleInstrumentRemove}
+                removable={instruments.length > 1}
+              />
+            ))}
+            <TouchableOpacity style={styles.addButton} onPress={handleInstrumentAdd}>
+              <Ionicons name="add" size={18} color={colors.textMuted} />
+              <Text style={styles.addButtonText}>악기 추가</Text>
+            </TouchableOpacity>
           </View>
         </ScrollView>
 
@@ -83,7 +178,9 @@ export default function PostCreateScreen() {
           <ThemedButton
             title="등록하기"
             onPress={() => {
-              // TODO: 구인글 등록 API(POST /api/posts) 연동. { title, content }를 payload에 포함
+              // TODO: 구인글 등록 API(POST /api/posts) 연동. PostCreateRequestDTO 규격:
+              // { category, title, eventAt: `${eventDate}T${eventTime}:00`, location, timetable,
+              //   pay: Number(pay), instruments: instruments.map(({ instrument, people }) => ({ instrument, people: Number(people) })) }
               router.back();
             }}
           />
@@ -114,26 +211,18 @@ const styles = StyleSheet.create({
   },
   content: {
     padding: 24,
-    gap: 24,
+    gap: 8,
   },
-  placeholderArea: {
-    alignItems: "center",
-    paddingVertical: 32,
+  row: {
+    flexDirection: "row",
     gap: 12,
   },
-  placeholderTitle: {
-    fontSize: 18,
-    fontWeight: "600",
-    color: colors.primary,
-  },
-  placeholderDesc: {
-    fontSize: 13,
-    color: colors.textMuted,
-    textAlign: "center",
-    lineHeight: 20,
+  rowField: {
+    flex: 1,
   },
   fieldGroup: {
     gap: 8,
+    marginBottom: 16,
   },
   label: {
     fontSize: 12,
@@ -151,8 +240,23 @@ const styles = StyleSheet.create({
     color: colors.textPrimary,
   },
   textArea: {
-    height: 140,
+    height: 90,
     paddingTop: 12,
+  },
+  addButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+    borderWidth: 1,
+    borderStyle: "dashed",
+    borderColor: colors.border,
+    borderRadius: 10,
+    height: 44,
+  },
+  addButtonText: {
+    fontSize: 13,
+    color: colors.textMuted,
   },
   footer: {
     paddingHorizontal: 24,
