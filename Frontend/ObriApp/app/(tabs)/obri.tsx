@@ -37,6 +37,9 @@ export default function ObriScreen() {
     }
     if (filter.status.length > 0) {
       result = result.filter((p) => filter.status.includes(p.status));
+    } else {
+      // 백엔드 기본 노출 규칙과 동일: status 미지정 시 CLOSED는 제외(명시적 필터로만 조회 가능)
+      result = result.filter((p) => p.status !== "CLOSED");
     }
     if (filter.sort === "latest") {
       result = [...result].sort(

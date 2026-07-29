@@ -5,7 +5,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { colors } from "@/constants/theme";
 
 interface ScreenHeaderProps {
-  title: string;
+  title?: string;
   subtitle?: string;
   showBack?: boolean;
 }
@@ -28,7 +28,7 @@ export default function ScreenHeader({
           <Ionicons name="arrow-back" size={22} color={colors.primary} />
         </TouchableOpacity>
       )}
-      <Text style={styles.title}>{title}</Text>
+      {title ? <Text style={styles.title}>{title}</Text> : null}
       {subtitle && <Text style={styles.subtitle}>{subtitle}</Text>}
     </View>
   );

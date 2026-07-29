@@ -39,7 +39,7 @@ export default function PostDetailScreen() {
     return (
       <SafeAreaView style={styles.container} edges={["top"]}>
         <View style={styles.headerArea}>
-          <ScreenHeader title="" />
+          <ScreenHeader />
         </View>
         <EmptyState
           icon="alert-circle-outline"
@@ -84,7 +84,7 @@ export default function PostDetailScreen() {
   return (
     <SafeAreaView style={styles.container} edges={["top"]}>
       <View style={styles.headerArea}>
-        <ScreenHeader title="" />
+        <ScreenHeader />
       </View>
 
       <ScrollView
