@@ -92,9 +92,8 @@ public class PostService {
                 .collect(Collectors.toList());
         post.replaceInstruments(newInstruments);
 
-        // 구인글 수정 → 대기·수락 지원자에게 알림(거절/취소/철회 제외) — 명세 시나리오 1.8
-        List<String> applicantTokens = applicationService.getActiveApplicantFcmTokens(postId);
-        notificationService.notifyPostUpdated(applicantTokens, post.getId(), post.getTitle());
+        // 구인글 수정 → 지원자에게 알릴지 여부까지 Application 도메인이 결정 — 명세 시나리오 1.8
+        applicationService.notifyApplicantsOfPostUpdate(postId, post.getTitle());
 
         return PostResponseDTO.from(post);
     }
@@ -107,16 +106,14 @@ public class PostService {
         post.close();
     }
 
-    // 구인글 삭제 (작성자만) — 연관 지원서를 먼저 정리한 뒤 글 삭제, ACCEPTED 지원자에게 삭제 알림
+    // 구인글 삭제 (작성자만) — 지원서 정리·삭제 알림은 Application 도메인에 위임
     @Transactional
     public void deletePost(Long postId, User user) {
         Post post = findPostOrThrow(postId);
         requireOwner(post, user);
 
-        List<String> acceptedTokens = applicationService.getAcceptedApplicantFcmTokens(postId);
-        applicationService.deleteAllByPostId(postId);
+        applicationService.handlePostDeletion(postId, post.getTitle());
         postRepository.delete(post);
-        notificationService.notifyPostDeleted(acceptedTokens, postId, post.getTitle());
     }
 
     // 구인글 조회 공통 헬퍼 — 없으면 404

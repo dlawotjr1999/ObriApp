@@ -212,13 +212,6 @@ public class ApplicationService {
         notificationService.notifyPostDeleted(acceptedTokens, postId, title);
     }
 
-    // 구인글 수정 알림 대상(PENDING·ACCEPTED 지원자) fcm_token 목록 — Post 도메인에서 호출
-    @Transactional(readOnly = true)
-    public List<String> getActiveApplicantFcmTokens(Long postId) {
-        return applicationRepository.findApplicantFcmTokens(postId,
-                List.of(ApplicationStatus.PENDING, ApplicationStatus.ACCEPTED));
-    }
-
     // 구인글 단건 조회(applicationCount)용 — Post 도메인에서 호출
     @Transactional(readOnly = true)
     public long countApplicationsByPostId(Long postId) {
@@ -229,17 +222,5 @@ public class ApplicationService {
     @Transactional(readOnly = true)
     public boolean hasApplied(Long postId, Long userId) {
         return applicationRepository.existsByPostIdAndUserId(postId, userId);
-    }
-
-    // 구인글 삭제 시 ACCEPTED 지원자에게 알림 발송용 fcm_token 목록 — Post 도메인에서 호출
-    @Transactional(readOnly = true)
-    public List<String> getAcceptedApplicantFcmTokens(Long postId) {
-        return applicationRepository.findApplicantFcmTokens(postId, List.of(ApplicationStatus.ACCEPTED));
-    }
-
-    // 구인글 삭제 시 연관 지원서 정리용 — Post 도메인에서 호출
-    @Transactional
-    public void deleteAllByPostId(Long postId) {
-        applicationRepository.deleteByPostId(postId);
     }
 }

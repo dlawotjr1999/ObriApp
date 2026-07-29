@@ -152,6 +152,7 @@ class PostServiceTest {
         assertThat(result.getPay()).isEqualTo(200000);
         assertThat(result.getInstruments()).hasSize(1);
         assertThat(result.getInstruments().get(0).getInstrument()).isEqualTo("플루트");
+        verify(applicationService).notifyApplicantsOfPostUpdate(10L, "수정된 제목");
     }
 
     @Test
@@ -183,18 +184,16 @@ class PostServiceTest {
     }
 
     @Test
-    void deletePost_deletesApplicationsThenPostAndNotifiesAcceptedApplicantsWhenOwner() {
+    void deletePost_delegatesToApplicationServiceThenDeletesPostWhenOwner() {
         Post post = buildPost(owner);
         given(postRepository.findById(10L)).willReturn(Optional.of(post));
-        given(applicationService.getAcceptedApplicantFcmTokens(10L)).willReturn(List.of("accepted-token"));
 
         postService.deletePost(10L, owner);
 
-        org.mockito.InOrder inOrder = inOrder(applicationService, postRepository, notificationService);
-        inOrder.verify(applicationService).getAcceptedApplicantFcmTokens(10L);
-        inOrder.verify(applicationService).deleteAllByPostId(10L);
+        org.mockito.InOrder inOrder = inOrder(applicationService, postRepository);
+        inOrder.verify(applicationService).handlePostDeletion(10L, post.getTitle());
         inOrder.verify(postRepository).delete(post);
-        inOrder.verify(notificationService).notifyPostDeleted(List.of("accepted-token"), 10L, post.getTitle());
+        verifyNoInteractions(notificationService);
     }
 
     @Test
@@ -205,8 +204,7 @@ class PostServiceTest {
         assertThatThrownBy(() -> postService.deletePost(10L, other))
                 .isInstanceOf(ForbiddenException.class);
 
-        verify(applicationService, never()).getAcceptedApplicantFcmTokens(any());
-        verify(applicationService, never()).deleteAllByPostId(any());
+        verify(applicationService, never()).handlePostDeletion(any(), any());
         verify(postRepository, never()).delete(any(Post.class));
     }
 
