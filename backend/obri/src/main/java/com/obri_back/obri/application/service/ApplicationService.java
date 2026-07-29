@@ -59,6 +59,11 @@ public class ApplicationService {
             throw new BadRequestException("이미 종료된 공연에는 지원할 수 없습니다");
         }
 
+        // 지원자 전공 악기가 이미 정원 마감된 경우 사전 차단 (모집 목록에 없는 악기는 통과 — 자리 미반영 지원)
+        if (post.isInstrumentClosed(user.getInstrument())) {
+            throw new BadRequestException("이미 정원이 마감된 악기입니다");
+        }
+
         // 본인 글 지원 체크
         if (post.getUser().getId().equals(user.getId())) {
             throw new ForbiddenException("본인 구인글에는 지원할 수 없습니다");

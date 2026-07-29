@@ -108,4 +108,25 @@ class PostTest {
         assertThat(post.getStatus()).isEqualTo(PostStatus.OPEN);
         assertThat(instrument("바이올린").getConfirmed()).isEqualTo(0);
     }
+
+    // BACKLOG.md #23: 이미 정원 마감된 악기는 지원 시점에 사전 차단하기 위한 조회용 메서드
+    @Test
+    void isInstrumentClosed_trueWhenInstrumentAlreadyClosed() {
+        post.confirmInstrument("첼로"); // people=1 → 즉시 마감
+
+        assertThat(post.isInstrumentClosed("첼로")).isTrue();
+    }
+
+    @Test
+    void isInstrumentClosed_falseWhenInstrumentStillOpen() {
+        post.confirmInstrument("바이올린"); // people=2, confirmed=1 → 아직 미마감
+
+        assertThat(post.isInstrumentClosed("바이올린")).isFalse();
+    }
+
+    // 모집 목록에 없는 악기는 마감 개념이 없으므로 false(자리 미반영 지원 허용, 시나리오 1.4와 일관)
+    @Test
+    void isInstrumentClosed_falseWhenInstrumentNotRecruited() {
+        assertThat(post.isInstrumentClosed("트럼펫")).isFalse();
+    }
 }

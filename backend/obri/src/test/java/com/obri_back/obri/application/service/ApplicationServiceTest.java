@@ -101,6 +101,23 @@ class ApplicationServiceTest {
         verify(applicationRepository, never()).save(any());
     }
 
+    // BACKLOG.md #23: 이미 정원이 마감된 악기는 accept() 시점이 아니라 지원 시점에 사전 차단
+    @Test
+    void submitApplication_throwsBadRequestWhenInstrumentClosed() {
+        given(postRepository.findById(10L)).willReturn(Optional.of(post));
+        given(post.getStatus()).willReturn(PostStatus.PARTIALLY_CLOSED);
+        given(post.getEventAt()).willReturn(LocalDateTime.now().plusDays(1));
+        given(post.isInstrumentClosed(any())).willReturn(true);
+
+        AppRequestDTO request = AppRequestDTO.from(10L, null);
+
+        assertThatThrownBy(() -> applicationService.submitApplication(applicant, request))
+                .isInstanceOf(BadRequestException.class)
+                .hasMessage("이미 정원이 마감된 악기입니다");
+
+        verify(applicationRepository, never()).save(any());
+    }
+
     @Test
     void submitApplication_throwsForbiddenWhenOwnPost() {
         given(postRepository.findById(10L)).willReturn(Optional.of(post));
