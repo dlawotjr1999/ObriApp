@@ -32,6 +32,7 @@ Application 관련 비즈니스 로직
 - 지원 상태 업데이트 (구인자: ACCEPTED/REJECTED, 지원자: CANCELLED)
 
 - 한 게시글에 대한 지원서 목록 조회(PENDING)
+- 구인글 수정·삭제 시 지원자 알림·정리 처리 (Post 도메인 위임 — BACKLOG.md #12)
 */
 
 @Service

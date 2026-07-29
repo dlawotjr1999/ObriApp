@@ -35,8 +35,8 @@ import java.util.stream.Collectors;
 public class PostService {
 
     private final PostRepository postRepository;
-    // 단건 조회 시 applicationCount·hasApplied 계산을 위해 Application 도메인 참조
-    // (UserController → ApplicationService와 동일한 기존 패턴, CLAUDE.md 개선 백로그 항목)
+    // 읽기(applicationCount·hasApplied)는 CLAUDE.md §2가 문서화한 예외로 직접 조회
+    // 쓰기(수정·삭제 시 지원자 처리)는 notifyApplicantsOfPostUpdate·handlePostDeletion에 위임 — BACKLOG.md #12
     private final ApplicationService applicationService;
     private final NotificationService notificationService;
 
