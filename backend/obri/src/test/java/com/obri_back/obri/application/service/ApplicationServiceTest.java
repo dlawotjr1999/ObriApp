@@ -1,6 +1,7 @@
 package com.obri_back.obri.application.service;
 
 import com.obri_back.obri.application.dto.AppRequestDTO;
+import com.obri_back.obri.application.dto.AppResponseDTO;
 import com.obri_back.obri.application.entity.Application;
 import com.obri_back.obri.application.entity.ApplicationStatus;
 import com.obri_back.obri.application.repository.ApplicationRepository;
@@ -11,6 +12,7 @@ import com.obri_back.obri.post.entity.Post;
 import com.obri_back.obri.post.entity.PostStatus;
 import com.obri_back.obri.post.repository.PostRepository;
 import com.obri_back.obri.user.entity.User;
+import com.obri_back.obri.user.service.UserService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -32,6 +34,7 @@ class ApplicationServiceTest {
 
     @Mock ApplicationRepository applicationRepository;
     @Mock PostRepository postRepository;
+    @Mock UserService userService;
     @Mock com.obri_back.obri.notification.NotificationService notificationService;
 
     @InjectMocks ApplicationService applicationService;
@@ -62,6 +65,7 @@ class ApplicationServiceTest {
         given(post.getUser()).willReturn(recruiter);
         given(applicationRepository.save(any(Application.class)))
                 .willAnswer(inv -> inv.getArgument(0));
+        given(userService.getManagedUserById(applicant.getId())).willReturn(applicant);
 
         AppRequestDTO request = AppRequestDTO.from(10L, "추가 정보");
 
@@ -70,6 +74,32 @@ class ApplicationServiceTest {
         verify(applicationRepository, times(1)).save(any(Application.class));
         // 지원 도착 시 구인자에게 알림 발송 위임
         verify(notificationService, times(1)).notifyNewApplication(any(), any(), any());
+    }
+
+    // BACKLOG.md #1: user는 FirebaseAuthFilter가 조회한 detached 엔티티라 careers(LAZY) 접근 시
+    // LazyInitializationException 발생 — 응답 조립 전 UserService를 통해 managed 인스턴스로 재조회하는지 검증
+    // (UserRepository를 직접 주입하면 도메인 경계를 깨므로 UserService를 경유)
+    @Test
+    void submitApplication_refetchesManagedUserViaUserService_beforeBuildingResponse() {
+        given(postRepository.findById(10L)).willReturn(Optional.of(post));
+        given(post.getId()).willReturn(10L);
+        given(post.getStatus()).willReturn(PostStatus.OPEN);
+        given(post.getEventAt()).willReturn(LocalDateTime.now().plusDays(1));
+        given(post.getUser()).willReturn(recruiter);
+        given(applicationRepository.save(any(Application.class)))
+                .willAnswer(inv -> inv.getArgument(0));
+
+        User managedApplicant = User.builder()
+                .id(applicant.getId()).nickname("managed-applicant").firebaseUid("applicant-uid").build();
+        given(userService.getManagedUserById(applicant.getId())).willReturn(managedApplicant);
+
+        AppRequestDTO request = AppRequestDTO.from(10L, "추가 정보");
+
+        AppResponseDTO response = applicationService.submitApplication(applicant, request);
+
+        // 응답이 재조회한 managedApplicant(닉네임 다름)로 조립됐는지 확인 — 원본 detached applicant를 그대로 썼다면 실패
+        org.assertj.core.api.Assertions.assertThat(response.getApplicant().getNickname()).isEqualTo("managed-applicant");
+        verify(userService, times(1)).getManagedUserById(applicant.getId());
     }
 
     @Test

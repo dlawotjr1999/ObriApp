@@ -14,6 +14,7 @@ import com.obri_back.obri.post.entity.Post;
 import com.obri_back.obri.post.entity.PostStatus;
 import com.obri_back.obri.post.repository.PostRepository;
 import com.obri_back.obri.user.entity.User;
+import com.obri_back.obri.user.service.UserService;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -41,6 +42,7 @@ public class ApplicationService {
 
     private final ApplicationRepository applicationRepository;
     private final PostRepository postRepository;
+    private final UserService userService;
     private final NotificationService notificationService;
 
     // 지원서 제출
@@ -88,7 +90,12 @@ public class ApplicationService {
         // 지원 도착 → 구인자(글 작성자)에게 단건 push (발송 실패는 NotificationService에서 격리)
         notificationService.notifyNewApplication(post.getUser().getFcmToken(), post.getId(), post.getTitle());
 
-        return AppResponseDTO.from(application, user);
+        // BACKLOG.md #1: user는 FirebaseAuthFilter가 조회한 detached 엔티티라 careers(LAZY) 접근 시
+        // LazyInitializationException 발생 — UserService를 경유해 managed 인스턴스로 재조회
+        // (UserRepository를 직접 주입하면 도메인 경계를 깨므로 서비스 간 호출로 유지)
+        User managedUser = userService.getManagedUserById(user.getId());
+
+        return AppResponseDTO.from(application, managedUser);
     }
 
     // 한 게시글에 대한 지원서 목록 조회
