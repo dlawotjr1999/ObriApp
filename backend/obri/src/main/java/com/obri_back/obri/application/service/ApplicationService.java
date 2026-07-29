@@ -22,6 +22,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import lombok.RequiredArgsConstructor;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 /*
@@ -31,6 +32,7 @@ Application 관련 비즈니스 로직
 - 지원 상태 업데이트 (구인자: ACCEPTED/REJECTED, 지원자: CANCELLED)
 
 - 한 게시글에 대한 지원서 목록 조회(PENDING)
+- 구인글 수정·삭제 시 지원자 알림·정리 처리 (Post 도메인 위임 — BACKLOG.md #12)
 */
 
 @Service
@@ -45,11 +47,21 @@ public class ApplicationService {
     @Transactional
     public AppResponseDTO submitApplication(User user, AppRequestDTO requestDto) {
         Post post = postRepository.findById(requestDto.getPostId())
-            .orElseThrow(() -> new NotFoundException("게시글을 찾을 수 없습니다"));
+            .orElseThrow(() -> new NotFoundException("구인글을 찾을 수 없습니다"));
 
         // 마감된 구인글 체크
         if (post.getStatus() == PostStatus.CLOSED) {
             throw new BadRequestException("마감된 구인글에는 지원할 수 없습니다");
+        }
+
+        // 공연 날짜가 지난 구인글 체크 (인원이 안 찼어도 날짜가 지나면 지원 불가)
+        if (post.getEventAt().isBefore(LocalDateTime.now())) {
+            throw new BadRequestException("이미 종료된 공연에는 지원할 수 없습니다");
+        }
+
+        // 지원자 전공 악기가 이미 정원 마감된 경우 사전 차단 (모집 목록에 없는 악기는 통과 — 자리 미반영 지원)
+        if (post.isInstrumentClosed(user.getInstrument())) {
+            throw new BadRequestException("이미 정원이 마감된 악기입니다");
         }
 
         // 본인 글 지원 체크
@@ -187,11 +199,23 @@ public class ApplicationService {
         }
     }
 
-    // 구인글 수정 알림 대상(PENDING·ACCEPTED 지원자) fcm_token 목록 — Post 도메인에서 호출
+    // 구인글 수정 알림 — Post 도메인에서 호출. 대기·수락 지원자에게 알릴지 여부까지 이 도메인이 결정
+    // TODO: 수정 알림의 실제 필요성은 추후 재검토 대상(우선순위 낮음, 논의 2026-07-29)
     @Transactional(readOnly = true)
-    public List<String> getActiveApplicantFcmTokens(Long postId) {
-        return applicationRepository.findApplicantFcmTokens(postId,
+    public void notifyApplicantsOfPostUpdate(Long postId, String title) {
+        List<String> tokens = applicationRepository.findApplicantFcmTokens(postId,
                 List.of(ApplicationStatus.PENDING, ApplicationStatus.ACCEPTED));
+        notificationService.notifyPostUpdated(tokens, postId, title);
+    }
+
+    // 구인글 삭제 처리 — Post 도메인에서 호출(Post row 삭제 전 반드시 먼저 호출, FK 순서 보장)
+    // ACCEPTED 지원자 토큰 확보 → 지원서 정리 → 삭제 알림까지 전담
+    // TODO: 삭제 알림의 실제 필요성은 추후 재검토 대상(우선순위 낮음, 논의 2026-07-29)
+    @Transactional
+    public void handlePostDeletion(Long postId, String title) {
+        List<String> acceptedTokens = applicationRepository.findApplicantFcmTokens(postId, List.of(ApplicationStatus.ACCEPTED));
+        applicationRepository.deleteByPostId(postId);
+        notificationService.notifyPostDeleted(acceptedTokens, postId, title);
     }
 
     // 구인글 단건 조회(applicationCount)용 — Post 도메인에서 호출
@@ -204,11 +228,5 @@ public class ApplicationService {
     @Transactional(readOnly = true)
     public boolean hasApplied(Long postId, Long userId) {
         return applicationRepository.existsByPostIdAndUserId(postId, userId);
-    }
-
-    // 구인글 삭제 시 연관 지원서 정리용 — Post 도메인에서 호출
-    @Transactional
-    public void deleteAllByPostId(Long postId) {
-        applicationRepository.deleteByPostId(postId);
     }
 }

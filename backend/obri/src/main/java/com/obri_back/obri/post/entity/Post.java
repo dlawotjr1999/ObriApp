@@ -148,6 +148,12 @@ public class Post {
         recomputeStatus();
     }
 
+    // 해당 악기가 이미 정원 마감됐는지 확인 — 모집 목록에 없는 악기는 마감 개념이 없어 false(자리 미반영 지원 허용, 시나리오 1.4)
+    public boolean isInstrumentClosed(String instrumentName) {
+        PostInstrument target = findInstrument(instrumentName);
+        return target != null && Boolean.TRUE.equals(target.getClosed());
+    }
+
     // 모집 목록에 해당 악기가 없으면 null (호출부에서 "미반영" 케이스로 처리)
     private PostInstrument findInstrument(String instrumentName) {
         return this.postInstruments.stream()

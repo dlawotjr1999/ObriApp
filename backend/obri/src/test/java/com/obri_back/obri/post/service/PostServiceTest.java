@@ -152,6 +152,7 @@ class PostServiceTest {
         assertThat(result.getPay()).isEqualTo(200000);
         assertThat(result.getInstruments()).hasSize(1);
         assertThat(result.getInstruments().get(0).getInstrument()).isEqualTo("플루트");
+        verify(applicationService).notifyApplicantsOfPostUpdate(10L, "수정된 제목");
     }
 
     @Test
@@ -183,14 +184,16 @@ class PostServiceTest {
     }
 
     @Test
-    void deletePost_deletesApplicationsThenPostWhenOwner() {
+    void deletePost_delegatesToApplicationServiceThenDeletesPostWhenOwner() {
         Post post = buildPost(owner);
         given(postRepository.findById(10L)).willReturn(Optional.of(post));
 
         postService.deletePost(10L, owner);
 
-        verify(applicationService, times(1)).deleteAllByPostId(10L);
-        verify(postRepository, times(1)).delete(post);
+        org.mockito.InOrder inOrder = inOrder(applicationService, postRepository);
+        inOrder.verify(applicationService).handlePostDeletion(10L, post.getTitle());
+        inOrder.verify(postRepository).delete(post);
+        verifyNoInteractions(notificationService);
     }
 
     @Test
@@ -201,7 +204,7 @@ class PostServiceTest {
         assertThatThrownBy(() -> postService.deletePost(10L, other))
                 .isInstanceOf(ForbiddenException.class);
 
-        verify(applicationService, never()).deleteAllByPostId(any());
+        verify(applicationService, never()).handlePostDeletion(any(), any());
         verify(postRepository, never()).delete(any(Post.class));
     }
 

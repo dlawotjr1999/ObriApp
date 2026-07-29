@@ -9,6 +9,7 @@ import jakarta.persistence.criteria.Predicate;
 import org.springframework.data.jpa.domain.Specification;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -17,6 +18,7 @@ import java.util.stream.Collectors;
 /*
  * 구인글 목록 동적 필터 명세 빌더
  * GET /api/posts 필터: 필터 간 AND, 같은 필터 내 다중값은 OR
+ * eventAt이 지난 글은 status 파라미터와 무관하게 항상 제외(공연 종료 후 목록 노출 방지 — BACKLOG.md #8)
  */
 public class PostSpecification {
 
@@ -26,6 +28,9 @@ public class PostSpecification {
         return (root, query, cb) -> {
             query.distinct(true);
             List<Predicate> predicates = new ArrayList<>();
+
+            // 공연 날짜가 지난 글은 항상 제외 — status 필터로도 우회 불가
+            predicates.add(cb.greaterThanOrEqualTo(root.get("eventAt"), LocalDateTime.now()));
 
             if (categories != null && !categories.isEmpty()) {
                 predicates.add(root.get("category").in(categories));
