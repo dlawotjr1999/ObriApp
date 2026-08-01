@@ -1,5 +1,6 @@
 package com.obri_back.obri.application.dto;
 
+import jakarta.validation.constraints.NotNull;
 import lombok.Builder;
 import lombok.Getter;
 
@@ -10,6 +11,8 @@ import lombok.Getter;
 @Getter
 @Builder
 public class AppRequestDTO {
+    // 누락 시 findById(null) → 500이 나던 것을 사전 400으로 차단 (BACKLOG.md #5)
+    @NotNull(message = "구인글 ID를 입력해주세요")
     private Long postId;
     private String additionalInfo;
 

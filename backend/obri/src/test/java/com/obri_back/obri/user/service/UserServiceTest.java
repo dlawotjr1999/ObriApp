@@ -57,6 +57,26 @@ class UserServiceTest {
         assertThat(result.getEmail()).isEqualTo("test@test.com");
     }
 
+    // BACKLOG.md #1: 다른 도메인 서비스가 detached User(예: 필터에서 온 @AuthenticationPrincipal)를
+    // managed 인스턴스로 재조회할 때 쓰는 진입점 — UserRepository 대신 이 메서드를 거치게 해 서비스 경계를 지킴
+    @Test
+    void getManagedUserById_returnsManagedUserWhenExists() {
+        given(userRepository.findById(1L)).willReturn(Optional.of(mockUser));
+
+        User result = userService.getManagedUserById(1L);
+
+        assertThat(result).isEqualTo(mockUser);
+    }
+
+    @Test
+    void getManagedUserById_throwsNotFoundWhenMissing() {
+        given(userRepository.findById(99L)).willReturn(Optional.empty());
+
+        assertThatThrownBy(() -> userService.getManagedUserById(99L))
+                .isInstanceOf(NotFoundException.class)
+                .hasMessage("유저를 찾을 수 없습니다");
+    }
+
     @Test
     void getMyInfo_throwsNotFoundWhenMissing() {
         given(userRepository.findById(99L)).willReturn(Optional.empty());

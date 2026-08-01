@@ -9,12 +9,17 @@ import com.obri_back.obri.global.exception.BadRequestException;
 import com.obri_back.obri.global.exception.ConflictException;
 import com.obri_back.obri.global.exception.ForbiddenException;
 import com.obri_back.obri.global.exception.NotFoundException;
-import com.obri_back.obri.notification.NotificationService;
+import com.obri_back.obri.notification.event.ApplicationResultNotificationEvent;
+import com.obri_back.obri.notification.event.NewApplicationNotificationEvent;
+import com.obri_back.obri.notification.event.PostDeletedNotificationEvent;
+import com.obri_back.obri.notification.event.PostUpdatedNotificationEvent;
 import com.obri_back.obri.post.entity.Post;
 import com.obri_back.obri.post.entity.PostStatus;
 import com.obri_back.obri.post.repository.PostRepository;
 import com.obri_back.obri.user.entity.User;
+import com.obri_back.obri.user.service.UserService;
 
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -33,6 +38,9 @@ Application 관련 비즈니스 로직
 
 - 한 게시글에 대한 지원서 목록 조회(PENDING)
 - 구인글 수정·삭제 시 지원자 알림·정리 처리 (Post 도메인 위임 — BACKLOG.md #12)
+
+알림은 전부 NotificationEventListener를 거쳐 커밋 이후(AFTER_COMMIT)에 발송된다 — BACKLOG.md #15.
+이 클래스는 NotificationService를 직접 호출하지 않고 ApplicationEventPublisher로 이벤트만 발행한다.
 */
 
 @Service
@@ -41,7 +49,8 @@ public class ApplicationService {
 
     private final ApplicationRepository applicationRepository;
     private final PostRepository postRepository;
-    private final NotificationService notificationService;
+    private final UserService userService;
+    private final ApplicationEventPublisher eventPublisher;
 
     // 지원서 제출
     @Transactional
@@ -85,10 +94,17 @@ public class ApplicationService {
 
         applicationRepository.save(application);
 
-        // 지원 도착 → 구인자(글 작성자)에게 단건 push (발송 실패는 NotificationService에서 격리)
-        notificationService.notifyNewApplication(post.getUser().getFcmToken(), post.getId(), post.getTitle());
+        // 지원 도착 → 구인자(글 작성자)에게 단건 push. AFTER_COMMIT 이후 발송(BACKLOG.md #15) — 이 트랜잭션이
+        // 롤백되면(예: 아래 managedUser 재조회 실패) 이벤트 자체가 버려져 유령 알림이 나가지 않는다
+        eventPublisher.publishEvent(new NewApplicationNotificationEvent(
+                post.getUser().getFcmToken(), post.getId(), post.getTitle()));
 
-        return AppResponseDTO.from(application, user);
+        // BACKLOG.md #1: user는 FirebaseAuthFilter가 조회한 detached 엔티티라 careers(LAZY) 접근 시
+        // LazyInitializationException 발생 — UserService를 경유해 managed 인스턴스로 재조회
+        // (UserRepository를 직접 주입하면 도메인 경계를 깨므로 서비스 간 호출로 유지)
+        User managedUser = userService.getManagedUserById(user.getId());
+
+        return AppResponseDTO.from(application, managedUser);
     }
 
     // 한 게시글에 대한 지원서 목록 조회
@@ -98,9 +114,7 @@ public class ApplicationService {
                 .orElseThrow(() -> new NotFoundException("구인글을 찾을 수 없습니다"));
 
         // 구인자만 조회 가능
-        if (!post.getUser().getId().equals(user.getId())) {
-            throw new ForbiddenException("구인자만 지원자 목록을 조회할 수 있습니다");
-        }
+        requireRecruiter(user, post, "구인자만 지원자 목록을 조회할 수 있습니다");
 
         return applicationRepository.findByPostId(postId, pageable)
                 .map(application -> AppResponseDTO.from(application, application.getUser()));
@@ -134,7 +148,7 @@ public class ApplicationService {
     // ── 상태 전이 (명세 Application §2.4) ────────────────────────────
     // 전이별 행위자·출발 상태가 하나로 고정 → 엔드포인트/메서드 단위로 인가를 명확히 강제
     // 수락/철회 시 해당 악기 확정 인원·마감은 Post 도메인에 위임
-    // 지원 결과(수락/거절)만 지원자에게 단건 push. 발송 실패는 NotificationService에서 격리
+    // 지원 결과(수락/거절)만 지원자에게 단건 push. AFTER_COMMIT 이후 발송(BACKLOG.md #15)
 
     // 수락 (구인자, PENDING → ACCEPTED)
     @Transactional
@@ -144,7 +158,8 @@ public class ApplicationService {
         requirePending(application);
         application.getPost().confirmInstrument(application.getInstrument());
         application.updateStatus(ApplicationStatus.ACCEPTED);
-        notificationService.notifyResult(application.getUser().getFcmToken(), true);
+        // AFTER_COMMIT 이후 발송(BACKLOG.md #15) — @Version 충돌로 이 트랜잭션이 롤백돼도 유령 "수락" 알림 없음
+        eventPublisher.publishEvent(new ApplicationResultNotificationEvent(application.getUser().getFcmToken(), true));
     }
 
     // 거절 (구인자, PENDING → REJECTED)
@@ -154,7 +169,8 @@ public class ApplicationService {
         requireRecruiter(user, application, "구인자만 수락 또는 거절할 수 있습니다");
         requirePending(application);
         application.updateStatus(ApplicationStatus.REJECTED);
-        notificationService.notifyResult(application.getUser().getFcmToken(), false);
+        // AFTER_COMMIT 이후 발송(BACKLOG.md #15)
+        eventPublisher.publishEvent(new ApplicationResultNotificationEvent(application.getUser().getFcmToken(), false));
     }
 
     // 취소 (지원자, PENDING → CANCELLED). 결과 알림 없음
@@ -188,7 +204,12 @@ public class ApplicationService {
     }
 
     private void requireRecruiter(User user, Application application, String message) {
-        if (!application.getPost().getUser().getId().equals(user.getId())) {
+        requireRecruiter(user, application.getPost(), message);
+    }
+
+    // BACKLOG.md #18: getApplicationsByPostId()의 인라인 비교도 이 헬퍼로 통일
+    private void requireRecruiter(User user, Post post, String message) {
+        if (!post.getUser().getId().equals(user.getId())) {
             throw new ForbiddenException(message);
         }
     }
@@ -205,7 +226,7 @@ public class ApplicationService {
     public void notifyApplicantsOfPostUpdate(Long postId, String title) {
         List<String> tokens = applicationRepository.findApplicantFcmTokens(postId,
                 List.of(ApplicationStatus.PENDING, ApplicationStatus.ACCEPTED));
-        notificationService.notifyPostUpdated(tokens, postId, title);
+        eventPublisher.publishEvent(new PostUpdatedNotificationEvent(tokens, postId, title));
     }
 
     // 구인글 삭제 처리 — Post 도메인에서 호출(Post row 삭제 전 반드시 먼저 호출, FK 순서 보장)
@@ -215,7 +236,7 @@ public class ApplicationService {
     public void handlePostDeletion(Long postId, String title) {
         List<String> acceptedTokens = applicationRepository.findApplicantFcmTokens(postId, List.of(ApplicationStatus.ACCEPTED));
         applicationRepository.deleteByPostId(postId);
-        notificationService.notifyPostDeleted(acceptedTokens, postId, title);
+        eventPublisher.publishEvent(new PostDeletedNotificationEvent(acceptedTokens, postId, title));
     }
 
     // 구인글 단건 조회(applicationCount)용 — Post 도메인에서 호출
