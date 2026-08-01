@@ -88,6 +88,23 @@ class ApplicationControllerTest {
                 .andExpect(jsonPath("$.data.status").value("PENDING"));
     }
 
+    // BACKLOG.md #5: postId 누락 시 findById(null) → 500 대신 400으로 사전 차단
+    @Test
+    void submitApplication_returns400WhenPostIdMissing() throws Exception {
+        mockMvc.perform(post("/api/applications/submit")
+                        .with(authentication(auth))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "additionalInfo": "추가 정보"
+                                }
+                                """))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.status").value(400));
+
+        verify(applicationService, never()).submitApplication(any(), any());
+    }
+
     @Test
     void getMyApplications_returns200WithPagedList() throws Exception {
         AppResponseDTO response = AppResponseDTO.builder()
