@@ -118,6 +118,31 @@ class UserServiceTest {
     }
 
     @Test
+    void updateMyInfo_mapsEachFieldToMatchingProperty() {
+        User managedUser = User.builder()
+                .id(1L)
+                .nickname("tester")
+                .instrument("바이올린")
+                .school("서울대")
+                .isGraduate(false)
+                .build();
+        given(userRepository.findById(1L)).willReturn(Optional.of(managedUser));
+
+        UserUpdateRequestDTO request = mock(UserUpdateRequestDTO.class);
+        given(request.getNickname()).willReturn("tester"); // 닉네임 미변경 → 중복 체크 스킵
+        given(request.getInstrument()).willReturn("첼로");
+        given(request.getSchool()).willReturn("연세대");
+        given(request.getIsGraduate()).willReturn(true);
+
+        User inputUser = User.builder().id(1L).build();
+        UserResponseDTO result = userService.updateMyInfo(inputUser, request);
+
+        assertThat(result.getInstrument()).isEqualTo("첼로");
+        assertThat(result.getSchool()).isEqualTo("연세대");
+        assertThat(result.getIsGraduate()).isTrue();
+    }
+
+    @Test
     void checkNickname_returnsTrueWhenDuplicated() {
         given(userRepository.existsByNickname("tester")).willReturn(true);
 
