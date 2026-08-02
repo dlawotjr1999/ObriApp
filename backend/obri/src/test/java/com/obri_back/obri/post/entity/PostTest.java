@@ -1,13 +1,9 @@
 package com.obri_back.obri.post.entity;
 
 import com.obri_back.obri.global.exception.BadRequestException;
-import com.obri_back.obri.post.dto.PostCreateRequestDTO;
 import com.obri_back.obri.user.entity.User;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-
-import java.time.LocalDateTime;
-import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -20,22 +16,10 @@ class PostTest {
     @BeforeEach
     void setUp() {
         User owner = User.builder().id(1L).nickname("owner").firebaseUid("owner-uid").build();
-        PostCreateRequestDTO request = PostCreateRequestDTO.builder()
-                .category("결혼")
-                .title("결혼식 구인")
-                .eventAt(LocalDateTime.of(2024, 5, 1, 14, 0))
-                .location("서울 강남구")
-                .timetable("본식 14:00")
-                .pay(150000)
-                .instruments(List.of(
-                        PostCreateRequestDTO.InstrumentItem.builder().instrument("바이올린").people(2).build(),
-                        PostCreateRequestDTO.InstrumentItem.builder().instrument("첼로").people(1).build()
-                ))
-                .build();
 
-        post = Post.create(owner, request);
-        request.getInstruments().forEach(item ->
-                post.addInstrument(PostInstrument.of(post, item.getInstrument(), item.getPeople())));
+        post = Post.create(owner, PostInfo.builder().build());
+        post.addInstrument(PostInstrument.of(post, "바이올린", 2));
+        post.addInstrument(PostInstrument.of(post, "첼로", 1));
     }
 
     private PostInstrument instrument(String name) {
