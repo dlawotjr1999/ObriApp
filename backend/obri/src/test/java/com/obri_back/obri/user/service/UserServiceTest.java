@@ -112,7 +112,7 @@ class UserServiceTest {
         given(request.getNickname()).willReturn("duplicated");
         given(userRepository.existsByNickname("duplicated")).willReturn(true);
 
-        assertThatThrownBy(() -> userService.updateMyInfo(1L, request))
+        assertThatThrownBy(() -> userService.updateMyInfo(mockUser, request))
                 .isInstanceOf(ConflictException.class)
                 .hasMessage("이미 사용 중인 닉네임입니다");
     }
@@ -139,7 +139,7 @@ class UserServiceTest {
     void deleteUser_deletesWhenExists() {
         given(userRepository.findById(1L)).willReturn(Optional.of(mockUser));
 
-        userService.deleteUser(1L);
+        userService.deleteUser(mockUser);
 
         verify(userRepository, times(1)).delete(mockUser);
     }
@@ -148,7 +148,9 @@ class UserServiceTest {
     void deleteUser_throwsNotFoundWhenMissing() {
         given(userRepository.findById(99L)).willReturn(Optional.empty());
 
-        assertThatThrownBy(() -> userService.deleteUser(99L))
+        User missingUser = User.builder().id(99L).build();
+
+        assertThatThrownBy(() -> userService.deleteUser(missingUser))
                 .isInstanceOf(NotFoundException.class)
                 .hasMessage("유저를 찾을 수 없습니다");
     }
@@ -161,7 +163,7 @@ class UserServiceTest {
         SchoolEmailUpdateRequestDTO request = mock(SchoolEmailUpdateRequestDTO.class);
         given(request.getSchoolEmail()).willReturn("student@school.ac.kr");
 
-        userService.updateSchoolEmail(1L, request);
+        userService.updateSchoolEmail(mockUser, request);
 
         assertThat(mockUser.getSchoolEmail()).isEqualTo("student@school.ac.kr");
         assertThat(mockUser.isSchoolEmailVerified()).isFalse();
@@ -185,7 +187,7 @@ class UserServiceTest {
         SchoolEmailUpdateRequestDTO request = mock(SchoolEmailUpdateRequestDTO.class);
         given(request.getSchoolEmail()).willReturn("student@school.ac.kr");
 
-        userService.updateSchoolEmail(1L, request);
+        userService.updateSchoolEmail(mockUser, request);
 
         verify(userRepository, never()).existsBySchoolEmail(any());
     }
@@ -198,7 +200,7 @@ class UserServiceTest {
         SchoolEmailUpdateRequestDTO request = mock(SchoolEmailUpdateRequestDTO.class);
         given(request.getSchoolEmail()).willReturn("dup@school.ac.kr");
 
-        assertThatThrownBy(() -> userService.updateSchoolEmail(1L, request))
+        assertThatThrownBy(() -> userService.updateSchoolEmail(mockUser, request))
                 .isInstanceOf(ConflictException.class)
                 .hasMessage("이미 등록된 학교 이메일입니다");
     }
@@ -208,8 +210,9 @@ class UserServiceTest {
         given(userRepository.findById(99L)).willReturn(Optional.empty());
 
         SchoolEmailUpdateRequestDTO request = mock(SchoolEmailUpdateRequestDTO.class);
+        User missingUser = User.builder().id(99L).build();
 
-        assertThatThrownBy(() -> userService.updateSchoolEmail(99L, request))
+        assertThatThrownBy(() -> userService.updateSchoolEmail(missingUser, request))
                 .isInstanceOf(NotFoundException.class)
                 .hasMessage("유저를 찾을 수 없습니다");
     }

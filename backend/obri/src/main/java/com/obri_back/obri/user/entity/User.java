@@ -18,8 +18,6 @@ import lombok.NoArgsConstructor;
 import org.hibernate.annotations.BatchSize;
 import org.hibernate.annotations.CreationTimestamp;
 
-import com.obri_back.obri.user.dto.UserUpdateRequestDTO;
-
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.ArrayList;
@@ -104,10 +102,10 @@ public class User {
     }
 
     // 내 정보 수정: null이 아닌 필드만 선택적으로 반영 (phoneNumber는 전용 인증 엔드포인트로 이관되어 여기서 다루지 않음)
-    public void updateInfo(UserUpdateRequestDTO request) {
-        if (request.getNickname() != null) this.nickname = request.getNickname();
-        if (request.getInstrument() != null) this.instrument = request.getInstrument();
-        if (request.getSchool() != null) this.school = request.getSchool();
-        if (request.getIsGraduate() != null) this.isGraduate = request.getIsGraduate();
+    public void updateInfo(String nickname, String instrument, String school, Boolean isGraduate) {
+        if (nickname != null) this.nickname = nickname;
+        if (instrument != null) this.instrument = instrument;
+        if (school != null) this.school = school;
+        if (isGraduate != null) this.isGraduate = isGraduate;
     }
 }
