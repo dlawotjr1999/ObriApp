@@ -195,6 +195,6 @@ class AuthControllerTest {
                 .andExpect(jsonPath("$.status").value(200))
                 .andExpect(jsonPath("$.message").value("전화번호가 변경되었습니다"));
 
-        verify(authService).updatePhoneNumber("test-uid", "test-token");
+        verify(authService).updatePhoneNumber(mockUser, "test-token");
     }
 }

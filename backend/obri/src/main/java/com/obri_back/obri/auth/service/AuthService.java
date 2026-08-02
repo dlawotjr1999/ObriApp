@@ -104,15 +104,15 @@ public class AuthService {
      * FCM 토큰 갱신
      * 앱 실행 시 클라이언트에서 최신 FCM 토큰을 전송해 DB 업데이트
      *
-     * @param firebaseUid 현재 로그인한 유저의 Firebase UID
-     * @param request     FCM 토큰 갱신 요청 DTO
+     * @param user    현재 로그인한 유저(detached일 수 있음 — 내부에서 managed 재조회)
+     * @param request FCM 토큰 갱신 요청 DTO
      */
     @Transactional
-    public void updateFcmToken(String firebaseUid, FCMTokenUpdateRequestDTO request) {
-        User user = userRepository.findByFirebaseUid(firebaseUid)
+    public void updateFcmToken(User user, FCMTokenUpdateRequestDTO request) {
+        User managedUser = userRepository.findById(user.getId())
                 .orElseThrow(() -> new NotFoundException("유저를 찾을 수 없습니다"));
 
-        user.updateFcmToken(request.getFcmToken());
+        managedUser.updateFcmToken(request.getFcmToken());
     }
 
     /*
@@ -120,25 +120,25 @@ public class AuthService {
      * register()와 동일하게 Authorization 헤더의 Firebase ID Token을 재검증해
      * 그 안의 phone_number claim만 신뢰(요청 바디는 받지 않음). 현재 번호와 같으면 아무 것도 하지 않음
      *
-     * @param firebaseUid 현재 로그인한 유저의 Firebase UID
-     * @param idToken     Firebase ID Token (Authorization 헤더에서 추출)
+     * @param user    현재 로그인한 유저(detached일 수 있음 — 내부에서 managed 재조회)
+     * @param idToken Firebase ID Token (Authorization 헤더에서 추출)
      */
     @Transactional
-    public void updatePhoneNumber(String firebaseUid, String idToken) {
+    public void updatePhoneNumber(User user, String idToken) {
         FirebaseToken decodedToken = verifyToken(idToken);
         String phoneNumber = extractPhoneNumberClaim(decodedToken);
 
-        User user = userRepository.findByFirebaseUid(firebaseUid)
+        User managedUser = userRepository.findById(user.getId())
                 .orElseThrow(() -> new NotFoundException("유저를 찾을 수 없습니다"));
 
-        if (phoneNumber.equals(user.getPhoneNumber())) {
+        if (phoneNumber.equals(managedUser.getPhoneNumber())) {
             return;
         }
 
         ConflictGuard.requireUnique(
                 userRepository.existsByPhoneNumber(phoneNumber), "이미 가입된 전화번호입니다");
 
-        user.updatePhoneNumber(phoneNumber);
+        managedUser.updatePhoneNumber(phoneNumber);
     }
 
     // Firebase 토큰 검증 및 디코딩
