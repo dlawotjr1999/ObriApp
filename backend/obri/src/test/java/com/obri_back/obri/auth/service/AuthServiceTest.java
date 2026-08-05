@@ -165,24 +165,26 @@ class AuthServiceTest {
 
     @Test
     void updateFcmToken_updatesTokenWhenUserExists() {
-        User user = mock(User.class);
-        given(userRepository.findByFirebaseUid("test-uid")).willReturn(Optional.of(user));
+        User user = User.builder().id(1L).build();
+        User managedUser = mock(User.class);
+        given(userRepository.findById(1L)).willReturn(Optional.of(managedUser));
 
         FCMTokenUpdateRequestDTO request = mock(FCMTokenUpdateRequestDTO.class);
         given(request.getFcmToken()).willReturn("new-fcm-token");
 
-        authService.updateFcmToken("test-uid", request);
+        authService.updateFcmToken(user, request);
 
-        verify(user, times(1)).updateFcmToken("new-fcm-token");
+        verify(managedUser, times(1)).updateFcmToken("new-fcm-token");
     }
 
     @Test
     void updateFcmToken_throwsNotFoundWhenUserMissing() {
-        given(userRepository.findByFirebaseUid("missing-uid")).willReturn(Optional.empty());
+        given(userRepository.findById(99L)).willReturn(Optional.empty());
 
+        User user = User.builder().id(99L).build();
         FCMTokenUpdateRequestDTO request = mock(FCMTokenUpdateRequestDTO.class);
 
-        assertThatThrownBy(() -> authService.updateFcmToken("missing-uid", request))
+        assertThatThrownBy(() -> authService.updateFcmToken(user, request))
                 .isInstanceOf(NotFoundException.class)
                 .hasMessage("유저를 찾을 수 없습니다");
     }
@@ -191,27 +193,29 @@ class AuthServiceTest {
     void updatePhoneNumber_updatesWhenValidAndDifferent() throws Exception {
         given(firebaseAuth.verifyIdToken("valid-token")).willReturn(mockToken);
 
-        User user = mock(User.class);
-        given(user.getPhoneNumber()).willReturn("010-0000-0000");
-        given(userRepository.findByFirebaseUid("test-uid")).willReturn(Optional.of(user));
+        User user = User.builder().id(1L).build();
+        User managedUser = mock(User.class);
+        given(managedUser.getPhoneNumber()).willReturn("010-0000-0000");
+        given(userRepository.findById(1L)).willReturn(Optional.of(managedUser));
         given(userRepository.existsByPhoneNumber("010-1234-5678")).willReturn(false);
 
-        authService.updatePhoneNumber("test-uid", "valid-token");
+        authService.updatePhoneNumber(user, "valid-token");
 
-        verify(user, times(1)).updatePhoneNumber("010-1234-5678");
+        verify(managedUser, times(1)).updatePhoneNumber("010-1234-5678");
     }
 
     @Test
     void updatePhoneNumber_doesNothingWhenSameAsCurrent() throws Exception {
         given(firebaseAuth.verifyIdToken("valid-token")).willReturn(mockToken);
 
-        User user = mock(User.class);
-        given(user.getPhoneNumber()).willReturn("010-1234-5678");
-        given(userRepository.findByFirebaseUid("test-uid")).willReturn(Optional.of(user));
+        User user = User.builder().id(1L).build();
+        User managedUser = mock(User.class);
+        given(managedUser.getPhoneNumber()).willReturn("010-1234-5678");
+        given(userRepository.findById(1L)).willReturn(Optional.of(managedUser));
 
-        authService.updatePhoneNumber("test-uid", "valid-token");
+        authService.updatePhoneNumber(user, "valid-token");
 
-        verify(user, never()).updatePhoneNumber(any());
+        verify(managedUser, never()).updatePhoneNumber(any());
         verify(userRepository, never()).existsByPhoneNumber(any());
     }
 
@@ -220,27 +224,30 @@ class AuthServiceTest {
         given(firebaseAuth.verifyIdToken("valid-token")).willReturn(mockToken);
         given(mockToken.getClaims()).willReturn(Map.of());
 
-        assertThatThrownBy(() -> authService.updatePhoneNumber("test-uid", "valid-token"))
+        User user = User.builder().id(1L).build();
+
+        assertThatThrownBy(() -> authService.updatePhoneNumber(user, "valid-token"))
                 .isInstanceOf(BadRequestException.class)
                 .hasMessage("휴대폰 인증 정보가 없습니다");
 
-        verify(userRepository, never()).findByFirebaseUid(any());
+        verify(userRepository, never()).findById(any());
     }
 
     @Test
     void updatePhoneNumber_throwsConflictWhenPhoneNumberExists() throws Exception {
         given(firebaseAuth.verifyIdToken("valid-token")).willReturn(mockToken);
 
-        User user = mock(User.class);
-        given(user.getPhoneNumber()).willReturn("010-0000-0000");
-        given(userRepository.findByFirebaseUid("test-uid")).willReturn(Optional.of(user));
+        User user = User.builder().id(1L).build();
+        User managedUser = mock(User.class);
+        given(managedUser.getPhoneNumber()).willReturn("010-0000-0000");
+        given(userRepository.findById(1L)).willReturn(Optional.of(managedUser));
         given(userRepository.existsByPhoneNumber("010-1234-5678")).willReturn(true);
 
-        assertThatThrownBy(() -> authService.updatePhoneNumber("test-uid", "valid-token"))
+        assertThatThrownBy(() -> authService.updatePhoneNumber(user, "valid-token"))
                 .isInstanceOf(ConflictException.class)
                 .hasMessage("이미 가입된 전화번호입니다");
 
-        verify(user, never()).updatePhoneNumber(any());
+        verify(managedUser, never()).updatePhoneNumber(any());
     }
 
     @Test
@@ -248,19 +255,23 @@ class AuthServiceTest {
         given(firebaseAuth.verifyIdToken("invalid-token"))
                 .willThrow(mock(FirebaseAuthException.class));
 
-        assertThatThrownBy(() -> authService.updatePhoneNumber("test-uid", "invalid-token"))
+        User user = User.builder().id(1L).build();
+
+        assertThatThrownBy(() -> authService.updatePhoneNumber(user, "invalid-token"))
                 .isInstanceOf(UnauthorizedException.class)
                 .hasMessage("유효하지 않은 Firebase 토큰입니다");
 
-        verify(userRepository, never()).findByFirebaseUid(any());
+        verify(userRepository, never()).findById(any());
     }
 
     @Test
     void updatePhoneNumber_throwsNotFoundWhenUserMissing() throws Exception {
         given(firebaseAuth.verifyIdToken("valid-token")).willReturn(mockToken);
-        given(userRepository.findByFirebaseUid("missing-uid")).willReturn(Optional.empty());
+        given(userRepository.findById(99L)).willReturn(Optional.empty());
 
-        assertThatThrownBy(() -> authService.updatePhoneNumber("missing-uid", "valid-token"))
+        User user = User.builder().id(99L).build();
+
+        assertThatThrownBy(() -> authService.updatePhoneNumber(user, "valid-token"))
                 .isInstanceOf(NotFoundException.class)
                 .hasMessage("유저를 찾을 수 없습니다");
     }

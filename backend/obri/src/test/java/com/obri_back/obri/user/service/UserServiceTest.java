@@ -112,9 +112,34 @@ class UserServiceTest {
         given(request.getNickname()).willReturn("duplicated");
         given(userRepository.existsByNickname("duplicated")).willReturn(true);
 
-        assertThatThrownBy(() -> userService.updateMyInfo(1L, request))
+        assertThatThrownBy(() -> userService.updateMyInfo(mockUser, request))
                 .isInstanceOf(ConflictException.class)
                 .hasMessage("이미 사용 중인 닉네임입니다");
+    }
+
+    @Test
+    void updateMyInfo_mapsEachFieldToMatchingProperty() {
+        User managedUser = User.builder()
+                .id(1L)
+                .nickname("tester")
+                .instrument("바이올린")
+                .school("서울대")
+                .isGraduate(false)
+                .build();
+        given(userRepository.findById(1L)).willReturn(Optional.of(managedUser));
+
+        UserUpdateRequestDTO request = mock(UserUpdateRequestDTO.class);
+        given(request.getNickname()).willReturn("tester"); // 닉네임 미변경 → 중복 체크 스킵
+        given(request.getInstrument()).willReturn("첼로");
+        given(request.getSchool()).willReturn("연세대");
+        given(request.getIsGraduate()).willReturn(true);
+
+        User inputUser = User.builder().id(1L).build();
+        UserResponseDTO result = userService.updateMyInfo(inputUser, request);
+
+        assertThat(result.getInstrument()).isEqualTo("첼로");
+        assertThat(result.getSchool()).isEqualTo("연세대");
+        assertThat(result.getIsGraduate()).isTrue();
     }
 
     @Test
@@ -139,7 +164,7 @@ class UserServiceTest {
     void deleteUser_deletesWhenExists() {
         given(userRepository.findById(1L)).willReturn(Optional.of(mockUser));
 
-        userService.deleteUser(1L);
+        userService.deleteUser(mockUser);
 
         verify(userRepository, times(1)).delete(mockUser);
     }
@@ -148,7 +173,9 @@ class UserServiceTest {
     void deleteUser_throwsNotFoundWhenMissing() {
         given(userRepository.findById(99L)).willReturn(Optional.empty());
 
-        assertThatThrownBy(() -> userService.deleteUser(99L))
+        User missingUser = User.builder().id(99L).build();
+
+        assertThatThrownBy(() -> userService.deleteUser(missingUser))
                 .isInstanceOf(NotFoundException.class)
                 .hasMessage("유저를 찾을 수 없습니다");
     }
@@ -161,7 +188,7 @@ class UserServiceTest {
         SchoolEmailUpdateRequestDTO request = mock(SchoolEmailUpdateRequestDTO.class);
         given(request.getSchoolEmail()).willReturn("student@school.ac.kr");
 
-        userService.updateSchoolEmail(1L, request);
+        userService.updateSchoolEmail(mockUser, request);
 
         assertThat(mockUser.getSchoolEmail()).isEqualTo("student@school.ac.kr");
         assertThat(mockUser.isSchoolEmailVerified()).isFalse();
@@ -185,7 +212,7 @@ class UserServiceTest {
         SchoolEmailUpdateRequestDTO request = mock(SchoolEmailUpdateRequestDTO.class);
         given(request.getSchoolEmail()).willReturn("student@school.ac.kr");
 
-        userService.updateSchoolEmail(1L, request);
+        userService.updateSchoolEmail(mockUser, request);
 
         verify(userRepository, never()).existsBySchoolEmail(any());
     }
@@ -198,7 +225,7 @@ class UserServiceTest {
         SchoolEmailUpdateRequestDTO request = mock(SchoolEmailUpdateRequestDTO.class);
         given(request.getSchoolEmail()).willReturn("dup@school.ac.kr");
 
-        assertThatThrownBy(() -> userService.updateSchoolEmail(1L, request))
+        assertThatThrownBy(() -> userService.updateSchoolEmail(mockUser, request))
                 .isInstanceOf(ConflictException.class)
                 .hasMessage("이미 등록된 학교 이메일입니다");
     }
@@ -208,8 +235,9 @@ class UserServiceTest {
         given(userRepository.findById(99L)).willReturn(Optional.empty());
 
         SchoolEmailUpdateRequestDTO request = mock(SchoolEmailUpdateRequestDTO.class);
+        User missingUser = User.builder().id(99L).build();
 
-        assertThatThrownBy(() -> userService.updateSchoolEmail(99L, request))
+        assertThatThrownBy(() -> userService.updateSchoolEmail(missingUser, request))
                 .isInstanceOf(NotFoundException.class)
                 .hasMessage("유저를 찾을 수 없습니다");
     }

@@ -131,7 +131,7 @@ class UserControllerTest {
 
     @Test
     void updateSchoolEmail_returns200() throws Exception {
-        doNothing().when(userService).updateSchoolEmail(anyLong(), any());
+        doNothing().when(userService).updateSchoolEmail(any(User.class), any());
 
         mockMvc.perform(patch("/api/users/me/school-email")
                         .with(authentication(auth))
@@ -161,7 +161,7 @@ class UserControllerTest {
 
     @Test
     void deleteUser_returns200() throws Exception {
-        doNothing().when(userService).deleteUser(anyLong());
+        doNothing().when(userService).deleteUser(any(User.class));
 
         mockMvc.perform(delete("/api/users/me")
                         .with(authentication(auth)))

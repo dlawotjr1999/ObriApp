@@ -74,47 +74,45 @@ public class UserService {
      * 수정 요청의 모든 필드를 한 번에 반영 (PUT 방식)
      * careers는 기존 데이터 전체 삭제 후 새로 insert
      *
-     * @param userId  현재 로그인한 유저의 내부 ID
+     * @param user    현재 로그인한 유저(필터가 조회한 detached 엔티티일 수 있음 — 내부에서 managed 재조회)
      * @param request 수정 요청 DTO
      * @return 수정된 유저 정보
      */
     @Transactional
-    public UserResponseDTO updateMyInfo(Long userId, UserUpdateRequestDTO request) {
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new NotFoundException("유저를 찾을 수 없습니다"));
+    public UserResponseDTO updateMyInfo(User user, UserUpdateRequestDTO request) {
+        User managedUser = getManagedUserById(user.getId());
 
         // 닉네임 변경 시 중복 체크
-        if (request.getNickname() != null && !request.getNickname().equals(user.getNickname())) {
+        if (request.getNickname() != null && !request.getNickname().equals(managedUser.getNickname())) {
             ConflictGuard.requireUnique(
                     userRepository.existsByNickname(request.getNickname()), "이미 사용 중인 닉네임입니다");
         }
 
         // 유저 정보 수정
-        user.updateInfo(request);
+        managedUser.updateInfo(request.getNickname(), request.getInstrument(), request.getSchool(), request.getIsGraduate());
 
         // 경력 전체 삭제 후 새로 insert
         if (request.getCareers() != null) {
-            careerRepository.deleteByUserId(userId);
+            careerRepository.deleteByUserId(managedUser.getId());
             List<Career> careers = request.getCareers().stream()
-                    .map(dto -> Career.of(user, dto.getOrganization(), dto.getContexts()))
+                    .map(dto -> Career.of(managedUser, dto.getOrganization(), dto.getContexts()))
                     .collect(Collectors.toList());
             careerRepository.saveAll(careers);
         }
 
-        return UserResponseDTO.from(user);
+        return UserResponseDTO.from(managedUser);
     }
 
     /*
      * 회원 탈퇴
      * MySQL 유저 삭제 (Firebase 계정 삭제는 클라이언트에서 처리)
      *
-     * @param userId 현재 로그인한 유저의 내부 ID
+     * @param user 현재 로그인한 유저(detached일 수 있음 — 내부에서 managed 재조회)
      */
     @Transactional
-    public void deleteUser(Long userId) {
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new NotFoundException("유저를 찾을 수 없습니다"));
-        userRepository.delete(user);
+    public void deleteUser(User user) {
+        User managedUser = getManagedUserById(user.getId());
+        userRepository.delete(managedUser);
     }
 
     /*
@@ -122,23 +120,22 @@ public class UserService {
      * 소속(학적) 증명 목적 — 저장만 하고 미인증 상태(schoolEmailVerified=false)로 둠
      * 현재 값과 같으면 아무 것도 하지 않음
      *
-     * @param userId  현재 로그인한 유저의 내부 ID
+     * @param user    현재 로그인한 유저(detached일 수 있음 — 내부에서 managed 재조회)
      * @param request 학교 이메일 요청 DTO
      */
     @Transactional
-    public void updateSchoolEmail(Long userId, SchoolEmailUpdateRequestDTO request) {
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new NotFoundException("유저를 찾을 수 없습니다"));
+    public void updateSchoolEmail(User user, SchoolEmailUpdateRequestDTO request) {
+        User managedUser = getManagedUserById(user.getId());
 
         String schoolEmail = request.getSchoolEmail();
-        if (schoolEmail.equals(user.getSchoolEmail())) {
+        if (schoolEmail.equals(managedUser.getSchoolEmail())) {
             return;
         }
 
         ConflictGuard.requireUnique(
                 userRepository.existsBySchoolEmail(schoolEmail), "이미 등록된 학교 이메일입니다");
 
-        user.updateSchoolEmail(schoolEmail);
+        managedUser.updateSchoolEmail(schoolEmail);
     }
 
     /*

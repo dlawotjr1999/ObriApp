@@ -25,7 +25,6 @@ import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import jakarta.persistence.Version;
 
-import com.obri_back.obri.post.dto.PostCreateRequestDTO;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
@@ -84,15 +83,15 @@ public class Post {
     private LocalDateTime createdAt;
 
     // 구인글 생성 (악기 목록은 호출부에서 addInstrument로 추가). 초기 상태 OPEN
-    public static Post create(User user, PostCreateRequestDTO dto) {
+    public static Post create(User user, PostInfo info) {
         Post post = new Post();
         post.user = user;
-        post.title = dto.getTitle();
-        post.category = dto.getCategory();
-        post.eventAt = dto.getEventAt();
-        post.location = dto.getLocation();
-        post.timetable = dto.getTimetable();
-        post.pay = dto.getPay();
+        post.title = info.getTitle();
+        post.category = info.getCategory();
+        post.eventAt = info.getEventAt();
+        post.location = info.getLocation();
+        post.timetable = info.getTimetable();
+        post.pay = info.getPay();
         post.status = PostStatus.OPEN;
         return post;
     }
@@ -103,13 +102,13 @@ public class Post {
     }
 
     // 글 본문 정보 수정 (악기 목록 교체는 replaceInstruments에서 별도 처리)
-    public void updateInfo(PostCreateRequestDTO dto) {
-        this.category = dto.getCategory();
-        this.title = dto.getTitle();
-        this.eventAt = dto.getEventAt();
-        this.location = dto.getLocation();
-        this.timetable = dto.getTimetable();
-        this.pay = dto.getPay();
+    public void updateInfo(PostInfo info) {
+        this.category = info.getCategory();
+        this.title = info.getTitle();
+        this.eventAt = info.getEventAt();
+        this.location = info.getLocation();
+        this.timetable = info.getTimetable();
+        this.pay = info.getPay();
     }
 
     // 악기 목록 전체 교체 (career와 동일하게 전체 삭제 후 재삽입 패턴, orphanRemoval로 처리)
