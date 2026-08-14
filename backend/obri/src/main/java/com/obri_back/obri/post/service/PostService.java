@@ -9,6 +9,7 @@ import com.obri_back.obri.post.dto.PostDetailResponseDTO;
 import com.obri_back.obri.post.dto.PostResponseDTO;
 import com.obri_back.obri.post.dto.PostSummaryResponseDTO;
 import com.obri_back.obri.post.entity.Post;
+import com.obri_back.obri.post.entity.PostInfo;
 import com.obri_back.obri.post.entity.PostInstrument;
 import com.obri_back.obri.post.entity.PostStatus;
 import com.obri_back.obri.post.repository.PostRepository;
@@ -43,7 +44,7 @@ public class PostService {
     // 구인글 등록 — 악기 목록을 함께 저장하고 전체 broadcast 알림 발송
     @Transactional
     public PostResponseDTO createPost(User user, PostCreateRequestDTO request) {
-        Post post = Post.create(user, request);
+        Post post = Post.create(user, toPostInfo(request));
         request.getInstruments().forEach(item ->
                 post.addInstrument(PostInstrument.of(post, item.getInstrument(), item.getPeople()))
         );
@@ -85,7 +86,7 @@ public class PostService {
         Post post = findPostOrThrow(postId);
         requireOwner(post, user);
 
-        post.updateInfo(request);
+        post.updateInfo(toPostInfo(request));
 
         List<PostInstrument> newInstruments = request.getInstruments().stream()
                 .map(item -> PostInstrument.of(post, item.getInstrument(), item.getPeople()))
@@ -114,6 +115,18 @@ public class PostService {
 
         applicationService.handlePostDeletion(postId, post.getTitle());
         postRepository.delete(post);
+    }
+
+    // PostCreateRequestDTO → PostInfo 변환 (BACKLOG.md #13, 엔티티가 웹 DTO를 직접 받지 않도록 분리)
+    private PostInfo toPostInfo(PostCreateRequestDTO request) {
+        return PostInfo.builder()
+                .category(request.getCategory())
+                .title(request.getTitle())
+                .eventAt(request.getEventAt())
+                .location(request.getLocation())
+                .timetable(request.getTimetable())
+                .pay(request.getPay())
+                .build();
     }
 
     // 구인글 조회 공통 헬퍼 — 없으면 404

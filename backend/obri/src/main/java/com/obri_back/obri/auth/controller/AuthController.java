@@ -61,7 +61,7 @@ public class AuthController {
             @AuthenticationPrincipal User user,
             @RequestBody @Valid FCMTokenUpdateRequestDTO request) {
 
-        authService.updateFcmToken(user.getFirebaseUid(), request);
+        authService.updateFcmToken(user, request);
 
         return ResponseEntity.ok(APIResponse.ok("FCM 토큰이 갱신되었습니다"));
     }
@@ -80,7 +80,7 @@ public class AuthController {
             @AuthenticationPrincipal User user) {
 
         String idToken = authorization.substring(7);
-        authService.updatePhoneNumber(user.getFirebaseUid(), idToken);
+        authService.updatePhoneNumber(user, idToken);
 
         return ResponseEntity.ok(APIResponse.ok("전화번호가 변경되었습니다"));
     }

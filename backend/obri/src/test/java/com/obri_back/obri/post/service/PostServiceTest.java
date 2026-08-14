@@ -7,6 +7,7 @@ import com.obri_back.obri.post.dto.PostCreateRequestDTO;
 import com.obri_back.obri.post.dto.PostDetailResponseDTO;
 import com.obri_back.obri.post.dto.PostResponseDTO;
 import com.obri_back.obri.post.entity.Post;
+import com.obri_back.obri.post.entity.PostInfo;
 import com.obri_back.obri.post.entity.PostInstrument;
 import com.obri_back.obri.post.entity.PostStatus;
 import com.obri_back.obri.post.repository.PostRepository;
@@ -81,7 +82,14 @@ class PostServiceTest {
     }
 
     private Post buildPost(User user) {
-        Post post = Post.create(user, request);
+        Post post = Post.create(user, PostInfo.builder()
+                .category(request.getCategory())
+                .title(request.getTitle())
+                .eventAt(request.getEventAt())
+                .location(request.getLocation())
+                .timetable(request.getTimetable())
+                .pay(request.getPay())
+                .build());
         request.getInstruments().forEach(item ->
                 post.addInstrument(PostInstrument.of(post, item.getInstrument(), item.getPeople())));
         return post;

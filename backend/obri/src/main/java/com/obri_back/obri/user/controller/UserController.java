@@ -55,7 +55,7 @@ public class UserController {
             @AuthenticationPrincipal User user,
             @RequestBody @Valid UserUpdateRequestDTO request) {
 
-        UserResponseDTO response = userService.updateMyInfo(user.getId(), request);
+        UserResponseDTO response = userService.updateMyInfo(user, request);
         return ResponseEntity.ok(APIResponse.ok("내 정보가 수정되었습니다.", response));
     }
 
@@ -68,7 +68,7 @@ public class UserController {
             @AuthenticationPrincipal User user,
             @RequestBody @Valid SchoolEmailUpdateRequestDTO request) {
 
-        userService.updateSchoolEmail(user.getId(), request);
+        userService.updateSchoolEmail(user, request);
         return ResponseEntity.ok(APIResponse.ok("학교 이메일이 등록되었습니다. 인증이 필요합니다."));
     }
 
@@ -79,7 +79,7 @@ public class UserController {
     public ResponseEntity<APIResponse<Void>> deleteUser(
             @AuthenticationPrincipal User user) {
 
-        userService.deleteUser(user.getId());
+        userService.deleteUser(user);
         return ResponseEntity.ok(APIResponse.ok("회원 탈퇴가 완료되었습니다."));
     }
 
