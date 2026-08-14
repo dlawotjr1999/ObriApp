@@ -89,4 +89,24 @@ class ConcoursListPageParserTest {
 
         assertThat(items).isEmpty();
     }
+
+    @Test
+    void parseTotalPages_returnsMaxPgValueFromPaginationLinks() {
+        String html = """
+                <div class="pager">
+                  <a href='https://contest.co.kr/contest/list_n/1?s_area=&t=2&list_state=&limit_=1&ncount=50&pg=2'>2</a>
+                  <a href='https://contest.co.kr/contest/list_n/1?s_area=&t=2&list_state=&limit_=1&ncount=50&pg=305'>마지막</a>
+                </div>
+                """;
+        Document document = Jsoup.parse(html);
+
+        assertThat(ConcoursListPageParser.parseTotalPages(document)).isEqualTo(305);
+    }
+
+    @Test
+    void parseTotalPages_returnsOneWhenNoPaginationLinks() {
+        Document document = Jsoup.parse(TABLE_HTML);
+
+        assertThat(ConcoursListPageParser.parseTotalPages(document)).isEqualTo(1);
+    }
 }

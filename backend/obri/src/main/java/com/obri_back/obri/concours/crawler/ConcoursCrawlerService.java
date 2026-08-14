@@ -12,12 +12,13 @@ import lombok.extern.slf4j.Slf4j;
 import org.jsoup.nodes.Document;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /*
- * 콩쿠르 크롤링 오케스트레이션 — 목록을 1페이지부터 순회하며 신규 항목만 저장
- * title+url 기준 중복 체크, 한 페이지가 전부 중복이면 그 페이지에서 중단(신규 데이터는 항상 앞쪽 페이지에 나타난다는 전제)
+ * 콩쿠르 크롤링 오케스트레이션 — 목록 전 페이지를 순회하며 신규 항목만 저장
+ * 목록 정렬이 접수마감일 기준이라 신규 항목이 뒤쪽 페이지에도 나타날 수 있어, 페이지 단위 조기 종료는 하지 않는다
+ * (구버전은 "한 페이지가 전부 중복이면 중단"했으나 실측 결과 그 전제가 틀려 제거됨 — BACKLOG #42)
+ * title+url 기준 중복 체크로 이미 저장된 항목은 상세 페이지 재조회 없이 스킵
  * 스케줄러·수동 트리거 엔드포인트가 공유하는 진입점이라 동시 실행은 AtomicBoolean으로 차단
  */
 @Slf4j
@@ -25,8 +26,10 @@ import java.util.concurrent.atomic.AtomicBoolean;
 @RequiredArgsConstructor
 public class ConcoursCrawlerService {
 
-    // 안전판 — 사이트 전체 페이지 수 근방. 보통 중복 감지로 훨씬 일찍(1~2페이지) 멈춘다
-    private static final int MAX_PAGE = 305;
+    // 안전판 — 총 페이지 파싱이 비정상적으로 크게 나올 경우에 대비한 상한(사이트 전체는 현재 ~305페이지)
+    private static final int HARD_CAP_PAGE = 1000;
+    // 대상 사이트에 대한 예의상 지연 — 페이지 요청 사이에만 적용
+    private static final long REQUEST_DELAY_MS = 300;
 
     private final ConcoursCrawlerClient client;
     private final ConcoursRepository concoursRepository;
@@ -47,40 +50,55 @@ public class ConcoursCrawlerService {
     }
 
     private int crawlPages() {
-        int savedCount = 0;
+        Document firstPage = fetchListDocumentSafely(1);
+        if (firstPage == null) {
+            log.warn("콩쿠르 크롤링 중단 — 1페이지 조회 실패");
+            return 0;
+        }
 
-        for (int page = 1; page <= MAX_PAGE; page++) {
-            List<ConcoursListItem> items = fetchListItemsSafely(page);
-            if (items.isEmpty()) {
-                log.info("콩쿠르 크롤링 종료 — {}페이지에 항목 없음", page);
-                break;
-            }
+        int totalPages = Math.min(ConcoursListPageParser.parseTotalPages(firstPage), HARD_CAP_PAGE);
+        log.info("콩쿠르 크롤링 시작 — 총 {}페이지", totalPages);
 
-            int newInPage = 0;
-            for (ConcoursListItem item : items) {
-                if (saveIfNew(item)) {
-                    savedCount++;
-                    newInPage++;
-                }
-            }
+        int savedCount = saveItemsOnPage(firstPage);
 
-            if (newInPage == 0) {
-                log.info("콩쿠르 크롤링 종료 — {}페이지가 전부 중복", page);
-                break;
+        for (int page = 2; page <= totalPages; page++) {
+            sleepBetweenRequests();
+
+            Document document = fetchListDocumentSafely(page);
+            if (document == null) {
+                continue; // 해당 페이지만 스킵, 나머지 페이지는 계속 순회
             }
+            savedCount += saveItemsOnPage(document);
         }
 
         log.info("콩쿠르 크롤링 완료 — 신규 {}건 저장", savedCount);
         return savedCount;
     }
 
-    private List<ConcoursListItem> fetchListItemsSafely(int page) {
+    private int saveItemsOnPage(Document document) {
+        int saved = 0;
+        for (ConcoursListItem item : ConcoursListPageParser.parse(document)) {
+            if (saveIfNew(item)) {
+                saved++;
+            }
+        }
+        return saved;
+    }
+
+    private Document fetchListDocumentSafely(int page) {
         try {
-            Document document = client.fetchListDocument(page);
-            return ConcoursListPageParser.parse(document);
+            return client.fetchListDocument(page);
         } catch (ConcoursCrawlException e) {
-            log.warn("콩쿠르 목록 페이지 조회 실패, 크롤링 중단: page={}", page, e);
-            return List.of();
+            log.warn("콩쿠르 목록 페이지 조회 실패, 해당 페이지 스킵: page={}", page, e);
+            return null;
+        }
+    }
+
+    private void sleepBetweenRequests() {
+        try {
+            Thread.sleep(REQUEST_DELAY_MS);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
         }
     }
 

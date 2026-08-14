@@ -17,7 +17,7 @@ import lombok.NoArgsConstructor;
 @Getter
 @NoArgsConstructor
 @Entity
-@Table(name = "Concours")
+@Table(name = "concours")
 public class Concours {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -44,7 +44,7 @@ public class Concours {
     @Column(name="url", nullable=false)
     private String url;
 
-    @Column(name="crawled_at", nullable=false)
+    @Column(name="crawledAt", nullable=false)
     private LocalDateTime crawledAt;
 
     // 크롤링 결과로부터 생성 — crawledAt은 저장 시점으로 고정

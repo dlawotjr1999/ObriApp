@@ -41,7 +41,7 @@ public class ConcoursDetailPageParser {
         LocalDate deadlineDate = LocalDate.parse(matcher.group(3), DATE_FORMAT);
         LocalTime deadlineTime = matcher.group(4) != null
                 ? LocalTime.parse(matcher.group(4), TIME_FORMAT)
-                : LocalTime.MAX;
+                : LocalTime.of(23, 59, 59);
 
         return new ConcoursDetailInfo(startDate.atStartOfDay(), endDate.atStartOfDay(), deadlineDate.atTime(deadlineTime));
     }

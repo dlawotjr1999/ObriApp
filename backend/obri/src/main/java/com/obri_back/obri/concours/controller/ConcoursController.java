@@ -10,6 +10,7 @@ import lombok.RequiredArgsConstructor;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -36,11 +37,11 @@ public class ConcoursController {
     private final ConcoursService concoursService;
     private final ConcoursCrawlerService concoursCrawlerService;
 
-    // 콩쿠르 전체 조회 (카테고리 필터 + 페이지네이션, 정렬은 ?sort=deadline,asc 등 Pageable 기본 파라미터 사용)
+    // 콩쿠르 전체 조회 (카테고리 필터 + 페이지네이션, 기본 정렬은 마감임박순. ?sort=로 재정의 가능)
     @GetMapping
     public ResponseEntity<APIResponse<PageResponse<ConcoursResponseDTO>>> getConcoursList(
             @RequestParam(required = false) List<String> category,
-            @PageableDefault(size = 10) Pageable pageable) {
+            @PageableDefault(size = 10, sort = "deadline", direction = Sort.Direction.ASC) Pageable pageable) {
 
         Page<ConcoursResponseDTO> response = concoursService.getConcoursList(category, pageable);
         return ResponseEntity.ok(APIResponse.ok("콩쿠르 목록 조회 성공", PageResponse.from(response)));
