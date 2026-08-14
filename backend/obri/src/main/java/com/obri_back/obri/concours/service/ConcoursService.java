@@ -28,9 +28,8 @@ public class ConcoursService {
 
     // 콩쿠르 전체 조회 — Specification 동적 필터 적용 후 DTO로 반환
     @Transactional(readOnly = true)
-    public Page<ConcoursResponseDTO> getConcoursList(List<String> categories, List<String> instruments,
-            Pageable pageable) {
-        Specification<Concours> spec = ConcoursSpecification.filter(categories, instruments);
+    public Page<ConcoursResponseDTO> getConcoursList(List<String> categories, Pageable pageable) {
+        Specification<Concours> spec = ConcoursSpecification.filter(categories);
         return concoursRepository.findAll(spec, pageable).map(ConcoursResponseDTO::from);
     }
 

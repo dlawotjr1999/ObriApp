@@ -14,17 +14,13 @@ import java.util.List;
  */
 public class ConcoursSpecification {
 
-    // 카테고리·대상 악기 조건을 조합한 Specification 생성
-    public static Specification<Concours> filter(List<String> categories, List<String> instruments) {
+    // 카테고리 조건을 조합한 Specification 생성
+    public static Specification<Concours> filter(List<String> categories) {
         return (root, query, cb) -> {
             List<Predicate> predicates = new ArrayList<>();
 
             if (categories != null && !categories.isEmpty()) {
                 predicates.add(root.get("category").in(categories));
-            }
-
-            if (instruments != null && !instruments.isEmpty()) {
-                predicates.add(root.get("targetInstrument").in(instruments));
             }
 
             return cb.and(predicates.toArray(new Predicate[0]));

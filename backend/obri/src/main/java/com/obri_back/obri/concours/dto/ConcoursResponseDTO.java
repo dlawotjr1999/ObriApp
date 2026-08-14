@@ -21,7 +21,6 @@ public class ConcoursResponseDTO {
     private Long id;
     private String title;
     private String category;
-    private String targetInstrument;
     private LocalDateTime deadline;
     private LocalDateTime startDate;
     private LocalDateTime endDate;
@@ -34,7 +33,6 @@ public class ConcoursResponseDTO {
                 .id(concours.getId())
                 .title(concours.getTitle())
                 .category(concours.getCategory())
-                .targetInstrument(concours.getTargetInstrument())
                 .deadline(concours.getDeadline())
                 .startDate(concours.getStartDate())
                 .endDate(concours.getEndDate())

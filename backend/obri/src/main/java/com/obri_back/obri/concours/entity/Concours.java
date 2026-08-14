@@ -11,6 +11,9 @@ import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+/*
+ * 콩쿠르 엔티티 — 크롤러가 채우는 조회 전용 데이터, 다른 도메인과 연관관계 없음
+ */
 @Getter
 @NoArgsConstructor
 @Entity
@@ -25,9 +28,6 @@ public class Concours {
 
     @Column(name="category", nullable=false)
     private String category;
-
-    @Column(name="targetInstrument", nullable=false)
-    private String targetInstrument;
 
     @Column(name="startDate", nullable=false)
     private LocalDateTime startDate;
@@ -46,4 +46,19 @@ public class Concours {
 
     @Column(name="crawled_at", nullable=false)
     private LocalDateTime crawledAt;
+
+    // 크롤링 결과로부터 생성 — crawledAt은 저장 시점으로 고정
+    public static Concours fromCrawl(String title, String category, String organizer, String url,
+            LocalDateTime startDate, LocalDateTime endDate, LocalDateTime deadline) {
+        Concours concours = new Concours();
+        concours.title = title;
+        concours.category = category;
+        concours.organizer = organizer;
+        concours.url = url;
+        concours.startDate = startDate;
+        concours.endDate = endDate;
+        concours.deadline = deadline;
+        concours.crawledAt = LocalDateTime.now();
+        return concours;
+    }
 }
