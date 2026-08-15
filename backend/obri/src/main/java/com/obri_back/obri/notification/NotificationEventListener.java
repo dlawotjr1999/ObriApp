@@ -2,6 +2,7 @@ package com.obri_back.obri.notification;
 
 import com.obri_back.obri.notification.event.ApplicationResultNotificationEvent;
 import com.obri_back.obri.notification.event.NewApplicationNotificationEvent;
+import com.obri_back.obri.notification.event.NewPostNotificationEvent;
 import com.obri_back.obri.notification.event.PostDeletedNotificationEvent;
 import com.obri_back.obri.notification.event.PostUpdatedNotificationEvent;
 
@@ -22,6 +23,11 @@ import org.springframework.transaction.event.TransactionalEventListener;
 public class NotificationEventListener {
 
     private final NotificationService notificationService;
+
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+    public void onNewPost(NewPostNotificationEvent event) {
+        notificationService.notifyNewPost(event.postId(), event.title());
+    }
 
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void onNewApplication(NewApplicationNotificationEvent event) {
