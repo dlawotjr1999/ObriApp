@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import { View, FlatList, StyleSheet, TouchableOpacity, Text } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
@@ -14,6 +14,15 @@ import PracticeLogDetailModal from "@/components/practiceLog/PracticeLogDetailMo
 export default function PracticeLogScreen() {
   const router = useRouter();
   const [selected, setSelected] = useState<PracticeLog | null>(null);
+
+  // 연습 날짜 기준 최신순. 목데이터 배열 순서에 의존하지 않도록 명시적으로 정렬한다
+  const sortedLogs = useMemo(
+    () =>
+      [...MOCK_PRACTICE_LOGS].sort(
+        (a, b) => new Date(b.practicedAt).getTime() - new Date(a.practicedAt).getTime()
+      ),
+    []
+  );
 
   return (
     <SafeAreaView style={styles.container} edges={["top"]}>
@@ -32,7 +41,7 @@ export default function PracticeLogScreen() {
       </View>
 
       <FlatList
-        data={MOCK_PRACTICE_LOGS}
+        data={sortedLogs}
         keyExtractor={(item) => String(item.id)}
         renderItem={({ item }) => (
           <PracticeLogCard log={item} onPress={() => setSelected(item)} />

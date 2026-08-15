@@ -34,6 +34,9 @@ dependencies {
 	// MySQL
 	runtimeOnly 'com.mysql:mysql-connector-j'
 
+	// 콩쿠르 크롤러 (HTML 파싱)
+	implementation 'org.jsoup:jsoup:1.17.2'
+
 	// Firebase Admin SDK (서버용)
 	implementation 'com.google.cloud:spring-cloud-gcp-starter:7.2.0'
     implementation 'com.google.firebase:firebase-admin:9.2.0'
