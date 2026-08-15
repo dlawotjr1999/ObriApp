@@ -9,6 +9,7 @@ import com.obri_back.obri.auth.dto.RegisterResponseDTO;
 import com.obri_back.obri.global.exception.BadRequestException;
 import com.obri_back.obri.global.exception.ConflictGuard;
 import com.obri_back.obri.global.exception.NotFoundException;
+import com.obri_back.obri.global.exception.RegistrationFailedException;
 import com.obri_back.obri.global.exception.UnauthorizedException;
 import com.obri_back.obri.user.entity.Career;
 import com.obri_back.obri.user.entity.User;
@@ -91,7 +92,7 @@ public class AuthService {
             } catch (FirebaseAuthException ex) {
                 log.error("Firebase 계정 롤백 실패 — 고아 계정 발생 가능 (firebaseUid={})", firebaseUid, ex);
             }
-            throw new RuntimeException("회원가입 중 오류가 발생했습니다");
+            throw new RegistrationFailedException("회원가입 중 오류가 발생했습니다");
         }
 
         // 경력 저장

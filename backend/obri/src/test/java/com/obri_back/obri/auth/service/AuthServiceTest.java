@@ -8,6 +8,7 @@ import com.obri_back.obri.auth.dto.RegisterRequestDTO;
 import com.obri_back.obri.global.exception.ConflictException;
 import com.obri_back.obri.global.exception.NotFoundException;
 import com.obri_back.obri.global.exception.BadRequestException;
+import com.obri_back.obri.global.exception.RegistrationFailedException;
 import com.obri_back.obri.global.exception.UnauthorizedException;
 import com.obri_back.obri.user.entity.User;
 import com.obri_back.obri.user.repository.CareerRepository;
@@ -86,7 +87,7 @@ class AuthServiceTest {
         given(request.getNickname()).willReturn("tester");
 
         assertThatThrownBy(() -> authService.register("valid-token", request))
-                .isInstanceOf(RuntimeException.class)
+                .isInstanceOf(RegistrationFailedException.class)
                 .hasMessage("회원가입 중 오류가 발생했습니다");
 
         verify(firebaseAuth, times(1)).deleteUser("test-uid");
@@ -107,7 +108,7 @@ class AuthServiceTest {
         given(request.getNickname()).willReturn("tester");
 
         assertThatThrownBy(() -> authService.register("valid-token", request))
-                .isInstanceOf(RuntimeException.class)
+                .isInstanceOf(RegistrationFailedException.class)
                 .hasMessage("회원가입 중 오류가 발생했습니다");
     }
 
