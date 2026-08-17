@@ -126,6 +126,7 @@ public class PostService {
                 .title(request.getTitle())
                 .eventAt(request.getEventAt())
                 .location(request.getLocation())
+                .region(request.getRegion())
                 .timetable(request.getTimetable())
                 .pay(request.getPay())
                 .description(request.getDescription())

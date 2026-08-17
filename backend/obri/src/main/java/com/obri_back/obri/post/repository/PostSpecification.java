@@ -13,7 +13,6 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 
 /*
  * 구인글 목록 동적 필터 명세 빌더
@@ -44,11 +43,7 @@ public class PostSpecification {
             }
 
             if (regions != null && !regions.isEmpty()) {
-                // region 전용 필드가 없어 location 텍스트에 지역명이 포함되는지로 매칭
-                List<Predicate> regionPredicates = regions.stream()
-                        .map(region -> cb.like(root.get("location"), "%" + region + "%"))
-                        .collect(Collectors.toList());
-                predicates.add(cb.or(regionPredicates.toArray(new Predicate[0])));
+                predicates.add(root.get("region").in(regions));
             }
 
             if (startDate != null) {

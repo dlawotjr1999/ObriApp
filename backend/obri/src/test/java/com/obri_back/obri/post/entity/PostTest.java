@@ -207,4 +207,24 @@ class PostTest {
 
         assertThat(created.getDescription()).isEqualTo("수정된 설명");
     }
+
+    // BACKLOG.md #38: location 자유텍스트와 분리된 지역 필터 전용 컬럼
+    @Test
+    void create_setsRegionFromInfo() {
+        User owner = User.builder().id(1L).nickname("owner").firebaseUid("owner-uid").build();
+
+        Post created = Post.create(owner, PostInfo.builder().region("서울").build());
+
+        assertThat(created.getRegion()).isEqualTo("서울");
+    }
+
+    @Test
+    void updateInfo_updatesRegion() {
+        User owner = User.builder().id(1L).nickname("owner").firebaseUid("owner-uid").build();
+        Post created = Post.create(owner, PostInfo.builder().region("서울").build());
+
+        created.updateInfo(PostInfo.builder().region("경기").build());
+
+        assertThat(created.getRegion()).isEqualTo("경기");
+    }
 }

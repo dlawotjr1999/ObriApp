@@ -35,6 +35,10 @@ public class PostCreateRequestDTO {
     @NotBlank
     private String location;
 
+    // 지역 필터 전용 값 (프론트 지역 선택 UI에서 제공) — BACKLOG.md #38
+    @NotBlank
+    private String region;
+
     @NotBlank
     private String timetable;
 

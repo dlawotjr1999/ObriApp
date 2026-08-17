@@ -25,6 +25,7 @@ public class PostResponseDTO {
     private String title;
     private LocalDateTime eventAt;
     private String location;
+    private String region;
     private String timetable;
     private Integer pay;
     private String description;
@@ -40,6 +41,7 @@ public class PostResponseDTO {
                 .title(post.getTitle())
                 .eventAt(post.getEventAt())
                 .location(post.getLocation())
+                .region(post.getRegion())
                 .timetable(post.getTimetable())
                 .pay(post.getPay())
                 .description(post.getDescription())

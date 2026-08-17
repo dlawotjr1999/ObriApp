@@ -73,6 +73,7 @@ class PostServiceTest {
                 .title("결혼식 바이올린 구인")
                 .eventAt(LocalDateTime.of(2024, 5, 1, 14, 0))
                 .location("서울 강남구 OO웨딩홀")
+                .region("서울")
                 .timetable("리허설 1회 (13:00), 본식 (14:00)")
                 .pay(150000)
                 .description("결혼식 축가 반주 부탁드립니다")
@@ -91,6 +92,7 @@ class PostServiceTest {
                 .title(request.getTitle())
                 .eventAt(request.getEventAt())
                 .location(request.getLocation())
+                .region(request.getRegion())
                 .timetable(request.getTimetable())
                 .pay(request.getPay())
                 .description(request.getDescription())
@@ -110,6 +112,7 @@ class PostServiceTest {
         assertThat(result.getStatus()).isEqualTo(PostStatus.OPEN);
         assertThat(result.getTitle()).isEqualTo("결혼식 바이올린 구인");
         assertThat(result.getCategory()).isEqualTo("결혼");
+        assertThat(result.getRegion()).isEqualTo("서울");
         assertThat(result.getDescription()).isEqualTo("결혼식 축가 반주 부탁드립니다");
         assertThat(result.getInstruments()).hasSize(2);
         assertThat(result.getInstruments().get(0).getInstrument()).isEqualTo("바이올린");
@@ -166,6 +169,7 @@ class PostServiceTest {
                 .title("수정된 제목")
                 .eventAt(LocalDateTime.of(2024, 5, 1, 15, 0))
                 .location("서울 강남구 OO웨딩홀")
+                .region("경기")
                 .timetable("리허설 1회 (14:00), 본식 (15:00)")
                 .pay(200000)
                 .description("수정된 설명")
@@ -179,6 +183,7 @@ class PostServiceTest {
 
         assertThat(result.getTitle()).isEqualTo("수정된 제목");
         assertThat(result.getPay()).isEqualTo(200000);
+        assertThat(result.getRegion()).isEqualTo("경기");
         assertThat(result.getDescription()).isEqualTo("수정된 설명");
         assertThat(result.getInstruments()).hasSize(1);
         assertThat(result.getInstruments().get(0).getInstrument()).isEqualTo("플루트");

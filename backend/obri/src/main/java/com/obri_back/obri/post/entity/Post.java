@@ -66,6 +66,10 @@ public class Post {
     @Column(name = "location", nullable = false)
     private String location;
 
+    // 지역 필터 전용 컬럼 — location(자유 텍스트 주소)과 분리, 작성 시 프론트가 제공하는 지역 목록 중 선택(BACKLOG.md #38)
+    @Column(name = "region", nullable = false)
+    private String region;
+
     @Column(name = "timetable" , nullable = false)
     private String timetable;
 
@@ -73,7 +77,8 @@ public class Post {
     private Integer pay;
 
     // 구인글 상세 설명 (선택 입력) — BACKLOG.md #34, 프론트 상세 화면 "설명" 섹션에 대응
-    @Column(name = "description", columnDefinition = "TEXT")
+    // length만 지정(columnDefinition 미사용) — DB별 raw SQL 타입(TEXT 등)에 의존하지 않아 이식성 확보
+    @Column(name = "description", length = 2000)
     private String description;
 
     @Enumerated(EnumType.STRING)
@@ -101,6 +106,7 @@ public class Post {
         post.category = info.getCategory();
         post.eventAt = info.getEventAt();
         post.location = info.getLocation();
+        post.region = info.getRegion();
         post.timetable = info.getTimetable();
         post.pay = info.getPay();
         post.description = info.getDescription();
@@ -120,6 +126,7 @@ public class Post {
         this.title = info.getTitle();
         this.eventAt = info.getEventAt();
         this.location = info.getLocation();
+        this.region = info.getRegion();
         this.timetable = info.getTimetable();
         this.pay = info.getPay();
         this.description = info.getDescription();

@@ -100,6 +100,7 @@ class PostControllerTest {
                                   "title": "결혼식 바이올린 구인",
                                   "eventAt": "2024-05-01T14:00:00",
                                   "location": "서울 강남구 OO웨딩홀",
+                                  "region": "서울",
                                   "timetable": "리허설 1회 (13:00), 본식 (14:00)",
                                   "pay": 150000,
                                   "instruments": [
@@ -248,6 +249,7 @@ class PostControllerTest {
                                   "title": "수정된 제목",
                                   "eventAt": "2024-05-01T15:00:00",
                                   "location": "서울 강남구 OO웨딩홀",
+                                  "region": "서울",
                                   "timetable": "리허설 1회 (14:00), 본식 (15:00)",
                                   "pay": 200000,
                                   "instruments": [
