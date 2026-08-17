@@ -16,6 +16,8 @@ public class PostInfo {
     private String title;
     private LocalDateTime eventAt;
     private String location;
+    private String region;
     private String timetable;
     private Integer pay;
+    private String description;
 }

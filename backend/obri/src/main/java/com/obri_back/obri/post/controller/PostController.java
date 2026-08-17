@@ -6,7 +6,6 @@ import com.obri_back.obri.post.dto.PostCreateRequestDTO;
 import com.obri_back.obri.post.dto.PostDetailResponseDTO;
 import com.obri_back.obri.post.dto.PostResponseDTO;
 import com.obri_back.obri.post.dto.PostSummaryResponseDTO;
-import com.obri_back.obri.post.entity.PostStatus;
 import com.obri_back.obri.post.service.PostService;
 import com.obri_back.obri.user.entity.User;
 import jakarta.validation.Valid;
@@ -48,7 +47,9 @@ public class PostController {
         return ResponseEntity.ok(APIResponse.ok("구인글이 등록되었습니다", response));
     }
 
-    // 구인글 전체 조회 (카테고리·악기·지역·기간·상태 필터 + 무한스크롤)
+    // 구인글 전체 조회 (카테고리·악기·지역·기간 필터 + 무한스크롤)
+    // status 필터 파라미터 없음(BACKLOG.md #35) — 공개 목록은 항상 OPEN·PARTIALLY_CLOSED만 노출,
+    // CLOSED(마감)된 글은 이 엔드포인트로 조회 불가. 작성자 본인의 마감글은 GET /api/posts/me로 조회
     @GetMapping
     public ResponseEntity<APIResponse<PageResponse<PostSummaryResponseDTO>>> getPosts(
             @RequestParam(required = false) List<String> category,
@@ -56,11 +57,10 @@ public class PostController {
             @RequestParam(required = false) List<String> region,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
-            @RequestParam(required = false) PostStatus status,
             @PageableDefault(size = 10, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
 
         Page<PostSummaryResponseDTO> response =
-                postService.getPosts(category, instrument, region, startDate, endDate, status, pageable);
+                postService.getPosts(category, instrument, region, startDate, endDate, pageable);
         return ResponseEntity.ok(APIResponse.ok("구인글 목록 조회 성공", PageResponse.from(response)));
     }
 

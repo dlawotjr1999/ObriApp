@@ -25,6 +25,7 @@ public class PostSummaryResponseDTO {
     private String category;
     private LocalDateTime eventAt;
     private String location;
+    private String region;
     private List<PostInstrumentDTO> instruments;
     private String timetable;
     private Integer pay;
@@ -38,6 +39,7 @@ public class PostSummaryResponseDTO {
                 .category(post.getCategory())
                 .eventAt(post.getEventAt())
                 .location(post.getLocation())
+                .region(post.getRegion())
                 .instruments(post.getPostInstruments().stream()
                         .map(PostInstrumentDTO::from)
                         .collect(Collectors.toList()))

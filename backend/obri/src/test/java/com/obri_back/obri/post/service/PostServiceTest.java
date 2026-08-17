@@ -73,8 +73,10 @@ class PostServiceTest {
                 .title("결혼식 바이올린 구인")
                 .eventAt(LocalDateTime.of(2024, 5, 1, 14, 0))
                 .location("서울 강남구 OO웨딩홀")
+                .region("서울")
                 .timetable("리허설 1회 (13:00), 본식 (14:00)")
                 .pay(150000)
+                .description("결혼식 축가 반주 부탁드립니다")
                 .instruments(List.of(
                         PostCreateRequestDTO.InstrumentItem.builder()
                                 .instrument("바이올린").people(2).build(),
@@ -90,8 +92,10 @@ class PostServiceTest {
                 .title(request.getTitle())
                 .eventAt(request.getEventAt())
                 .location(request.getLocation())
+                .region(request.getRegion())
                 .timetable(request.getTimetable())
                 .pay(request.getPay())
+                .description(request.getDescription())
                 .build());
         request.getInstruments().forEach(item ->
                 post.addInstrument(PostInstrument.of(post, item.getInstrument(), item.getPeople())));
@@ -108,6 +112,8 @@ class PostServiceTest {
         assertThat(result.getStatus()).isEqualTo(PostStatus.OPEN);
         assertThat(result.getTitle()).isEqualTo("결혼식 바이올린 구인");
         assertThat(result.getCategory()).isEqualTo("결혼");
+        assertThat(result.getRegion()).isEqualTo("서울");
+        assertThat(result.getDescription()).isEqualTo("결혼식 축가 반주 부탁드립니다");
         assertThat(result.getInstruments()).hasSize(2);
         assertThat(result.getInstruments().get(0).getInstrument()).isEqualTo("바이올린");
         assertThat(result.getInstruments().get(0).getConfirmed()).isEqualTo(0);
@@ -142,6 +148,7 @@ class PostServiceTest {
         assertThat(result.getIsMine()).isFalse();
         assertThat(result.getHasApplied()).isTrue();
         assertThat(result.getWriter().getNickname()).isEqualTo("tester");
+        assertThat(result.getDescription()).isEqualTo("결혼식 축가 반주 부탁드립니다");
     }
 
     @Test
@@ -162,8 +169,10 @@ class PostServiceTest {
                 .title("수정된 제목")
                 .eventAt(LocalDateTime.of(2024, 5, 1, 15, 0))
                 .location("서울 강남구 OO웨딩홀")
+                .region("경기")
                 .timetable("리허설 1회 (14:00), 본식 (15:00)")
                 .pay(200000)
+                .description("수정된 설명")
                 .instruments(List.of(
                         PostCreateRequestDTO.InstrumentItem.builder()
                                 .instrument("플루트").people(1).build()
@@ -174,6 +183,8 @@ class PostServiceTest {
 
         assertThat(result.getTitle()).isEqualTo("수정된 제목");
         assertThat(result.getPay()).isEqualTo(200000);
+        assertThat(result.getRegion()).isEqualTo("경기");
+        assertThat(result.getDescription()).isEqualTo("수정된 설명");
         assertThat(result.getInstruments()).hasSize(1);
         assertThat(result.getInstruments().get(0).getInstrument()).isEqualTo("플루트");
         verify(applicationService).notifyApplicantsOfPostUpdate(10L, "수정된 제목");
@@ -238,7 +249,7 @@ class PostServiceTest {
         when(postRepository.findAll(ArgumentMatchers.<Specification<Post>>any(), any(org.springframework.data.domain.Pageable.class)))
                 .thenReturn(new PageImpl<>(List.of(post), PageRequest.of(0, 10), 1));
 
-        var result = postService.getPosts(null, null, null, null, null, null, PageRequest.of(0, 10));
+        var result = postService.getPosts(null, null, null, null, null, PageRequest.of(0, 10));
 
         assertThat(result.getContent()).hasSize(1);
         assertThat(result.getContent().get(0).getTitle()).isEqualTo("결혼식 바이올린 구인");

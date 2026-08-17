@@ -13,18 +13,19 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 
 /*
  * 구인글 목록 동적 필터 명세 빌더
  * GET /api/posts 필터: 필터 간 AND, 같은 필터 내 다중값은 OR
- * eventAt이 지난 글은 status 파라미터와 무관하게 항상 제외(공연 종료 후 목록 노출 방지 — BACKLOG.md #8)
+ * eventAt이 지난 글은 항상 제외(공연 종료 후 목록 노출 방지 — BACKLOG.md #8)
+ * status는 필터 파라미터로 받지 않고 항상 OPEN·PARTIALLY_CLOSED만 노출 — CLOSED(마감)는 이 공개 목록에
+ * 노출하지 않는다(BACKLOG.md #35). 작성자 본인의 마감글은 PostService.getMyPosts(status 필터 없음)로 조회
  */
 public class PostSpecification {
 
-    // 카테고리·악기·지역·기간·상태 조건을 조합한 Specification 생성 (status 미지정 시 OPEN·PARTIALLY_CLOSED 기본 노출)
+    // 카테고리·악기·지역·기간 조건을 조합한 Specification 생성
     public static Specification<Post> filter(List<String> categories, List<String> instruments,
-            List<String> regions, LocalDate startDate, LocalDate endDate, PostStatus status) {
+            List<String> regions, LocalDate startDate, LocalDate endDate) {
         return (root, query, cb) -> {
             query.distinct(true);
             List<Predicate> predicates = new ArrayList<>();
@@ -42,11 +43,7 @@ public class PostSpecification {
             }
 
             if (regions != null && !regions.isEmpty()) {
-                // region 전용 필드가 없어 location 텍스트에 지역명이 포함되는지로 매칭
-                List<Predicate> regionPredicates = regions.stream()
-                        .map(region -> cb.like(root.get("location"), "%" + region + "%"))
-                        .collect(Collectors.toList());
-                predicates.add(cb.or(regionPredicates.toArray(new Predicate[0])));
+                predicates.add(root.get("region").in(regions));
             }
 
             if (startDate != null) {
@@ -57,12 +54,8 @@ public class PostSpecification {
                 predicates.add(cb.lessThanOrEqualTo(root.get("eventAt"), endDate.atTime(LocalTime.MAX)));
             }
 
-            if (status != null) {
-                predicates.add(cb.equal(root.get("status"), status));
-            } else {
-                // 기본 노출은 OPEN·PARTIALLY_CLOSED, CLOSED는 status 필터로만 조회 가능
-                predicates.add(root.get("status").in(List.of(PostStatus.OPEN, PostStatus.PARTIALLY_CLOSED)));
-            }
+            // CLOSED(마감)는 공개 목록에 노출하지 않음 — 항상 OPEN·PARTIALLY_CLOSED만
+            predicates.add(root.get("status").in(List.of(PostStatus.OPEN, PostStatus.PARTIALLY_CLOSED)));
 
             return cb.and(predicates.toArray(new Predicate[0]));
         };

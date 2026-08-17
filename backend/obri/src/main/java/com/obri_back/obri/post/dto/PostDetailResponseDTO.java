@@ -25,8 +25,10 @@ public class PostDetailResponseDTO {
     private String title;
     private LocalDateTime eventAt;
     private String location;
+    private String region;
     private String timetable;
     private Integer pay;
+    private String description;
     private PostStatus status;
     private List<PostInstrumentDTO> instruments;
     private LocalDateTime createdAt;
@@ -43,8 +45,10 @@ public class PostDetailResponseDTO {
                 .title(post.getTitle())
                 .eventAt(post.getEventAt())
                 .location(post.getLocation())
+                .region(post.getRegion())
                 .timetable(post.getTimetable())
                 .pay(post.getPay())
+                .description(post.getDescription())
                 .status(post.getStatus())
                 .instruments(post.getPostInstruments().stream()
                         .map(PostInstrumentDTO::from)
