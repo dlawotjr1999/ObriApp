@@ -3,6 +3,9 @@ package com.obri_back.obri.post.entity;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.hibernate.annotations.BatchSize;
 import org.hibernate.annotations.CreationTimestamp;
@@ -73,6 +76,10 @@ public class Post {
     @Column(name = "status", nullable = false)
     private PostStatus status;
 
+    // 작성자가 수동으로 전체 마감했는지 여부 — true면 recomputeStatus()가 악기별 파생 상태로 되돌리지 않음(BACKLOG.md #31)
+    @Column(name = "manually_closed", nullable = false)
+    private Boolean manuallyClosed;
+
     // 낙관적 락
     @Version
     @Column(name = "version")
@@ -93,6 +100,7 @@ public class Post {
         post.timetable = info.getTimetable();
         post.pay = info.getPay();
         post.status = PostStatus.OPEN;
+        post.manuallyClosed = false;
         return post;
     }
 
@@ -111,14 +119,33 @@ public class Post {
         this.pay = info.getPay();
     }
 
-    // 악기 목록 전체 교체 (career와 동일하게 전체 삭제 후 재삽입 패턴, orphanRemoval로 처리)
+    // 악기 목록 교체 (글 수정) — 이름이 같은 악기는 확정 인원(confirmed)·마감 상태를 승계하고 정원만 갱신,
+    // 새 목록에서 사라진 이름만 제거(orphanRemoval), 새로 등장한 이름만 추가. 전체 clear 후 재삽입하면
+    // 이미 수락된 지원자의 확정 카운트가 초기화되는 문제가 있었음(BACKLOG.md #32)
     public void replaceInstruments(List<PostInstrument> newInstruments) {
-        this.postInstruments.clear();
-        newInstruments.forEach(this::addInstrument);
+        Map<String, PostInstrument> existingByName = this.postInstruments.stream()
+                .collect(Collectors.toMap(PostInstrument::getInstrument, pi -> pi));
+        Set<String> newNames = newInstruments.stream()
+                .map(PostInstrument::getInstrument)
+                .collect(Collectors.toSet());
+
+        this.postInstruments.removeIf(pi -> !newNames.contains(pi.getInstrument()));
+
+        for (PostInstrument newInstrument : newInstruments) {
+            PostInstrument existing = existingByName.get(newInstrument.getInstrument());
+            if (existing != null) {
+                existing.updatePeople(newInstrument.getPeople());
+            } else {
+                addInstrument(newInstrument);
+            }
+        }
+
+        recomputeStatus();
     }
 
-    // 수동 전체 마감 — 상태를 CLOSED로 전환
+    // 수동 전체 마감 — 상태를 CLOSED로 전환하고, 이후 악기 상태 변동(철회 등)에 재파생되지 않도록 플래그 고정
     public void close() {
+        this.manuallyClosed = true;
         this.status = PostStatus.CLOSED;
     }
 
@@ -162,7 +189,12 @@ public class Post {
     }
 
     // 악기별 마감 상태로부터 글 전체 상태를 파생: 전부 마감→CLOSED, 일부→PARTIALLY_CLOSED, 없음→OPEN
+    // 단, 작성자가 수동 마감(manuallyClosed)한 글은 악기 상태가 바뀌어도(예: 수락 철회) 재오픈하지 않음(BACKLOG.md #31)
     private void recomputeStatus() {
+        if (Boolean.TRUE.equals(this.manuallyClosed)) {
+            this.status = PostStatus.CLOSED;
+            return;
+        }
         boolean allClosed = this.postInstruments.stream().allMatch(pi -> Boolean.TRUE.equals(pi.getClosed()));
         boolean anyClosed = this.postInstruments.stream().anyMatch(pi -> Boolean.TRUE.equals(pi.getClosed()));
         if (allClosed) {

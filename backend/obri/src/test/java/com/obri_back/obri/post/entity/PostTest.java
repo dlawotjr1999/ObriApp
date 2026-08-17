@@ -5,6 +5,8 @@ import com.obri_back.obri.user.entity.User;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.util.List;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
@@ -112,5 +114,77 @@ class PostTest {
     @Test
     void isInstrumentClosed_falseWhenInstrumentNotRecruited() {
         assertThat(post.isInstrumentClosed("트럼펫")).isFalse();
+    }
+
+    // BACKLOG.md #31: 수동 마감은 악기 상태 파생과 별개로 유지되어야 함
+    @Test
+    void close_thenRevokeInstrument_staysClosedInsteadOfReopening() {
+        post.confirmInstrument("첼로"); // people=1 → 첼로 즉시 마감
+        post.close(); // 작성자가 나머지(바이올린)까지 포함해 수동 전체 마감
+
+        post.revokeInstrument("첼로"); // 지원 수락 철회로 첼로 재오픈 시도
+
+        assertThat(post.getStatus()).isEqualTo(PostStatus.CLOSED);
+    }
+
+    @Test
+    void close_setsManuallyClosedFlag() {
+        post.close();
+
+        assertThat(post.getManuallyClosed()).isTrue();
+    }
+
+    // BACKLOG.md #32: 글 수정 시 이름이 같은 악기는 확정 인원·마감 상태를 승계해야 함
+    @Test
+    void replaceInstruments_matchingNamePreservesConfirmedCount() {
+        post.confirmInstrument("첼로"); // confirmed=1, people=1 → closed=true
+
+        post.replaceInstruments(List.of(
+                PostInstrument.of(post, "첼로", 1),
+                PostInstrument.of(post, "바이올린", 2)
+        ));
+
+        assertThat(instrument("첼로").getConfirmed()).isEqualTo(1);
+        assertThat(instrument("첼로").getClosed()).isTrue();
+    }
+
+    @Test
+    void replaceInstruments_removesInstrumentNotInNewList() {
+        post.replaceInstruments(List.of(PostInstrument.of(post, "바이올린", 2)));
+
+        assertThat(post.getPostInstruments()).hasSize(1);
+        assertThat(post.getPostInstruments().get(0).getInstrument()).isEqualTo("바이올린");
+    }
+
+    @Test
+    void replaceInstruments_recomputesStatus() {
+        post.confirmInstrument("첼로"); // 첼로 마감 → PARTIALLY_CLOSED
+
+        // 바이올린을 제거하면 남은 악기(첼로)가 이미 마감 상태이므로 전체 CLOSED가 되어야 함
+        post.replaceInstruments(List.of(PostInstrument.of(post, "첼로", 1)));
+
+        assertThat(post.getStatus()).isEqualTo(PostStatus.CLOSED);
+    }
+
+    @Test
+    void replaceInstruments_reducingCapacityBelowConfirmedClosesInstrument() {
+        post.confirmInstrument("바이올린"); // confirmed=1, people=2 → 아직 미마감
+
+        post.replaceInstruments(List.of(
+                PostInstrument.of(post, "바이올린", 1), // 정원 축소
+                PostInstrument.of(post, "첼로", 1)
+        ));
+
+        assertThat(instrument("바이올린").getClosed()).isTrue();
+        assertThat(instrument("바이올린").getConfirmed()).isEqualTo(1);
+    }
+
+    @Test
+    void replaceInstruments_respectsManuallyClosedStatus() {
+        post.close(); // 수동 마감
+
+        post.replaceInstruments(List.of(PostInstrument.of(post, "바이올린", 2)));
+
+        assertThat(post.getStatus()).isEqualTo(PostStatus.CLOSED);
     }
 }

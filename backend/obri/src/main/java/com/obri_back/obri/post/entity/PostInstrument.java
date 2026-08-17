@@ -73,4 +73,10 @@ public class PostInstrument {
         }
         this.closed = false;
     }
+
+    // 정원 변경 반영(글 수정 시 이름이 같은 악기 병합용): 확정 인원은 유지하고, 새 정원 기준으로 마감 여부만 재계산
+    public void updatePeople(int people) {
+        this.people = people;
+        this.closed = this.confirmed >= this.people;
+    }
 }
