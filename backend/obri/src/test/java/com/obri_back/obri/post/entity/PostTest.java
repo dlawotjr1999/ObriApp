@@ -187,4 +187,24 @@ class PostTest {
 
         assertThat(post.getStatus()).isEqualTo(PostStatus.CLOSED);
     }
+
+    // BACKLOG.md #34: 구인글 상세 "설명" 섹션에 대응하는 필드
+    @Test
+    void create_setsDescriptionFromInfo() {
+        User owner = User.builder().id(1L).nickname("owner").firebaseUid("owner-uid").build();
+
+        Post created = Post.create(owner, PostInfo.builder().description("공연 설명입니다").build());
+
+        assertThat(created.getDescription()).isEqualTo("공연 설명입니다");
+    }
+
+    @Test
+    void updateInfo_updatesDescription() {
+        User owner = User.builder().id(1L).nickname("owner").firebaseUid("owner-uid").build();
+        Post created = Post.create(owner, PostInfo.builder().description("기존 설명").build());
+
+        created.updateInfo(PostInfo.builder().description("수정된 설명").build());
+
+        assertThat(created.getDescription()).isEqualTo("수정된 설명");
+    }
 }

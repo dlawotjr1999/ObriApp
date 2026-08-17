@@ -72,6 +72,10 @@ public class Post {
     @Column(name = "pay", nullable = false)
     private Integer pay;
 
+    // 구인글 상세 설명 (선택 입력) — BACKLOG.md #34, 프론트 상세 화면 "설명" 섹션에 대응
+    @Column(name = "description", columnDefinition = "TEXT")
+    private String description;
+
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false)
     private PostStatus status;
@@ -99,6 +103,7 @@ public class Post {
         post.location = info.getLocation();
         post.timetable = info.getTimetable();
         post.pay = info.getPay();
+        post.description = info.getDescription();
         post.status = PostStatus.OPEN;
         post.manuallyClosed = false;
         return post;
@@ -117,6 +122,7 @@ public class Post {
         this.location = info.getLocation();
         this.timetable = info.getTimetable();
         this.pay = info.getPay();
+        this.description = info.getDescription();
     }
 
     // 악기 목록 교체 (글 수정) — 이름이 같은 악기는 확정 인원(confirmed)·마감 상태를 승계하고 정원만 갱신,

@@ -27,6 +27,7 @@ public class PostDetailResponseDTO {
     private String location;
     private String timetable;
     private Integer pay;
+    private String description;
     private PostStatus status;
     private List<PostInstrumentDTO> instruments;
     private LocalDateTime createdAt;
@@ -45,6 +46,7 @@ public class PostDetailResponseDTO {
                 .location(post.getLocation())
                 .timetable(post.getTimetable())
                 .pay(post.getPay())
+                .description(post.getDescription())
                 .status(post.getStatus())
                 .instruments(post.getPostInstruments().stream()
                         .map(PostInstrumentDTO::from)

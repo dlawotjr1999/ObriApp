@@ -41,6 +41,9 @@ public class PostCreateRequestDTO {
     @NotNull
     private Integer pay;
 
+    // 구인글 상세 설명 (선택 입력) — BACKLOG.md #34
+    private String description;
+
     @NotNull
     @Size(min = 1)
     @Valid

@@ -18,4 +18,5 @@ public class PostInfo {
     private String location;
     private String timetable;
     private Integer pay;
+    private String description;
 }

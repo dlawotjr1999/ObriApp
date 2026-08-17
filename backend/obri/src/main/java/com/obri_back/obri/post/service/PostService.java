@@ -11,7 +11,6 @@ import com.obri_back.obri.post.dto.PostSummaryResponseDTO;
 import com.obri_back.obri.post.entity.Post;
 import com.obri_back.obri.post.entity.PostInfo;
 import com.obri_back.obri.post.entity.PostInstrument;
-import com.obri_back.obri.post.entity.PostStatus;
 import com.obri_back.obri.post.repository.PostRepository;
 import com.obri_back.obri.post.repository.PostSpecification;
 import com.obri_back.obri.user.entity.User;
@@ -57,10 +56,11 @@ public class PostService {
     }
 
     // 구인글 전체 조회 — Specification 동적 필터 적용 후 요약 DTO로 반환
+    // status 필터 없음(BACKLOG.md #35) — PostSpecification이 항상 OPEN·PARTIALLY_CLOSED만 노출
     @Transactional(readOnly = true)
     public Page<PostSummaryResponseDTO> getPosts(List<String> categories, List<String> instruments,
-            List<String> regions, LocalDate startDate, LocalDate endDate, PostStatus status, Pageable pageable) {
-        Specification<Post> spec = PostSpecification.filter(categories, instruments, regions, startDate, endDate, status);
+            List<String> regions, LocalDate startDate, LocalDate endDate, Pageable pageable) {
+        Specification<Post> spec = PostSpecification.filter(categories, instruments, regions, startDate, endDate);
         return postRepository.findAll(spec, pageable).map(PostSummaryResponseDTO::from);
     }
 
@@ -128,6 +128,7 @@ public class PostService {
                 .location(request.getLocation())
                 .timetable(request.getTimetable())
                 .pay(request.getPay())
+                .description(request.getDescription())
                 .build();
     }
 
