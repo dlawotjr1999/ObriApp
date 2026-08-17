@@ -3,7 +3,7 @@ package com.obri_back.obri.post.service;
 import com.obri_back.obri.application.service.ApplicationService;
 import com.obri_back.obri.global.exception.ForbiddenException;
 import com.obri_back.obri.global.exception.NotFoundException;
-import com.obri_back.obri.notification.NotificationService;
+import com.obri_back.obri.notification.event.NewPostNotificationEvent;
 import com.obri_back.obri.post.dto.PostCreateRequestDTO;
 import com.obri_back.obri.post.dto.PostDetailResponseDTO;
 import com.obri_back.obri.post.dto.PostResponseDTO;
@@ -16,6 +16,7 @@ import com.obri_back.obri.post.repository.PostRepository;
 import com.obri_back.obri.post.repository.PostSpecification;
 import com.obri_back.obri.user.entity.User;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
@@ -39,7 +40,7 @@ public class PostService {
     // 읽기(applicationCount·hasApplied)는 CLAUDE.md §2가 문서화한 예외로 직접 조회
     // 쓰기(수정·삭제 시 지원자 처리)는 notifyApplicantsOfPostUpdate·handlePostDeletion에 위임 — BACKLOG.md #12
     private final ApplicationService applicationService;
-    private final NotificationService notificationService;
+    private final ApplicationEventPublisher eventPublisher;
 
     // 구인글 등록 — 악기 목록을 함께 저장하고 전체 broadcast 알림 발송
     @Transactional
@@ -49,8 +50,9 @@ public class PostService {
                 post.addInstrument(PostInstrument.of(post, item.getInstrument(), item.getPeople()))
         );
         Post saved = postRepository.save(post);
-        // 새 구인글 → 전체 구독자에게 broadcast (발송 실패는 NotificationService에서 격리)
-        notificationService.notifyNewPost(saved.getId(), saved.getTitle());
+        // 새 구인글 → 전체 구독자에게 broadcast. AFTER_COMMIT 이후 발송(BACKLOG.md #33) — 이 트랜잭션이
+        // 롤백되면 이벤트 자체가 버려져 존재하지 않는 구인글의 알림이 나가지 않는다
+        eventPublisher.publishEvent(new NewPostNotificationEvent(saved.getId(), saved.getTitle()));
         return PostResponseDTO.from(saved);
     }
 

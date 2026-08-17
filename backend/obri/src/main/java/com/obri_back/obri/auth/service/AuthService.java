@@ -9,12 +9,14 @@ import com.obri_back.obri.auth.dto.RegisterResponseDTO;
 import com.obri_back.obri.global.exception.BadRequestException;
 import com.obri_back.obri.global.exception.ConflictGuard;
 import com.obri_back.obri.global.exception.NotFoundException;
+import com.obri_back.obri.global.exception.RegistrationFailedException;
 import com.obri_back.obri.global.exception.UnauthorizedException;
 import com.obri_back.obri.user.entity.Career;
 import com.obri_back.obri.user.entity.User;
 import com.obri_back.obri.user.repository.CareerRepository;
 import com.obri_back.obri.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -26,6 +28,7 @@ import java.util.stream.Collectors;
  * Firebase Authentication과 MySQL 유저 정보를 연동
  * 회원가입 시 Firebase UID로 유저를 식별하고 MySQL에 저장
  */
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class AuthService {
@@ -78,15 +81,18 @@ public class AuthService {
                 .build();
 
         try {
-            userRepository.save(user);
+            // saveAndFlush로 즉시 flush시켜 UNIQUE 제약 위반을 이 catch 블록 안에서 잡는다.
+            // save()만 쓰면 flush가 트랜잭션 커밋 시점(메서드 반환 후)까지 미뤄져 예외가
+            // 이 try-catch 밖에서 터지고, 아래 Firebase 보상 롤백이 아예 실행되지 않는다.
+            userRepository.saveAndFlush(user);
         } catch (Exception e) {
             // MySQL 저장 실패 시 Firebase 계정 롤백
             try {
                 firebaseAuth.deleteUser(firebaseUid);
             } catch (FirebaseAuthException ex) {
-                // Firebase 롤백 실패 로그 (운영 환경에서는 알림 필요)
+                log.error("Firebase 계정 롤백 실패 — 고아 계정 발생 가능 (firebaseUid={})", firebaseUid, ex);
             }
-            throw new RuntimeException("회원가입 중 오류가 발생했습니다");
+            throw new RegistrationFailedException("회원가입 중 오류가 발생했습니다");
         }
 
         // 경력 저장

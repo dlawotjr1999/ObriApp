@@ -3,6 +3,7 @@ package com.obri_back.obri.post.service;
 import com.obri_back.obri.application.service.ApplicationService;
 import com.obri_back.obri.global.exception.ForbiddenException;
 import com.obri_back.obri.global.exception.NotFoundException;
+import com.obri_back.obri.notification.event.NewPostNotificationEvent;
 import com.obri_back.obri.post.dto.PostCreateRequestDTO;
 import com.obri_back.obri.post.dto.PostDetailResponseDTO;
 import com.obri_back.obri.post.dto.PostResponseDTO;
@@ -18,7 +19,9 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentMatchers;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.ArgumentCaptor;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.jpa.domain.Specification;
@@ -38,7 +41,7 @@ class PostServiceTest {
 
     @Mock private PostRepository postRepository;
     @Mock private ApplicationService applicationService;
-    @Mock private com.obri_back.obri.notification.NotificationService notificationService;
+    @Mock private ApplicationEventPublisher eventPublisher;
     @InjectMocks private PostService postService;
 
     private User owner;
@@ -111,6 +114,19 @@ class PostServiceTest {
         assertThat(result.getInstruments().get(0).getClosed()).isFalse();
         assertThat(result.getInstruments().get(1).getInstrument()).isEqualTo("첼로");
         verify(postRepository, times(1)).save(any(Post.class));
+    }
+
+    @Test
+    void createPost_publishesNewPostNotificationEventAfterSave() {
+        when(postRepository.save(any(Post.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+
+        postService.createPost(owner, request);
+
+        ArgumentCaptor<NewPostNotificationEvent> captor =
+                ArgumentCaptor.forClass(NewPostNotificationEvent.class);
+        verify(eventPublisher, times(1)).publishEvent(captor.capture());
+        assertThat(captor.getValue().title()).isEqualTo("결혼식 바이올린 구인");
     }
 
     @Test
@@ -201,7 +217,7 @@ class PostServiceTest {
         org.mockito.InOrder inOrder = inOrder(applicationService, postRepository);
         inOrder.verify(applicationService).handlePostDeletion(10L, post.getTitle());
         inOrder.verify(postRepository).delete(post);
-        verifyNoInteractions(notificationService);
+        verifyNoInteractions(eventPublisher);
     }
 
     @Test

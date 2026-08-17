@@ -2,6 +2,7 @@ package com.obri_back.obri.notification;
 
 import com.obri_back.obri.notification.event.ApplicationResultNotificationEvent;
 import com.obri_back.obri.notification.event.NewApplicationNotificationEvent;
+import com.obri_back.obri.notification.event.NewPostNotificationEvent;
 import com.obri_back.obri.notification.event.PostDeletedNotificationEvent;
 import com.obri_back.obri.notification.event.PostUpdatedNotificationEvent;
 import org.junit.jupiter.api.Test;
@@ -28,6 +29,13 @@ class NotificationEventListenerTest {
         listener.onNewApplication(new NewApplicationNotificationEvent("recruiter-token", 1L, "결혼식 바이올린 구인"));
 
         verify(notificationService, times(1)).notifyNewApplication("recruiter-token", 1L, "결혼식 바이올린 구인");
+    }
+
+    @Test
+    void onNewPost_delegatesToNotifyNewPost() {
+        listener.onNewPost(new NewPostNotificationEvent(1L, "결혼식 바이올린 구인"));
+
+        verify(notificationService, times(1)).notifyNewPost(1L, "결혼식 바이올린 구인");
     }
 
     @Test
