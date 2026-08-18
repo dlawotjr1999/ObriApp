@@ -2,6 +2,7 @@ package com.obri_back.obri.concours.crawler;
 
 import com.obri_back.obri.concours.entity.Concours;
 import com.obri_back.obri.concours.repository.ConcoursRepository;
+import com.obri_back.obri.global.exception.BadRequestException;
 import com.obri_back.obri.global.exception.ConflictException;
 
 import org.jsoup.Jsoup;
@@ -148,6 +149,26 @@ class ConcoursCrawlerServiceTest {
 
         assertThat(savedCount).isZero();
         verifyNoInteractions(concoursRepository);
+    }
+
+    @Test
+    void crawl_stopsAtMaxPagesWhenProvided() {
+        // 전체는 2페이지(pg=2 링크 존재)지만 maxPages=1이면 1페이지만 순회해야 함
+        when(client.fetchListDocument(1)).thenReturn(Jsoup.parse(TWO_ROW_TABLE_WITH_NEXT_PAGE_LINK));
+        when(concoursRepository.existsByTitleAndUrl(anyString(), anyString())).thenReturn(true);
+
+        int savedCount = concoursCrawlerService.crawl(1);
+
+        assertThat(savedCount).isZero();
+        verify(client, never()).fetchListDocument(2);
+    }
+
+    @Test
+    void crawl_throwsBadRequestWhenMaxPagesNotPositive() {
+        assertThatThrownBy(() -> concoursCrawlerService.crawl(0))
+                .isInstanceOf(BadRequestException.class);
+
+        verifyNoInteractions(client, concoursRepository);
     }
 
     @Test

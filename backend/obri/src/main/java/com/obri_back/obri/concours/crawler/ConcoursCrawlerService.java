@@ -4,6 +4,7 @@ import com.obri_back.obri.concours.crawler.dto.ConcoursDetailInfo;
 import com.obri_back.obri.concours.crawler.dto.ConcoursListItem;
 import com.obri_back.obri.concours.entity.Concours;
 import com.obri_back.obri.concours.repository.ConcoursRepository;
+import com.obri_back.obri.global.exception.BadRequestException;
 import com.obri_back.obri.global.exception.ConflictException;
 
 import lombok.RequiredArgsConstructor;
@@ -36,20 +37,28 @@ public class ConcoursCrawlerService {
 
     private final AtomicBoolean running = new AtomicBoolean(false);
 
-    // 크롤링 1회 실행 — 저장된 신규 건수 반환
+    // 크롤링 1회 실행(전체 페이지) — 스케줄러 진입점, 저장된 신규 건수 반환
     public int crawl() {
+        return crawl(null);
+    }
+
+    // 크롤링 1회 실행 — maxPages가 주어지면 그 페이지 수까지만 순회(개발자 수동 검증용, null이면 전체)
+    public int crawl(Integer maxPages) {
+        if (maxPages != null && maxPages <= 0) {
+            throw new BadRequestException("maxPages는 1 이상이어야 합니다");
+        }
         if (!running.compareAndSet(false, true)) {
             throw new ConflictException("이미 콩쿠르 크롤링이 진행 중입니다");
         }
 
         try {
-            return crawlPages();
+            return crawlPages(maxPages);
         } finally {
             running.set(false);
         }
     }
 
-    private int crawlPages() {
+    private int crawlPages(Integer maxPages) {
         Document firstPage = fetchListDocumentSafely(1);
         if (firstPage == null) {
             log.warn("콩쿠르 크롤링 중단 — 1페이지 조회 실패");
@@ -57,6 +66,9 @@ public class ConcoursCrawlerService {
         }
 
         int totalPages = Math.min(ConcoursListPageParser.parseTotalPages(firstPage), HARD_CAP_PAGE);
+        if (maxPages != null) {
+            totalPages = Math.min(totalPages, maxPages);
+        }
         log.info("콩쿠르 크롤링 시작 — 총 {}페이지", totalPages);
 
         int savedCount = saveItemsOnPage(firstPage);
