@@ -1,6 +1,7 @@
 package com.obri_back.obri.global.exception;
 
 import com.obri_back.obri.global.common.APIResponse;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -18,6 +19,7 @@ import org.springframework.web.method.annotation.MethodArgumentTypeMismatchExcep
  * 모든 예외를 ApiResponse 형식으로 변환해 반환
  * @RestControllerAdvice로 모든 컨트롤러에 적용
  */
+@Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
@@ -169,6 +171,8 @@ public class GlobalExceptionHandler {
      */
     @ExceptionHandler(Exception.class)
     public ResponseEntity<APIResponse<Void>> handleException(Exception e) {
+        // BACKLOG.md #23: 운영에서 500이 나면 원인을 추적할 수 있도록 스택트레이스를 남김
+        log.error("예상치 못한 서버 오류", e);
         return ResponseEntity
                 .status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(APIResponse.error(500, "서버 오류가 발생했습니다"));

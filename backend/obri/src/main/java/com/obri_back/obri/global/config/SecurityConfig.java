@@ -46,6 +46,8 @@ public class SecurityConfig {
                 // Swagger 관련 경로 추가
                 .requestMatchers("/swagger-ui/**").permitAll()
                 .requestMatchers("/v3/api-docs/**").permitAll()
+                // 헬스체크 — PaaS/로드밸런서/오케스트레이터의 기동 확인용(BACKLOG.md #28)
+                .requestMatchers("/actuator/health").permitAll()
                 .anyRequest().authenticated()
             )
             .exceptionHandling(exception ->
