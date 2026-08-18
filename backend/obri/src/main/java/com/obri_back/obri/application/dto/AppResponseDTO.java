@@ -1,5 +1,6 @@
 package com.obri_back.obri.application.dto;
 
+import com.obri_back.obri.user.dto.CareerDTO;
 import com.obri_back.obri.user.entity.User;
 import com.obri_back.obri.application.entity.Application;
 import com.obri_back.obri.application.entity.ApplicationStatus;
@@ -8,6 +9,7 @@ import lombok.Builder;
 import lombok.Getter;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 /*
  * 지원서 응답 DTO — 전 엔드포인트 공통(글 요약 post + 지원자 요약 applicant 중첩)
@@ -26,10 +28,19 @@ public class AppResponseDTO {
 
     // Application 엔티티 + 지원자 → 응답 DTO 변환 (글·지원자 요약 중첩)
     public static AppResponseDTO from(Application application, User user) {
+        return from(application, user, null);
+    }
+
+    // Application 엔티티 + 지원자 + 배치 조회된 careers → 응답 DTO 변환
+    // 목록 조회(지원자 목록/내 지원 목록) 전용 — N+1 방지를 위해 careers를 미리 배치 조회해 전달(BACKLOG.md #21)
+    public static AppResponseDTO from(Application application, User user, List<CareerDTO> careers) {
+        ApplicantResponseDTO applicant = careers != null
+                ? ApplicantResponseDTO.from(user, careers)
+                : ApplicantResponseDTO.from(user);
         return AppResponseDTO.builder()
                 .id(application.getId())
                 .post(ApplicationPostSummaryDTO.from(application.getPost()))
-                .applicant(ApplicantResponseDTO.from(user))
+                .applicant(applicant)
                 .additionalInfo(application.getAdditionalInfo())
                 .status(application.getStatus())
                 .createdAt(application.getCreatedAt())

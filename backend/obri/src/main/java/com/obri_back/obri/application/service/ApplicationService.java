@@ -19,6 +19,8 @@ import com.obri_back.obri.post.repository.PostRepository;
 import com.obri_back.obri.user.entity.User;
 import com.obri_back.obri.user.service.UserService;
 
+import com.obri_back.obri.user.dto.CareerDTO;
+
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -29,6 +31,8 @@ import lombok.RequiredArgsConstructor;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 /*
 Application 관련 비즈니스 로직
@@ -108,6 +112,7 @@ public class ApplicationService {
     }
 
     // 한 게시글에 대한 지원서 목록 조회
+    // careers는 user.getCareers() lazy 접근 대신 UserService 배치 조회로 채움 — N+1 방지(BACKLOG.md #21)
     @Transactional(readOnly = true)
     public Page<AppResponseDTO> getApplicationsByPostId(Long postId, User user, Pageable pageable) {
          Post post = postRepository.findById(postId)
@@ -116,15 +121,31 @@ public class ApplicationService {
         // 구인자만 조회 가능
         requireRecruiter(user, post, "구인자만 지원자 목록을 조회할 수 있습니다");
 
-        return applicationRepository.findByPostId(postId, pageable)
-                .map(application -> AppResponseDTO.from(application, application.getUser()));
+        Page<Application> applications = applicationRepository.findByPostId(postId, pageable);
+        Map<Long, List<CareerDTO>> careersByUserId = loadCareersByApplicant(applications);
+        return applications.map(application -> AppResponseDTO.from(
+                application, application.getUser(),
+                careersByUserId.getOrDefault(application.getUser().getId(), List.of())));
     }
 
     // 아이디로 지원서 목록 조회
+    // careers는 user.getCareers() lazy 접근 대신 UserService 배치 조회로 채움 — N+1 방지(BACKLOG.md #21)
     @Transactional(readOnly = true)
     public Page<AppResponseDTO> getApplicationsByUserId(Long userId, Pageable pageable) {
-        return applicationRepository.findByUserId(userId, pageable)
-                .map(application -> AppResponseDTO.from(application, application.getUser()));
+        Page<Application> applications = applicationRepository.findByUserId(userId, pageable);
+        Map<Long, List<CareerDTO>> careersByUserId = loadCareersByApplicant(applications);
+        return applications.map(application -> AppResponseDTO.from(
+                application, application.getUser(),
+                careersByUserId.getOrDefault(application.getUser().getId(), List.of())));
+    }
+
+    // 페이지 안의 지원자 id를 모아 careers를 한 번에 배치 조회 (UserService 경유 — CareerRepository 직접 의존 금지)
+    private Map<Long, List<CareerDTO>> loadCareersByApplicant(Page<Application> applications) {
+        List<Long> applicantIds = applications.getContent().stream()
+                .map(application -> application.getUser().getId())
+                .distinct()
+                .collect(Collectors.toList());
+        return userService.getCareersByUserIds(applicantIds);
     }
 
     // 지원서 단건 조회

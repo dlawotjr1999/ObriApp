@@ -15,6 +15,7 @@ import com.obri_back.obri.notification.event.PostUpdatedNotificationEvent;
 import com.obri_back.obri.post.entity.Post;
 import com.obri_back.obri.post.entity.PostStatus;
 import com.obri_back.obri.post.repository.PostRepository;
+import com.obri_back.obri.user.dto.CareerDTO;
 import com.obri_back.obri.user.entity.User;
 import com.obri_back.obri.user.service.UserService;
 import org.junit.jupiter.api.BeforeEach;
@@ -24,12 +25,19 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
 
 import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.*;
 
@@ -191,6 +199,63 @@ class ApplicationServiceTest {
                 10L, applicant, org.springframework.data.domain.PageRequest.of(0, 10)))
                 .isInstanceOf(ForbiddenException.class)
                 .hasMessage("구인자만 지원자 목록을 조회할 수 있습니다");
+    }
+
+    // BACKLOG.md #21: careers는 user.getCareers() lazy 접근 대신 UserService의 배치 조회로 채워지는지 검증
+    // (CareerRepository 직접 의존 없이 UserService를 경유 — 도메인 경계 유지)
+    @Test
+    void getApplicationsByPostId_populatesApplicantCareersFromBatchLoadedMap() {
+        given(postRepository.findById(10L)).willReturn(Optional.of(post));
+        given(post.getUser()).willReturn(recruiter);
+
+        Application app = Application.builder()
+                .id(100L).user(applicant).post(post).instrument("바이올린").status(ApplicationStatus.PENDING).build();
+        Page<Application> page = new PageImpl<>(List.of(app));
+        given(applicationRepository.findByPostId(eq(10L), any())).willReturn(page);
+
+        CareerDTO career = CareerDTO.builder().id(1L).organization("서울시향").contexts("연주").build();
+        given(userService.getCareersByUserIds(List.of(applicant.getId())))
+                .willReturn(Map.of(applicant.getId(), List.of(career)));
+
+        Page<AppResponseDTO> result = applicationService.getApplicationsByPostId(
+                10L, recruiter, PageRequest.of(0, 10));
+
+        assertThat(result.getContent().get(0).getApplicant().getCareers()).containsExactly(career);
+        verify(userService, times(1)).getCareersByUserIds(List.of(applicant.getId()));
+    }
+
+    @Test
+    void getApplicationsByPostId_returnsEmptyCareersWhenApplicantHasNone() {
+        given(postRepository.findById(10L)).willReturn(Optional.of(post));
+        given(post.getUser()).willReturn(recruiter);
+
+        Application app = Application.builder()
+                .id(100L).user(applicant).post(post).instrument("바이올린").status(ApplicationStatus.PENDING).build();
+        Page<Application> page = new PageImpl<>(List.of(app));
+        given(applicationRepository.findByPostId(eq(10L), any())).willReturn(page);
+        given(userService.getCareersByUserIds(List.of(applicant.getId()))).willReturn(Map.of());
+
+        Page<AppResponseDTO> result = applicationService.getApplicationsByPostId(
+                10L, recruiter, PageRequest.of(0, 10));
+
+        assertThat(result.getContent().get(0).getApplicant().getCareers()).isEmpty();
+    }
+
+    @Test
+    void getApplicationsByUserId_populatesApplicantCareersFromBatchLoadedMap() {
+        Application app = Application.builder()
+                .id(100L).user(applicant).post(post).instrument("바이올린").status(ApplicationStatus.PENDING).build();
+        Page<Application> page = new PageImpl<>(List.of(app));
+        given(applicationRepository.findByUserId(eq(applicant.getId()), any())).willReturn(page);
+
+        CareerDTO career = CareerDTO.builder().id(1L).organization("서울시향").contexts("연주").build();
+        given(userService.getCareersByUserIds(List.of(applicant.getId())))
+                .willReturn(Map.of(applicant.getId(), List.of(career)));
+
+        Page<AppResponseDTO> result = applicationService.getApplicationsByUserId(
+                applicant.getId(), PageRequest.of(0, 10));
+
+        assertThat(result.getContent().get(0).getApplicant().getCareers()).containsExactly(career);
     }
 
     // ── 상태 변경 ──────────────────────────────────
