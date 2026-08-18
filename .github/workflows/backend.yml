@@ -81,7 +81,10 @@ jobs:
           SPRING_DATASOURCE_URL: jdbc:mysql://localhost:3306/obri_test?serverTimezone=Asia/Seoul&characterEncoding=UTF-8
           SPRING_DATASOURCE_USERNAME: root
           SPRING_DATASOURCE_PASSWORD: test
-          SPRING_JPA_HIBERNATE_DDL_AUTO: create-drop
+          # Flyway(BACKLOG.md #53)가 빈 MySQL 컨테이너에 스키마를 만들고, Hibernate는 validate로
+          # 그 결과가 엔티티 매핑과 정확히 일치하는지만 검증 — create-drop이면 Flyway가 만든 스키마를
+          # Hibernate가 곧바로 지우고 재생성해버려 마이그레이션 자체가 검증되지 않음
+          SPRING_JPA_HIBERNATE_DDL_AUTO: validate
 
       # 7. 테스트 결과 리포트 업로드 (실패 시에만)
       - name: 테스트 결과 업로드

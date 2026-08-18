@@ -19,8 +19,13 @@ import static org.assertj.core.api.Assertions.assertThat;
 // PostSpecification의 region 필터는 Criteria API 조건이라 실제 쿼리 실행 없이는 검증 불가 → @DataJpaTest(내장 H2)
 // BACKLOG.md #38: location 자유텍스트 LIKE 매칭 대신 region 전용 컬럼 정확 일치로 전환
 // globally_quoted_identifiers: `user` 테이블명이 H2 예약어(USER)와 충돌해 스키마 생성 자체가 실패하는 문제 회피
+// spring.flyway.enabled=false: Flyway(BACKLOG.md #53)가 MySQL 문법 마이그레이션을 이 H2 스키마에 적용하려 들면
+// 충돌·실패하므로, 이 테스트는 지금처럼 Hibernate가 H2 스키마를 직접 관리(ddl-auto=create-drop, @DataJpaTest 기본값)하도록 유지
 @DataJpaTest
-@TestPropertySource(properties = "spring.jpa.properties.hibernate.globally_quoted_identifiers=true")
+@TestPropertySource(properties = {
+        "spring.jpa.properties.hibernate.globally_quoted_identifiers=true",
+        "spring.flyway.enabled=false"
+})
 class PostSpecificationTest {
 
     @Autowired

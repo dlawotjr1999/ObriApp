@@ -227,4 +227,23 @@ class PostTest {
 
         assertThat(created.getRegion()).isEqualTo("경기");
     }
+
+    // CLAUDE.md §8: ApplicationAccessPolicy가 post.getUser().getId().equals(...) 체인을 직접 다루지 않도록
+    // 소유자 판단 로직 자체를 Post로 이관(Tell-Don't-Ask)
+    @Test
+    void isOwnedBy_trueWhenSameUser() {
+        User owner = User.builder().id(1L).nickname("owner").firebaseUid("owner-uid").build();
+        Post created = Post.create(owner, PostInfo.builder().build());
+
+        assertThat(created.isOwnedBy(owner)).isTrue();
+    }
+
+    @Test
+    void isOwnedBy_falseWhenDifferentUser() {
+        User owner = User.builder().id(1L).nickname("owner").firebaseUid("owner-uid").build();
+        User other = User.builder().id(2L).nickname("other").firebaseUid("other-uid").build();
+        Post created = Post.create(owner, PostInfo.builder().build());
+
+        assertThat(created.isOwnedBy(other)).isFalse();
+    }
 }

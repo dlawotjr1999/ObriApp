@@ -2,6 +2,7 @@ package com.obri_back.obri.user.service;
 
 import com.obri_back.obri.global.exception.ConflictGuard;
 import com.obri_back.obri.global.exception.NotFoundException;
+import com.obri_back.obri.user.dto.CareerDTO;
 import com.obri_back.obri.user.dto.SchoolEmailUpdateRequestDTO;
 import com.obri_back.obri.user.dto.UserPublicProfileDTO;
 import com.obri_back.obri.user.dto.UserResponseDTO;
@@ -15,6 +16,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
@@ -136,6 +138,22 @@ public class UserService {
                 userRepository.existsBySchoolEmail(schoolEmail), "이미 등록된 학교 이메일입니다");
 
         managedUser.updateSchoolEmail(schoolEmail);
+    }
+
+    /*
+     * 여러 유저의 경력을 배치 조회 후 유저별로 그룹화
+     * application 도메인(지원자 목록)이 페이지 단위 careers를 N+1 없이 로딩할 때 이 메서드를 경유(BACKLOG.md #21) —
+     * 다른 도메인이 CareerRepository를 직접 찌르지 않도록 함
+     *
+     * @param userIds 조회할 유저 id 목록
+     * @return 유저 id별 경력 목록 (경력이 없는 유저는 키 자체가 없음)
+     */
+    @Transactional(readOnly = true)
+    public Map<Long, List<CareerDTO>> getCareersByUserIds(List<Long> userIds) {
+        return careerRepository.findByUserIdIn(userIds).stream()
+                .collect(Collectors.groupingBy(
+                        career -> career.getUser().getId(),
+                        Collectors.mapping(CareerDTO::from, Collectors.toList())));
     }
 
     /*

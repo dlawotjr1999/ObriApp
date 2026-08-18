@@ -187,6 +187,11 @@ public class Post {
         recomputeStatus();
     }
 
+    // 이 글의 작성자가 user인지 확인 — 호출부가 getUser().getId().equals(...) 체인을 직접 다루지 않도록 함(CLAUDE.md §8)
+    public boolean isOwnedBy(User user) {
+        return this.user.getId().equals(user.getId());
+    }
+
     // 해당 악기가 이미 정원 마감됐는지 확인 — 모집 목록에 없는 악기는 마감 개념이 없어 false(자리 미반영 지원 허용, 시나리오 1.4)
     public boolean isInstrumentClosed(String instrumentName) {
         PostInstrument target = findInstrument(instrumentName);

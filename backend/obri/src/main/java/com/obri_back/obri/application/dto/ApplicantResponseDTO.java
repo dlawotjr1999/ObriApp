@@ -22,16 +22,23 @@ public class ApplicantResponseDTO {
     private List<CareerDTO> careers;
 
     // User 엔티티 → 지원자 프로필 DTO 변환 (email 제외, phoneNumber 포함)
+    // 단건 조회 전용 — user.getCareers() LAZY 접근(BACKLOG.md #21 대상 아님, 목록 조회는 아래 배치 오버로드 사용)
     public static ApplicantResponseDTO from(User user) {
+        return from(user, user.getCareers().stream()
+                .map(CareerDTO::from)
+                .collect(Collectors.toList()));
+    }
+
+    // User 엔티티 + 배치 조회된 careers → 지원자 프로필 DTO 변환
+    // 목록 조회(지원자 목록/내 지원 목록) 전용 — user.getCareers() lazy 접근을 피해 N+1을 방지(BACKLOG.md #21)
+    public static ApplicantResponseDTO from(User user, List<CareerDTO> careers) {
         return ApplicantResponseDTO.builder()
                 .nickname(user.getNickname())
                 .instrument(user.getInstrument())
                 .school(user.getSchool())
                 .isGraduate(user.isGraduate())
                 .phoneNumber(user.getPhoneNumber())
-                .careers(user.getCareers().stream()
-                        .map(CareerDTO::from)
-                        .collect(Collectors.toList()))
+                .careers(careers)
                 .build();
     }
 }

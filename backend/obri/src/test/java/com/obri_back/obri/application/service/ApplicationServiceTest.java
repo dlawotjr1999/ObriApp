@@ -15,6 +15,7 @@ import com.obri_back.obri.notification.event.PostUpdatedNotificationEvent;
 import com.obri_back.obri.post.entity.Post;
 import com.obri_back.obri.post.entity.PostStatus;
 import com.obri_back.obri.post.repository.PostRepository;
+import com.obri_back.obri.user.dto.CareerDTO;
 import com.obri_back.obri.user.entity.User;
 import com.obri_back.obri.user.service.UserService;
 import org.junit.jupiter.api.BeforeEach;
@@ -24,12 +25,19 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
 
 import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.*;
 
@@ -40,6 +48,7 @@ class ApplicationServiceTest {
     @Mock PostRepository postRepository;
     @Mock UserService userService;
     @Mock ApplicationEventPublisher eventPublisher;
+    @Mock ApplicationAccessPolicy accessPolicy;
 
     @InjectMocks ApplicationService applicationService;
 
@@ -181,16 +190,73 @@ class ApplicationServiceTest {
 
     // ── 지원자 목록 조회 ──────────────────────────────────
 
-    // BACKLOG.md #18: 인라인 비교 대신 requireRecruiter() 헬퍼로 통일
+    // CLAUDE.md §8: 인가 판단은 ApplicationAccessPolicy로 위임 — 서비스는 정책이 던진 예외를 그대로 전파하는지만 검증
+    // (인가 판단 로직 자체는 ApplicationAccessPolicyTest에서 검증)
     @Test
     void getApplicationsByPostId_throwsForbiddenWhenNotOwner() {
         given(postRepository.findById(10L)).willReturn(Optional.of(post));
-        given(post.getUser()).willReturn(recruiter);
+        doThrow(new ForbiddenException("구인자만 지원자 목록을 조회할 수 있습니다"))
+                .when(accessPolicy).requireRecruiter(applicant, post, "구인자만 지원자 목록을 조회할 수 있습니다");
 
         assertThatThrownBy(() -> applicationService.getApplicationsByPostId(
                 10L, applicant, org.springframework.data.domain.PageRequest.of(0, 10)))
                 .isInstanceOf(ForbiddenException.class)
                 .hasMessage("구인자만 지원자 목록을 조회할 수 있습니다");
+    }
+
+    // BACKLOG.md #21: careers는 user.getCareers() lazy 접근 대신 UserService의 배치 조회로 채워지는지 검증
+    // (CareerRepository 직접 의존 없이 UserService를 경유 — 도메인 경계 유지)
+    @Test
+    void getApplicationsByPostId_populatesApplicantCareersFromBatchLoadedMap() {
+        given(postRepository.findById(10L)).willReturn(Optional.of(post));
+
+        Application app = Application.builder()
+                .id(100L).user(applicant).post(post).instrument("바이올린").status(ApplicationStatus.PENDING).build();
+        Page<Application> page = new PageImpl<>(List.of(app));
+        given(applicationRepository.findByPostId(eq(10L), any())).willReturn(page);
+
+        CareerDTO career = CareerDTO.builder().id(1L).organization("서울시향").contexts("연주").build();
+        given(userService.getCareersByUserIds(List.of(applicant.getId())))
+                .willReturn(Map.of(applicant.getId(), List.of(career)));
+
+        Page<AppResponseDTO> result = applicationService.getApplicationsByPostId(
+                10L, recruiter, PageRequest.of(0, 10));
+
+        assertThat(result.getContent().get(0).getApplicant().getCareers()).containsExactly(career);
+        verify(userService, times(1)).getCareersByUserIds(List.of(applicant.getId()));
+    }
+
+    @Test
+    void getApplicationsByPostId_returnsEmptyCareersWhenApplicantHasNone() {
+        given(postRepository.findById(10L)).willReturn(Optional.of(post));
+
+        Application app = Application.builder()
+                .id(100L).user(applicant).post(post).instrument("바이올린").status(ApplicationStatus.PENDING).build();
+        Page<Application> page = new PageImpl<>(List.of(app));
+        given(applicationRepository.findByPostId(eq(10L), any())).willReturn(page);
+        given(userService.getCareersByUserIds(List.of(applicant.getId()))).willReturn(Map.of());
+
+        Page<AppResponseDTO> result = applicationService.getApplicationsByPostId(
+                10L, recruiter, PageRequest.of(0, 10));
+
+        assertThat(result.getContent().get(0).getApplicant().getCareers()).isEmpty();
+    }
+
+    @Test
+    void getApplicationsByUserId_populatesApplicantCareersFromBatchLoadedMap() {
+        Application app = Application.builder()
+                .id(100L).user(applicant).post(post).instrument("바이올린").status(ApplicationStatus.PENDING).build();
+        Page<Application> page = new PageImpl<>(List.of(app));
+        given(applicationRepository.findByUserId(eq(applicant.getId()), any())).willReturn(page);
+
+        CareerDTO career = CareerDTO.builder().id(1L).organization("서울시향").contexts("연주").build();
+        given(userService.getCareersByUserIds(List.of(applicant.getId())))
+                .willReturn(Map.of(applicant.getId(), List.of(career)));
+
+        Page<AppResponseDTO> result = applicationService.getApplicationsByUserId(
+                applicant.getId(), PageRequest.of(0, 10));
+
+        assertThat(result.getContent().get(0).getApplicant().getCareers()).containsExactly(career);
     }
 
     // ── 상태 변경 ──────────────────────────────────
@@ -209,7 +275,6 @@ class ApplicationServiceTest {
     void accept_confirmsInstrumentAndNotifiesWhenRecruiter() {
         Application app = buildApplication(ApplicationStatus.PENDING);
         given(applicationRepository.findById(100L)).willReturn(Optional.of(app));
-        given(post.getUser()).willReturn(recruiter);
 
         applicationService.accept(recruiter, 100L);
 
@@ -222,7 +287,6 @@ class ApplicationServiceTest {
     void reject_setsRejectedAndNotifiesWhenRecruiter() {
         Application app = buildApplication(ApplicationStatus.PENDING);
         given(applicationRepository.findById(100L)).willReturn(Optional.of(app));
-        given(post.getUser()).willReturn(recruiter);
 
         applicationService.reject(recruiter, 100L);
 
@@ -235,7 +299,6 @@ class ApplicationServiceTest {
     void revoke_releasesInstrumentWhenRecruiterAndAccepted() {
         Application app = buildApplication(ApplicationStatus.ACCEPTED);
         given(applicationRepository.findById(100L)).willReturn(Optional.of(app));
-        given(post.getUser()).willReturn(recruiter);
 
         applicationService.revoke(recruiter, 100L);
 
@@ -247,7 +310,8 @@ class ApplicationServiceTest {
     void accept_throwsForbiddenWhenApplicant() {
         Application app = buildApplication(ApplicationStatus.PENDING);
         given(applicationRepository.findById(100L)).willReturn(Optional.of(app));
-        given(post.getUser()).willReturn(recruiter);
+        doThrow(new ForbiddenException("구인자만 수락 또는 거절할 수 있습니다"))
+                .when(accessPolicy).requireRecruiter(applicant, app, "구인자만 수락 또는 거절할 수 있습니다");
 
         assertThatThrownBy(() -> applicationService.accept(applicant, 100L))
                 .isInstanceOf(ForbiddenException.class);
@@ -268,7 +332,6 @@ class ApplicationServiceTest {
     void revoke_throwsBadRequestWhenNonAccepted() {
         Application app = buildApplication(ApplicationStatus.PENDING);
         given(applicationRepository.findById(100L)).willReturn(Optional.of(app));
-        given(post.getUser()).willReturn(recruiter);
 
         assertThatThrownBy(() -> applicationService.revoke(recruiter, 100L))
                 .isInstanceOf(BadRequestException.class);
