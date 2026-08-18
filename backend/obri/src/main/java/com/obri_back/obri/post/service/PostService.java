@@ -76,7 +76,7 @@ public class PostService {
         Post post = findPostOrThrow(postId);
 
         long applicationCount = applicationService.countApplicationsByPostId(postId);
-        boolean isMine = post.getUser().getId().equals(user.getId());
+        boolean isMine = post.isOwnedBy(user);
         boolean hasApplied = applicationService.hasApplied(postId, user.getId());
 
         return PostDetailResponseDTO.from(post, applicationCount, isMine, hasApplied);
@@ -141,7 +141,7 @@ public class PostService {
 
     // 작성자 본인 여부 검증 — 아니면 403
     private void requireOwner(Post post, User user) {
-        if (!post.getUser().getId().equals(user.getId())) {
+        if (!post.isOwnedBy(user)) {
             throw new ForbiddenException("작성자만 처리할 수 있습니다");
         }
     }
