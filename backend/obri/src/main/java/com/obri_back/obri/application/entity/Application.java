@@ -69,4 +69,14 @@ public class Application {
     public void updateStatus(ApplicationStatus status) {
         this.status = status;
     }
+
+    // 이 지원서의 지원자가 user인지 확인 — 호출부가 getUser().getId().equals(...) 체인을 직접 다루지 않도록 함(CLAUDE.md §8)
+    public boolean isApplicant(User user) {
+        return this.user.getId().equals(user.getId());
+    }
+
+    // 이 지원서가 걸린 글의 구인자가 user인지 확인 — Post에 위임(Post.getUser()를 여기서 직접 만지지 않음)
+    public boolean isRecruiter(User user) {
+        return this.post.isOwnedBy(user);
+    }
 }

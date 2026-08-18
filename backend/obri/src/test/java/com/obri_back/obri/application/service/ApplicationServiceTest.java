@@ -48,6 +48,7 @@ class ApplicationServiceTest {
     @Mock PostRepository postRepository;
     @Mock UserService userService;
     @Mock ApplicationEventPublisher eventPublisher;
+    @Mock ApplicationAccessPolicy accessPolicy;
 
     @InjectMocks ApplicationService applicationService;
 
@@ -189,11 +190,13 @@ class ApplicationServiceTest {
 
     // ── 지원자 목록 조회 ──────────────────────────────────
 
-    // BACKLOG.md #18: 인라인 비교 대신 requireRecruiter() 헬퍼로 통일
+    // CLAUDE.md §8: 인가 판단은 ApplicationAccessPolicy로 위임 — 서비스는 정책이 던진 예외를 그대로 전파하는지만 검증
+    // (인가 판단 로직 자체는 ApplicationAccessPolicyTest에서 검증)
     @Test
     void getApplicationsByPostId_throwsForbiddenWhenNotOwner() {
         given(postRepository.findById(10L)).willReturn(Optional.of(post));
-        given(post.getUser()).willReturn(recruiter);
+        doThrow(new ForbiddenException("구인자만 지원자 목록을 조회할 수 있습니다"))
+                .when(accessPolicy).requireRecruiter(applicant, post, "구인자만 지원자 목록을 조회할 수 있습니다");
 
         assertThatThrownBy(() -> applicationService.getApplicationsByPostId(
                 10L, applicant, org.springframework.data.domain.PageRequest.of(0, 10)))
@@ -206,7 +209,6 @@ class ApplicationServiceTest {
     @Test
     void getApplicationsByPostId_populatesApplicantCareersFromBatchLoadedMap() {
         given(postRepository.findById(10L)).willReturn(Optional.of(post));
-        given(post.getUser()).willReturn(recruiter);
 
         Application app = Application.builder()
                 .id(100L).user(applicant).post(post).instrument("바이올린").status(ApplicationStatus.PENDING).build();
@@ -227,7 +229,6 @@ class ApplicationServiceTest {
     @Test
     void getApplicationsByPostId_returnsEmptyCareersWhenApplicantHasNone() {
         given(postRepository.findById(10L)).willReturn(Optional.of(post));
-        given(post.getUser()).willReturn(recruiter);
 
         Application app = Application.builder()
                 .id(100L).user(applicant).post(post).instrument("바이올린").status(ApplicationStatus.PENDING).build();
@@ -274,7 +275,6 @@ class ApplicationServiceTest {
     void accept_confirmsInstrumentAndNotifiesWhenRecruiter() {
         Application app = buildApplication(ApplicationStatus.PENDING);
         given(applicationRepository.findById(100L)).willReturn(Optional.of(app));
-        given(post.getUser()).willReturn(recruiter);
 
         applicationService.accept(recruiter, 100L);
 
@@ -287,7 +287,6 @@ class ApplicationServiceTest {
     void reject_setsRejectedAndNotifiesWhenRecruiter() {
         Application app = buildApplication(ApplicationStatus.PENDING);
         given(applicationRepository.findById(100L)).willReturn(Optional.of(app));
-        given(post.getUser()).willReturn(recruiter);
 
         applicationService.reject(recruiter, 100L);
 
@@ -300,7 +299,6 @@ class ApplicationServiceTest {
     void revoke_releasesInstrumentWhenRecruiterAndAccepted() {
         Application app = buildApplication(ApplicationStatus.ACCEPTED);
         given(applicationRepository.findById(100L)).willReturn(Optional.of(app));
-        given(post.getUser()).willReturn(recruiter);
 
         applicationService.revoke(recruiter, 100L);
 
@@ -312,7 +310,8 @@ class ApplicationServiceTest {
     void accept_throwsForbiddenWhenApplicant() {
         Application app = buildApplication(ApplicationStatus.PENDING);
         given(applicationRepository.findById(100L)).willReturn(Optional.of(app));
-        given(post.getUser()).willReturn(recruiter);
+        doThrow(new ForbiddenException("구인자만 수락 또는 거절할 수 있습니다"))
+                .when(accessPolicy).requireRecruiter(applicant, app, "구인자만 수락 또는 거절할 수 있습니다");
 
         assertThatThrownBy(() -> applicationService.accept(applicant, 100L))
                 .isInstanceOf(ForbiddenException.class);
@@ -333,7 +332,6 @@ class ApplicationServiceTest {
     void revoke_throwsBadRequestWhenNonAccepted() {
         Application app = buildApplication(ApplicationStatus.PENDING);
         given(applicationRepository.findById(100L)).willReturn(Optional.of(app));
-        given(post.getUser()).willReturn(recruiter);
 
         assertThatThrownBy(() -> applicationService.revoke(recruiter, 100L))
                 .isInstanceOf(BadRequestException.class);

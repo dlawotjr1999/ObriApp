@@ -55,6 +55,7 @@ public class ApplicationService {
     private final PostRepository postRepository;
     private final UserService userService;
     private final ApplicationEventPublisher eventPublisher;
+    private final ApplicationAccessPolicy accessPolicy;
 
     // 지원서 제출
     @Transactional
@@ -119,7 +120,7 @@ public class ApplicationService {
                 .orElseThrow(() -> new NotFoundException("구인글을 찾을 수 없습니다"));
 
         // 구인자만 조회 가능
-        requireRecruiter(user, post, "구인자만 지원자 목록을 조회할 수 있습니다");
+        accessPolicy.requireRecruiter(user, post, "구인자만 지원자 목록을 조회할 수 있습니다");
 
         Page<Application> applications = applicationRepository.findByPostId(postId, pageable);
         Map<Long, List<CareerDTO>> careersByUserId = loadCareersByApplicant(applications);
@@ -156,12 +157,7 @@ public class ApplicationService {
                 .orElseThrow(() -> new NotFoundException("지원서를 찾을 수 없습니다"));
 
         // 구인자 또는 지원자 본인만 조회 가능
-        boolean isApplicant = application.getUser().getId().equals(user.getId());
-        boolean isRecruiter = application.getPost().getUser().getId().equals(user.getId());
-
-        if (!isApplicant && !isRecruiter) {
-            throw new ForbiddenException("조회 권한이 없습니다");
-        }
+        accessPolicy.requireViewer(user, application, "조회 권한이 없습니다");
 
         return AppResponseDTO.from(application, application.getUser());
     }
@@ -175,7 +171,7 @@ public class ApplicationService {
     @Transactional
     public void accept(User user, Long id) {
         Application application = findApplicationOrThrow(id);
-        requireRecruiter(user, application, "구인자만 수락 또는 거절할 수 있습니다");
+        accessPolicy.requireRecruiter(user, application, "구인자만 수락 또는 거절할 수 있습니다");
         requirePending(application);
         application.getPost().confirmInstrument(application.getInstrument());
         application.updateStatus(ApplicationStatus.ACCEPTED);
@@ -187,7 +183,7 @@ public class ApplicationService {
     @Transactional
     public void reject(User user, Long id) {
         Application application = findApplicationOrThrow(id);
-        requireRecruiter(user, application, "구인자만 수락 또는 거절할 수 있습니다");
+        accessPolicy.requireRecruiter(user, application, "구인자만 수락 또는 거절할 수 있습니다");
         requirePending(application);
         application.updateStatus(ApplicationStatus.REJECTED);
         // AFTER_COMMIT 이후 발송(BACKLOG.md #15)
@@ -198,9 +194,7 @@ public class ApplicationService {
     @Transactional
     public void cancel(User user, Long id) {
         Application application = findApplicationOrThrow(id);
-        if (!application.getUser().getId().equals(user.getId())) {
-            throw new ForbiddenException("지원자만 지원을 취소할 수 있습니다");
-        }
+        accessPolicy.requireApplicant(user, application, "지원자만 지원을 취소할 수 있습니다");
         if (application.getStatus() != ApplicationStatus.PENDING) {
             throw new BadRequestException("대기 중인 지원만 취소할 수 있습니다");
         }
@@ -211,7 +205,7 @@ public class ApplicationService {
     @Transactional
     public void revoke(User user, Long id) {
         Application application = findApplicationOrThrow(id);
-        requireRecruiter(user, application, "구인자만 수락을 철회할 수 있습니다");
+        accessPolicy.requireRecruiter(user, application, "구인자만 수락을 철회할 수 있습니다");
         if (application.getStatus() != ApplicationStatus.ACCEPTED) {
             throw new BadRequestException("수락된 지원만 철회할 수 있습니다");
         }
@@ -222,17 +216,6 @@ public class ApplicationService {
     private Application findApplicationOrThrow(Long id) {
         return applicationRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException("지원서를 찾을 수 없습니다"));
-    }
-
-    private void requireRecruiter(User user, Application application, String message) {
-        requireRecruiter(user, application.getPost(), message);
-    }
-
-    // BACKLOG.md #18: getApplicationsByPostId()의 인라인 비교도 이 헬퍼로 통일
-    private void requireRecruiter(User user, Post post, String message) {
-        if (!post.getUser().getId().equals(user.getId())) {
-            throw new ForbiddenException(message);
-        }
     }
 
     private void requirePending(Application application) {
