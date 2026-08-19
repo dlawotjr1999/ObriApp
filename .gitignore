@@ -1,21 +1,33 @@
+# OS 파일
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# 개발 환경(IDE) 설정
+.vscode/
+.idea/
+*.iml
+.project
+.classpath
+.settings/
+
+# 문서 파일
 docs/*
 CLAUDE.md
 AGENTS.md
 BACKLOG.md
 spring-diagnostic-prompt.md
 
-### OS ###
-.DS_Store
-Thumbs.db
+# 로그 및 임시 파일
+*.log
+*.tmp
+*.temp
+.cache/
 
-### Editor ###
-.vscode/
-.idea/
-
-### Node (루트 임시 설치물) ###
+# Node (루트 임시 설치물) 
 node_modules/
 
-### 비밀/환경 (하위 프로젝트에도 각각 존재하나 모노레포 공통 방어선) ###
+# 환경 변수 및 보안 파일
 .env
 .env.*
 !.env.example
