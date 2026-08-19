@@ -9,38 +9,43 @@ npm install
 npx expo start
 ```
 
+실행 환경은 **Expo Go**다. Firebase는 네이티브 모듈이 아닌 `firebase` JS SDK를 사용하므로 별도 개발 빌드 없이 Expo Go에서 그대로 동작한다.
+
 ## 로컬 환경 설정 (필수)
 
-이 프로젝트는 백엔드 API 주소와 Firebase 설정을 로컬 파일로 주입받는다. 아래 파일들은 전부 `.gitignore` 대상 — 절대 커밋하지 않는다.
-
-### 1. `.env`
+백엔드 API 주소와 Firebase 웹 설정을 `.env`로 주입받는다. 이 파일은 `.gitignore` 대상 — 절대 커밋하지 않는다.
 
 ```bash
 cp .env.example .env
 ```
 
-`EXPO_PUBLIC_API_URL`을 로컬에서 띄운 백엔드 주소(기본 `http://localhost:8080`)로 맞춘다. `EXPO_PUBLIC_` 접두어가 붙은 값은 빌드 시 클라이언트 번들에 그대로 인라인되므로, 여기엔 공개돼도 되는 값만 넣는다.
+### API 주소
 
-### 2. Firebase 네이티브 설정 파일
+**실기기 Expo Go에서는 `localhost`가 폰 자기 자신을 가리켜 백엔드에 붙지 않는다.** 개발 머신의 LAN IP를 써야 한다.
 
-`@react-native-firebase`가 요구하는 두 파일은 저장소에 포함돼 있지 않다. Firebase 콘솔(프로젝트 설정 → 내 앱)에서 각자 다운로드해 아래 경로에 둔다.
+| 실행 환경 | `EXPO_PUBLIC_API_URL` |
+|---|---|
+| 실기기 Expo Go | `http://<개발머신 LAN IP>:8080` |
+| iOS 시뮬레이터 | `http://localhost:8080` |
+| Android 에뮬레이터 | `http://10.0.2.2:8080` |
 
-| 플랫폼 | 파일명 | 위치 |
-|---|---|---|
-| Android | `google-services.json` | `Frontend/ObriApp/google-services.json` |
-| iOS | `GoogleService-Info.plist` | `Frontend/ObriApp/GoogleService-Info.plist` |
+폰과 개발 머신이 같은 Wi-Fi에 있어야 하고, 방화벽에서 8080 인바운드가 열려 있어야 한다.
 
-접근 권한이 없다면 프로젝트 관리자에게 Firebase 콘솔 초대를 요청한다.
+### Firebase 설정
 
-여러 명이 EAS로 빌드하는 단계부터는 로컬 파일 대신 `eas secret:create`로 등록하고 `eas.json`의 빌드 프로필에서 참조하는 방식으로 전환한다 — 파일을 각자 로컬에 복사해 다니지 않아도 된다.
+Firebase 콘솔 → 프로젝트 설정 → 내 앱 → 웹 앱의 `firebaseConfig` 값을 `.env`의 `EXPO_PUBLIC_FIREBASE_*` 항목에 채운다. 접근 권한이 없다면 프로젝트 관리자에게 콘솔 초대를 요청한다.
 
-## 개발 빌드 (EAS)
+이 값들은 클라이언트에 노출되는 것이 정상이다(공개 식별자). 실제 접근 제어는 Firebase 보안 규칙과 백엔드의 ID Token 검증이 담당한다.
 
-Firebase Phone Auth 등 네이티브 모듈이 필요한 기능은 Expo Go에서 동작하지 않는다. Development build가 필요하다.
+## 인증 현황
 
-```bash
-npx eas build --profile development --platform android   # 또는 ios
-```
+현재 인증은 **Firebase 이메일/비밀번호**를 사용한다. 백엔드가 계정 고유성 앵커로 설계한 **전화번호 인증(SMS OTP)은 출시 전 하드닝 단계로 미뤄져 있다** — Phone Auth가 Expo Go에서 동작하지 않아 EAS development build가 선행돼야 하기 때문이다.
+
+그 전환 시점에 `@react-native-firebase/auth`로 SDK를 교체할 가능성이 높다. 따라서 **화면 코드에서 `firebase/auth`를 직접 import하지 않는다** — 인증 호출은 전부 `api/auth.ts` 래퍼를 경유시켜 교체 지점을 한 파일로 고정한다.
+
+전환 시 함께 필요해지는 것들(지금은 불필요):
+- `google-services.json` / `GoogleService-Info.plist` (Firebase 콘솔에서 다운로드, 이미 `.gitignore` 등록됨)
+- `eas.json` 빌드 프로필 + `eas secret:create`로 시크릿 등록
 
 ## 파일 기반 라우팅
 
