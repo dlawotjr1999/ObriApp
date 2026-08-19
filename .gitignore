@@ -2,6 +2,7 @@ docs/*
 CLAUDE.md
 AGENTS.md
 BACKLOG.md
+spring-diagnostic-prompt.md
 
 ### OS ###
 .DS_Store
