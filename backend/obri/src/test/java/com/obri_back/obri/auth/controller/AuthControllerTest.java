@@ -30,6 +30,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.authentication;
@@ -109,6 +110,46 @@ class AuthControllerTest {
                 .andExpect(jsonPath("$.message").value("회원가입이 완료되었습니다"))
                 .andExpect(jsonPath("$.data.createdAt").value("2024-01-01T00:00:00"))
                 .andExpect(jsonPath("$.data.nickname").doesNotExist());
+    }
+
+    // register는 permitAll이라 미인증 상태로도 호출된다 — 헤더가 "Bearer " 형식이 아니면
+    // substring(7)에서 StringIndexOutOfBounds가 나 500이 되던 것을 401로 차단(CLAUDE.md §7)
+    @Test
+    void register_returns401WhenAuthorizationHeaderMalformed() throws Exception {
+        mockMvc.perform(post("/api/auth/register")
+                        .header("Authorization", "abc")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "nickname": "테스터",
+                                  "instrument": "바이올린",
+                                  "school": "서울대",
+                                  "isGraduate": false
+                                }
+                                """))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.status").value(401));
+
+        verify(authService, never()).register(any(), any());
+    }
+
+    @Test
+    void register_returns401WhenBearerTokenEmpty() throws Exception {
+        mockMvc.perform(post("/api/auth/register")
+                        .header("Authorization", "Bearer ")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "nickname": "테스터",
+                                  "instrument": "바이올린",
+                                  "school": "서울대",
+                                  "isGraduate": false
+                                }
+                                """))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.status").value(401));
+
+        verify(authService, never()).register(any(), any());
     }
 
     @Test

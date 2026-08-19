@@ -53,8 +53,7 @@ public class AuthService {
 
         String firebaseUid = decodedToken.getUid();
         String email = decodedToken.getEmail();
-        // 전화번호는 클라이언트가 인증한 값이 아니라 검증된 ID Token의 phone_number claim만 신뢰
-        String phoneNumber = extractPhoneNumberClaim(decodedToken);
+        String phoneNumber = resolvePhoneNumber(decodedToken, request);
 
         ConflictGuard.requireUnique(
                 userRepository.existsByFirebaseUid(firebaseUid), "이미 가입된 계정입니다");
@@ -148,15 +147,40 @@ public class AuthService {
     }
 
     // Firebase 토큰 검증 및 디코딩
+    // IllegalArgumentException까지 잡는 이유: verifyIdToken은 토큰이 비어 있으면 FirebaseAuthException이
+    // 아니라 IllegalArgumentException을 던진다. 놓치면 401이어야 할 요청이 500으로 새어 나간다.
     private FirebaseToken verifyToken(String idToken) {
         try {
             return firebaseAuth.verifyIdToken(idToken);
-        } catch (FirebaseAuthException e) {
+        } catch (FirebaseAuthException | IllegalArgumentException e) {
             throw new UnauthorizedException("유효하지 않은 Firebase 토큰입니다");
         }
     }
 
+    /*
+     * 회원가입 시 전화번호 결정 — claim 우선, 없으면 요청 바디 폴백
+     *
+     * [임시] 원 설계는 claim만 신뢰하는 것이나(§3.1), Phone Auth가 Expo Go에서 동작하지 않아
+     * 전화 인증 도입이 출시 전으로 연기됐다. claim을 먼저 보는 순서는 그대로 두었으므로,
+     * 나중에 Phone Auth를 붙이면 이 메서드를 고치지 않아도 자동으로 claim이 우선한다.
+     * 전화 인증 도입이 끝나면 아래 폴백 분기와 RegisterRequestDTO.phoneNumber를 함께 제거할 것.
+     */
+    private String resolvePhoneNumber(FirebaseToken decodedToken, RegisterRequestDTO request) {
+        Object phoneClaim = decodedToken.getClaims().get("phone_number");
+        if (phoneClaim != null) {
+            return phoneClaim.toString();
+        }
+
+        String phoneNumber = request.getPhoneNumber();
+        if (phoneNumber == null || phoneNumber.isBlank()) {
+            throw new BadRequestException("휴대폰 번호가 없습니다");
+        }
+        return phoneNumber;
+    }
+
     // 검증된 토큰에서 phone_number claim 추출 (Firebase Admin SDK에 전용 getter 없어 claims map에서 직접 조회)
+    // 전화번호 변경(PATCH /api/auth/phone-number)은 폴백 없이 claim만 신뢰한다 — 변경은 가입과 달리
+    // 이미 인증된 사용자의 행위라, 바디 값을 받아주면 남의 번호로 덮어쓸 수 있다
     private String extractPhoneNumberClaim(FirebaseToken decodedToken) {
         Object phoneClaim = decodedToken.getClaims().get("phone_number");
         if (phoneClaim == null) {
