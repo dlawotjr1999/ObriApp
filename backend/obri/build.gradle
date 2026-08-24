@@ -25,9 +25,9 @@ dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-validation'
 	implementation 'org.springframework.boot:spring-boot-starter-web'
 
-	// DB 마이그레이션 (BACKLOG.md #53) — MySQL 8 지원은 Flyway 10+부터 flyway-mysql 별도 모듈 필요
+	// DB 마이그레이션 (BACKLOG.md #53) — PostgreSQL 지원은 Flyway 10+부터 flyway-database-postgresql 별도 모듈 필요
 	implementation 'org.flywaydb:flyway-core'
-	implementation 'org.flywaydb:flyway-mysql'
+	implementation 'org.flywaydb:flyway-database-postgresql'
 
 	// Lombok
 	compileOnly 'org.projectlombok:lombok'
@@ -36,8 +36,8 @@ dependencies {
 	// DevTools
 	developmentOnly 'org.springframework.boot:spring-boot-devtools'
 	
-	// MySQL
-	runtimeOnly 'com.mysql:mysql-connector-j'
+	// PostgreSQL
+	runtimeOnly 'org.postgresql:postgresql'
 
 	// 콩쿠르 크롤러 (HTML 파싱)
 	implementation 'org.jsoup:jsoup:1.17.2'
@@ -52,7 +52,7 @@ dependencies {
 	testCompileOnly 'org.projectlombok:lombok'
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 	testAnnotationProcessor 'org.projectlombok:lombok'
-	// @DataJpaTest용 내장 DB — 운영은 MySQL/PostgreSQL 컨테이너라 테스트 스코프 한정
+	// @DataJpaTest용 내장 DB — 운영은 PostgreSQL 컨테이너라 테스트 스코프 한정
 	testRuntimeOnly 'com.h2database:h2'
 
 	// Swagger
