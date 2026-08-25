@@ -137,7 +137,7 @@ public class Post {
     // 이미 수락된 지원자의 확정 카운트가 초기화되는 문제가 있었음(BACKLOG.md #32)
     public void replaceInstruments(List<PostInstrument> newInstruments) {
         Map<String, PostInstrument> existingByName = this.postInstruments.stream()
-                .collect(Collectors.toMap(PostInstrument::getInstrument, pi -> pi));
+                .collect(Collectors.toMap(PostInstrument::getInstrument, pi -> pi, (a, b) -> a));
         Set<String> newNames = newInstruments.stream()
                 .map(PostInstrument::getInstrument)
                 .collect(Collectors.toSet());

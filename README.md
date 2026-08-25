@@ -5,6 +5,14 @@
 - 백엔드: [`backend/obri`](backend/obri)
 - 프론트엔드: [`Frontend/ObriApp`](Frontend/ObriApp) — 로컬 환경 설정은 해당 README 참고
 
+## 로컬 DB 실행
+
+```
+cd backend/obri && docker compose up -d
+```
+
+PostgreSQL 컨테이너(포트 5432, DB `obri`)를 띄운다. 접속 정보는 `application-local.properties.example` 참고.
+
 ## 시크릿 파일
 
 DB 접속정보·Firebase 서비스 계정 키·Firebase 앱 설정 파일 등은 저장소에 포함되지 않는다. 각 하위 프로젝트의 `.gitignore`가 이를 막고 있고, 대신 `.example` 템플릿을 커밋해뒀다.

@@ -8,6 +8,7 @@ import org.junit.jupiter.api.Test;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 // 악기별 confirmed/closed에 따른 글 전체 상태(OPEN/PARTIALLY_CLOSED/CLOSED) 파생 로직 검증
@@ -154,6 +155,16 @@ class PostTest {
 
         assertThat(post.getPostInstruments()).hasSize(1);
         assertThat(post.getPostInstruments().get(0).getInstrument()).isEqualTo("바이올린");
+    }
+
+    // sequence.md 2026-08-17 §3: 악기명 중복 등록 검증이 없던 시절 유입된 레거시 데이터(같은 이름 중복)에서도
+    // replaceInstruments가 Duplicate key IllegalStateException 없이 동작해야 함 (merge function 회귀 방지)
+    @Test
+    void replaceInstruments_toleratesLegacyDuplicateInstrumentNames() {
+        post.addInstrument(PostInstrument.of(post, "바이올린", 3)); // 중복 이름 유입 시뮬레이션
+
+        assertThatCode(() -> post.replaceInstruments(List.of(PostInstrument.of(post, "바이올린", 2))))
+                .doesNotThrowAnyException();
     }
 
     @Test

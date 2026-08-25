@@ -7,10 +7,12 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
+  Alert,
 } from "react-native";
 import { Link } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { colors } from "@/constants/theme";
+import { useAuth } from "@/contexts/AuthContext";
 import Logo from "@/components/common/Logo";
 import ThemedInput from "@/components/common/ThemedInput";
 import ThemedButton from "@/components/common/ThemedButton";
@@ -18,12 +20,23 @@ import DividerWithText from "@/components/common/DividerWithText";
 import SocialLoginButtons from "@/components/auth/SocialLoginButtons";
 
 export default function LoginScreen() {
+  const { signIn } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleLogin = () => {
-    // TODO: Firebase 인증
+  const handleLogin = async () => {
+    if (isSubmitting) return;
+    setIsSubmitting(true);
+    try {
+      await signIn(email, password);
+      // 로그인 성공 시 RootLayout의 useAuth 구독이 자동으로 (tabs)로 리다이렉트
+    } catch {
+      Alert.alert("로그인 실패", "이메일 또는 비밀번호를 확인해주세요.");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -74,7 +87,7 @@ export default function LoginScreen() {
             <Text style={styles.forgotPasswordText}>비밀번호를 잊으셨나요?</Text>
           </TouchableOpacity>
 
-          <ThemedButton title="로그인" onPress={handleLogin} />
+          <ThemedButton title="로그인" onPress={handleLogin} loading={isSubmitting} />
 
           <DividerWithText text="또는" />
 

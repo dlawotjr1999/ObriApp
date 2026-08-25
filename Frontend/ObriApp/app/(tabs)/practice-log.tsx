@@ -19,7 +19,7 @@ export default function PracticeLogScreen() {
   const sortedLogs = useMemo(
     () =>
       [...MOCK_PRACTICE_LOGS].sort(
-        (a, b) => new Date(b.practicedAt).getTime() - new Date(a.practicedAt).getTime()
+        (a, b) => new Date(b.logDate).getTime() - new Date(a.logDate).getTime()
       ),
     []
   );

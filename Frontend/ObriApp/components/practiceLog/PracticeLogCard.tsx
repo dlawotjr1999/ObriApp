@@ -13,9 +13,9 @@ export default function PracticeLogCard({ log, onPress }: PracticeLogCardProps) 
   return (
     <TouchableOpacity style={styles.card} activeOpacity={0.8} onPress={onPress}>
       <View style={styles.topRow}>
-        <Text style={styles.date}>{formatDate(log.practicedAt)}</Text>
+        <Text style={styles.date}>{formatDate(log.logDate)}</Text>
         <View style={styles.durationBadge}>
-          <Text style={styles.durationText}>{formatDuration(log.durationMinutes)}</Text>
+          <Text style={styles.durationText}>{formatDuration(log.duration)}</Text>
         </View>
       </View>
       <Text style={styles.title} numberOfLines={1}>

@@ -51,7 +51,6 @@ export default function ContestDetailModal({ contest, onClose }: ContestDetailMo
 
               <View style={styles.badgeRow}>
                 {contest && <Tag label={contest.category} />}
-                {contest && <Tag label={contest.targetInstrument} />}
               </View>
 
               <View style={styles.divider} />

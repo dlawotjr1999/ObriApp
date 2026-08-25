@@ -54,13 +54,13 @@ export default function PracticeLogDetailModal({
                 <View style={styles.metaItem}>
                   <Ionicons name="calendar-outline" size={14} color={colors.textMuted} />
                   <Text style={styles.metaText}>
-                    {log ? formatDate(log.practicedAt) : ""}
+                    {log ? formatDate(log.logDate) : ""}
                   </Text>
                 </View>
                 <View style={styles.metaItem}>
                   <Ionicons name="time-outline" size={14} color={colors.textMuted} />
                   <Text style={styles.metaText}>
-                    {log ? formatDuration(log.durationMinutes) : ""}
+                    {log ? formatDuration(log.duration) : ""}
                   </Text>
                 </View>
               </View>

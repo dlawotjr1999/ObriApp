@@ -134,6 +134,31 @@ class PostControllerTest {
                 .andExpect(status().isBadRequest());
     }
 
+    // sequence.md 2026-08-17 §3: 중복 악기명이 등록되면 이후 수정 시 replaceInstruments가
+    // Duplicate key 예외를 던지던 버그의 유입 경로 차단(등록 시점 400)
+    @Test
+    void createPost_returns400WhenInstrumentNameDuplicated() throws Exception {
+        mockMvc.perform(post("/api/posts")
+                        .with(authentication(auth))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "category": "결혼",
+                                  "title": "결혼식 바이올린 구인",
+                                  "eventAt": "2024-05-01T14:00:00",
+                                  "location": "서울 강남구 OO웨딩홀",
+                                  "region": "서울",
+                                  "timetable": "리허설 1회",
+                                  "pay": 150000,
+                                  "instruments": [
+                                    { "instrument": "바이올린", "people": 2 },
+                                    { "instrument": "바이올린", "people": 3 }
+                                  ]
+                                }
+                                """))
+                .andExpect(status().isBadRequest());
+    }
+
     @Test
     void getPosts_returns200WithPagedList() throws Exception {
         PostSummaryResponseDTO summary = PostSummaryResponseDTO.builder()

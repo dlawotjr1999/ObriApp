@@ -4,7 +4,7 @@ const DATE_ONLY_RE = /^\d{4}-\d{2}-\d{2}$/;
 
 // "YYYY-MM-DD"(시간 없는 순수 날짜)는 new Date()가 UTC 자정으로 해석한다
 // (ECMA-262 date-only 규칙). UTC보다 느린 타임존(미주 등)에서는 이 때문에
-// 하루 전날로 밀려 보인다. 반면 이 파일의 다른 필드(eventAt, practicedAt 등)는
+// 하루 전날로 밀려 보인다. 반면 이 파일의 다른 필드(eventAt 등)는
 // 타임존 없는 전체 datetime("...T10:00:00")이라 로컬로 파싱돼 문제가 없다.
 // 콩쿠르 deadline/startDate/endDate처럼 순수 날짜 문자열만 로컬 자정으로
 // 명시 파싱해 두 포맷이 같은 함수를 타도 동일하게 동작하도록 맞춘다.
