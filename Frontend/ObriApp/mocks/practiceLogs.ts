@@ -4,8 +4,8 @@ export const MOCK_PRACTICE_LOGS: PracticeLog[] = [
   {
     id: 1,
     title: "Bach 무반주 파르티타 1번 연습",
-    practicedAt: "2026-07-04T10:00:00",
-    durationMinutes: 90,
+    logDate: "2026-07-04",
+    duration: 90,
     content:
       "알레망드 첫 번째 섹션 느린 템포로 반복. 활 속도 조절에 집중. 오른쪽 어깨 긴장 줄이는 연습.",
     createdAt: "2026-07-04T12:00:00",
@@ -13,8 +13,8 @@ export const MOCK_PRACTICE_LOGS: PracticeLog[] = [
   {
     id: 2,
     title: "음계 & 아르페지오 기초 훈련",
-    practicedAt: "2026-07-03T09:30:00",
-    durationMinutes: 45,
+    logDate: "2026-07-03",
+    duration: 45,
     content:
       "3옥타브 G장조, D장조. 메트로놈 ♩=60부터 시작해서 ♩=100까지 단계적으로 올림.",
     createdAt: "2026-07-03T11:00:00",
@@ -22,8 +22,8 @@ export const MOCK_PRACTICE_LOGS: PracticeLog[] = [
   {
     id: 3,
     title: "Brahms 소나타 1번 1악장 합맞춤",
-    practicedAt: "2026-07-02T14:00:00",
-    durationMinutes: 120,
+    logDate: "2026-07-02",
+    duration: 120,
     content:
       "피아노 반주와 합맞춤. 템포 조율 필요. 발전부 전환 지점 더 연습 필요.",
     createdAt: "2026-07-02T16:30:00",
@@ -31,16 +31,16 @@ export const MOCK_PRACTICE_LOGS: PracticeLog[] = [
   {
     id: 4,
     title: "시창·청음 자습",
-    practicedAt: "2026-07-01T18:00:00",
-    durationMinutes: 30,
+    logDate: "2026-07-01",
+    duration: 30,
     content: "5도권 화음 진행 청음. 단조 선율 시창 연습.",
     createdAt: "2026-07-01T18:45:00",
   },
   {
     id: 5,
     title: "콩쿠르 준비 — 전곡 리허설 및 세부 점검",
-    practicedAt: "2026-06-30T13:00:00",
-    durationMinutes: 180,
+    logDate: "2026-06-30",
+    duration: 180,
     content:
       "오늘은 콩쿠르 1차 예선곡 전곡을 처음부터 끝까지 통으로 연주해보는 것으로 시작했다. 녹음을 켜두고 연주한 뒤 바로 다시 들으면서 문제 지점을 체크하는 방식으로 진행.\n\n" +
       "1악장: 도입부 셈여림 대비가 생각보다 밋밋하게 들림. 특히 두 번째 주제로 넘어가는 부분에서 다이내믹이 자연스럽게 이어지지 않고 갑자기 튀는 느낌. 크레센도 구간을 4마디 단위로 쪼개서 활 압력을 단계적으로 늘리는 연습을 반복함. 메트로놈 없이 프레이즈 흐름 위주로 다시 연습하니 훨씬 자연스러워짐.\n\n" +

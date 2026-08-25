@@ -1,8 +1,8 @@
 export interface PracticeLog {
   id: number;
   title: string;
-  practicedAt: string;
-  durationMinutes: number;
+  logDate: string;
+  duration: number;
   content: string;
   createdAt: string;
 }
