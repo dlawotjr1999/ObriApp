@@ -4,7 +4,7 @@
 
 spring.datasource.url=jdbc:postgresql://localhost:5432/obri
 spring.datasource.username=postgres
-spring.datasource.password=
+spring.datasource.password=1234
 
 # 로컬 편의 — 운영에서는 절대 금지 (CLAUDE.md 6장 참고)
 spring.jpa.hibernate.ddl-auto=create
