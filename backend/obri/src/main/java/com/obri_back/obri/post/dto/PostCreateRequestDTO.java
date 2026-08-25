@@ -1,6 +1,7 @@
 package com.obri_back.obri.post.dto;
 
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.AssertTrue;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -52,6 +53,18 @@ public class PostCreateRequestDTO {
     @Size(min = 1)
     @Valid
     private List<InstrumentItem> instruments;
+
+    // 악기명 중복 등록 차단 — Post.replaceInstruments가 이름을 키로 병합하므로 중복 시
+    // 확정 인원(confirmed)·마감 상태가 뒤섞인다(BACKLOG.md 유입 버그, sequence.md 2026-08-17 §3)
+    @AssertTrue(message = "악기명은 중복될 수 없습니다")
+    private boolean isInstrumentsUnique() {
+        if (instruments == null) return true;
+        long distinctCount = instruments.stream()
+                .map(InstrumentItem::getInstrument)
+                .distinct()
+                .count();
+        return distinctCount == instruments.size();
+    }
 
     // 모집 악기 1건 (악기명 + 모집 인원)
     @Getter
