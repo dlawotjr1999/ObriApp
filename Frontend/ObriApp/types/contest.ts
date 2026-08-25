@@ -7,7 +7,6 @@ export interface ContestSummary {
   id: number;
   title: string;
   category: string;
-  targetInstrument: string;
   deadline: string; // 접수 마감일, "YYYY-MM-DD"
   startDate: string; // 대회 시작일, "YYYY-MM-DD"
   organizer: string;

@@ -34,7 +34,6 @@ export default function ContestCard({ contest, onPress }: ContestCardProps) {
 
       <View style={styles.badgeRow}>
         <Tag label={contest.category} />
-        <Tag label={contest.targetInstrument} />
       </View>
     </TouchableOpacity>
   );
