@@ -51,6 +51,14 @@ public class FirebaseAuthFilter extends OncePerRequestFilter {
 
         String idToken = header.substring(7);
 
+        // "Bearer " 뒤가 비어있으면 검증을 시도하지 않는다 — verifyIdToken은 빈 토큰에
+        // IllegalArgumentException을 던지는데, 필터에서 던진 예외는 DispatcherServlet 이전이라
+        // GlobalExceptionHandler가 잡지 못하고 컨테이너 기본 에러(비 JSON 500)로 나간다
+        if (idToken.isBlank()) {
+            filterChain.doFilter(request, response);
+            return;
+        }
+
         try {
             // Firebase 토큰 검증
             FirebaseToken decodedToken = firebaseAuth.verifyIdToken(idToken);
@@ -65,8 +73,9 @@ public class FirebaseAuthFilter extends OncePerRequestFilter {
                 SecurityContextHolder.getContext().setAuthentication(authentication);
             });
 
-        } catch (FirebaseAuthException e) {
+        } catch (FirebaseAuthException | IllegalArgumentException e) {
             // 토큰 검증 실패 → SecurityContext 비운 채로 다음 필터로
+            // (인증이 필요한 경로면 AuthenticationEntryPoint가 401 + APIResponse 형식으로 응답)
             SecurityContextHolder.clearContext();
         }
 

@@ -5,6 +5,7 @@ import com.obri_back.obri.auth.dto.RegisterRequestDTO;
 import com.obri_back.obri.auth.dto.RegisterResponseDTO;
 import com.obri_back.obri.auth.service.AuthService;
 import com.obri_back.obri.global.common.APIResponse;
+import com.obri_back.obri.global.exception.UnauthorizedException;
 import com.obri_back.obri.user.entity.User;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -40,8 +41,7 @@ public class AuthController {
             @RequestHeader("Authorization") String authorization,
             @RequestBody @Valid RegisterRequestDTO request) {
 
-        // "Bearer " 제거 후 토큰만 추출
-        String idToken = authorization.substring(7);
+        String idToken = extractBearerToken(authorization);
         RegisterResponseDTO response = authService.register(idToken, request);
 
         return ResponseEntity.ok(APIResponse.ok("회원가입이 완료되었습니다", response));
@@ -79,9 +79,29 @@ public class AuthController {
             @RequestHeader("Authorization") String authorization,
             @AuthenticationPrincipal User user) {
 
-        String idToken = authorization.substring(7);
+        String idToken = extractBearerToken(authorization);
         authService.updatePhoneNumber(user, idToken);
 
         return ResponseEntity.ok(APIResponse.ok("전화번호가 변경되었습니다"));
+    }
+
+    /*
+     * Authorization 헤더에서 Bearer 토큰만 추출
+     * 형식을 먼저 검증하는 이유: 무조건 substring(7)을 하면 헤더가 7자 미만일 때
+     * StringIndexOutOfBoundsException이 나고, register는 permitAll이라 미인증 상태로도 500을 유발할 수 있다
+     *
+     * param : authorization Authorization 헤더 원문
+     * return : "Bearer " 를 제거한 ID Token
+     */
+    private String extractBearerToken(String authorization) {
+        if (authorization == null || !authorization.startsWith("Bearer ")) {
+            throw new UnauthorizedException("Authorization 헤더 형식이 올바르지 않습니다");
+        }
+
+        String idToken = authorization.substring(7);
+        if (idToken.isBlank()) {
+            throw new UnauthorizedException("토큰이 비어 있습니다");
+        }
+        return idToken;
     }
 }

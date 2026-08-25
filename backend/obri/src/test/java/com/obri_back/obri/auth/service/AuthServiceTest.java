@@ -175,16 +175,75 @@ class AuthServiceTest {
         verify(userRepository, never()).save(any());
     }
 
+    // claim도 바디도 없으면 저장 이전에 400 — 폴백 도입 후에도 최종 방어선은 유지된다
     @Test
-    void register_throwsBadRequestWhenPhoneNumberClaimMissing() throws Exception {
+    void register_throwsBadRequestWhenPhoneNumberMissingFromBothClaimAndBody() throws Exception {
         given(firebaseAuth.verifyIdToken("valid-token")).willReturn(mockToken);
         given(mockToken.getClaims()).willReturn(Map.of());
 
         RegisterRequestDTO request = mock(RegisterRequestDTO.class);
+        given(request.getPhoneNumber()).willReturn(null);
 
         assertThatThrownBy(() -> authService.register("valid-token", request))
                 .isInstanceOf(BadRequestException.class)
-                .hasMessage("휴대폰 인증 정보가 없습니다");
+                .hasMessage("휴대폰 번호가 없습니다");
+
+        verify(userRepository, never()).save(any());
+    }
+
+    // [임시] Phone Auth 도입 전까지의 폴백 — claim이 없으면 요청 바디의 전화번호를 사용
+    @Test
+    void register_fallsBackToRequestPhoneNumberWhenClaimMissing() throws Exception {
+        given(firebaseAuth.verifyIdToken("valid-token")).willReturn(mockToken);
+        given(mockToken.getClaims()).willReturn(Map.of());
+        given(userRepository.existsByFirebaseUid("test-uid")).willReturn(false);
+        given(userRepository.existsByEmail("test@test.com")).willReturn(false);
+        given(userRepository.existsByPhoneNumber("010-9999-8888")).willReturn(false);
+        given(userRepository.existsByNickname(any())).willReturn(false);
+        given(userRepository.saveAndFlush(any(User.class))).willAnswer(inv -> inv.getArgument(0));
+
+        RegisterRequestDTO request = mock(RegisterRequestDTO.class);
+        given(request.getNickname()).willReturn("tester");
+        given(request.getPhoneNumber()).willReturn("010-9999-8888");
+        given(request.getCareers()).willReturn(null);
+
+        authService.register("valid-token", request);
+
+        ArgumentCaptor<User> captor = ArgumentCaptor.forClass(User.class);
+        verify(userRepository, times(1)).saveAndFlush(captor.capture());
+        assertThat(captor.getValue().getPhoneNumber()).isEqualTo("010-9999-8888");
+    }
+
+    // claim이 있으면 바디 값보다 우선한다 — Phone Auth 도입 시 코드 수정 없이 전환되도록 보장
+    @Test
+    void register_prefersClaimOverRequestPhoneNumber() throws Exception {
+        given(firebaseAuth.verifyIdToken("valid-token")).willReturn(mockToken);
+        given(userRepository.existsByFirebaseUid("test-uid")).willReturn(false);
+        given(userRepository.existsByEmail("test@test.com")).willReturn(false);
+        given(userRepository.existsByPhoneNumber("010-1234-5678")).willReturn(false);
+        given(userRepository.existsByNickname(any())).willReturn(false);
+        given(userRepository.saveAndFlush(any(User.class))).willAnswer(inv -> inv.getArgument(0));
+
+        RegisterRequestDTO request = mock(RegisterRequestDTO.class);
+        given(request.getNickname()).willReturn("tester");
+        given(request.getCareers()).willReturn(null);
+
+        authService.register("valid-token", request);
+
+        ArgumentCaptor<User> captor = ArgumentCaptor.forClass(User.class);
+        verify(userRepository, times(1)).saveAndFlush(captor.capture());
+        assertThat(captor.getValue().getPhoneNumber()).isEqualTo("010-1234-5678");
+    }
+
+    // 빈 토큰은 FirebaseAuthException이 아니라 IllegalArgumentException을 유발한다 — 500이 아닌 401이어야 함
+    @Test
+    void register_throwsUnauthorizedWhenTokenIsEmpty() throws Exception {
+        given(firebaseAuth.verifyIdToken("")).willThrow(new IllegalArgumentException("ID token must not be null or empty"));
+
+        RegisterRequestDTO request = mock(RegisterRequestDTO.class);
+
+        assertThatThrownBy(() -> authService.register("", request))
+                .isInstanceOf(UnauthorizedException.class);
 
         verify(userRepository, never()).save(any());
     }

@@ -38,7 +38,7 @@ public class User {
     @Column(name = "user_id", nullable = false, unique = true)
     private Long id;
 
-    // 이메일 UNIQUE: 계정당 유일. null 허용(전화 인증 등 email 부재 케이스), MySQL은 다중 NULL 허용
+    // 이메일 UNIQUE: 계정당 유일. null 허용(전화 인증 등 email 부재 케이스) — PostgreSQL도 UNIQUE에서 NULL끼리는 서로 다른 값으로 취급해 다중 NULL 허용
     @Column(name = "email", unique = true)
     private String email;
 

@@ -1,0 +1,15 @@
+# cp 후 파일명에서 .example 제거 (application-local.properties), 실제 값으로 채울 것.
+# 이 파일 자체는 application.properties가 optional:classpath:application-local.properties로
+# 불러오는 로컬 전용 오버라이드다 — 운영 값은 여기 쓰지 않는다(환경변수로 주입).
+
+spring.datasource.url=jdbc:postgresql://localhost:5432/obri
+spring.datasource.username=postgres
+spring.datasource.password=
+
+# 로컬 편의 — 운영에서는 절대 금지 (CLAUDE.md 6장 참고)
+spring.jpa.hibernate.ddl-auto=create
+spring.jpa.show-sql=true
+spring.jpa.properties.hibernate.format_sql=true
+
+# Expo web(브라우저)으로 로컬 연동 테스트할 때만 필요
+app.cors.allowed-origins=http://localhost:8081

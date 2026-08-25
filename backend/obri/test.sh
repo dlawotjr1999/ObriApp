@@ -1,10 +1,16 @@
 #!/bin/bash
 
 # ── 설정 ──────────────────────────────────────────
-FIREBASE_API_KEY="//"
-EMAIL="test@test.com"
-PASSWORD="test1234"
-BASE_URL="http://localhost:8080"
+# 실제 값은 이 파일에 커밋하지 않는다. cp .env.example .env 후 채우면 아래에서 자동으로 읽는다.
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+if [ -f "$SCRIPT_DIR/.env" ]; then
+  source "$SCRIPT_DIR/.env"
+fi
+
+: "${FIREBASE_API_KEY:?FIREBASE_API_KEY가 없어요. backend/obri/.env.example을 backend/obri/.env로 복사해 값을 채워주세요.}"
+EMAIL="${EMAIL:-test@test.com}"
+PASSWORD="${PASSWORD:-test1234}"
+BASE_URL="${BASE_URL:-http://localhost:8080}"
 
 # ── 서버 실행 확인 ────────────────────────────────
 check_server() {

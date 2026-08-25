@@ -21,10 +21,14 @@ import static org.assertj.core.api.Assertions.assertThat;
 // globally_quoted_identifiers: `user` 테이블명이 H2 예약어(USER)와 충돌해 스키마 생성 자체가 실패하는 문제 회피
 // spring.flyway.enabled=false: Flyway(BACKLOG.md #53)가 MySQL 문법 마이그레이션을 이 H2 스키마에 적용하려 들면
 // 충돌·실패하므로, 이 테스트는 지금처럼 Hibernate가 H2 스키마를 직접 관리(ddl-auto=create-drop, @DataJpaTest 기본값)하도록 유지
+// ddl-auto=create-drop 명시: @DataJpaTest의 기본값(create-drop)은 application.properties의
+// spring.jpa.hibernate.ddl-auto=validate에 덮여 무력화된다(CI도 동일 값을 환경변수로 주입).
+// 그 결과 비어 있는 H2 스키마를 validate하려다 SchemaManagementException으로 실패하므로 여기서 되돌린다
 @DataJpaTest
 @TestPropertySource(properties = {
         "spring.jpa.properties.hibernate.globally_quoted_identifiers=true",
-        "spring.flyway.enabled=false"
+        "spring.flyway.enabled=false",
+        "spring.jpa.hibernate.ddl-auto=create-drop"
 })
 class PostSpecificationTest {
 
