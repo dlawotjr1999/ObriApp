@@ -7,25 +7,35 @@ import {
   Modal,
   ScrollView,
   Dimensions,
+  ActivityIndicator,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { colors } from "@/constants/theme";
-import { PracticeLog } from "@/types/practiceLog";
+import { PracticeLogDetail } from "@/types/practiceLog";
 import { formatDate, formatDuration } from "@/utils/datetime";
 
 const { height: SCREEN_HEIGHT } = Dimensions.get("window");
 
 interface PracticeLogDetailModalProps {
-  log: PracticeLog | null;
+  // 모달을 열지 말지는 이 값 하나로 결정 — log가 아직 null이어도(조회 중) visible이면 열려 있어야
+  // 스피너를 보여줄 수 있다. 즉 visible과 log의 유무가 서로 독립적이다.
+  visible: boolean;
+  // 목록(PracticeLogSummary)에는 content가 없어 부모(practice-log.tsx)가 카드 선택 시
+  // GET /api/practice-logs/{id}로 별도 조회해 채워 넣는다 — 조회 완료 전까지는 null
+  log: PracticeLogDetail | null;
+  // 위 상세 조회가 진행 중인 동안 true — 이 모달은 그동안 title/날짜/내용 대신 스피너만 그린다
+  loading?: boolean;
   onClose: () => void;
 }
 
 export default function PracticeLogDetailModal({
+  visible,
   log,
+  loading = false,
   onClose,
 }: PracticeLogDetailModalProps) {
   return (
-    <Modal visible={!!log} transparent animationType="fade" onRequestClose={onClose}>
+    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
       {/* 전체 래퍼: 반투명 배경 + 중앙 정렬 */}
       <View style={styles.wrapper}>
         {/* 바깥 터치 시 닫기 */}
@@ -46,30 +56,38 @@ export default function PracticeLogDetailModal({
           <View style={styles.sheet}>
             {/* 흰색 카드 프레임 */}
             <View style={styles.card}>
-              <Text style={styles.title} numberOfLines={2}>
-                {log?.title}
-              </Text>
-
-              <View style={styles.metaRow}>
-                <View style={styles.metaItem}>
-                  <Ionicons name="calendar-outline" size={14} color={colors.textMuted} />
-                  <Text style={styles.metaText}>
-                    {log ? formatDate(log.logDate) : ""}
-                  </Text>
+              {/* 조회 중이거나(loading) 아직 상세가 안 채워졌으면(log null) 본문 대신 스피너만 표시.
+                  둘 다 확인하는 이유: log는 부모가 조회 시작 시 null로 리셋해 주는 것을 전제로
+                  하지만, 그 전제가 깨지더라도(예: 부모 구현이 바뀌어 이전 상세를 안 지우는 경우)
+                  loading이 여전히 안전망 역할을 하도록 남겨둔다. */}
+              {loading || !log ? (
+                <View style={styles.loadingArea}>
+                  <ActivityIndicator color={colors.primary} />
                 </View>
-                <View style={styles.metaItem}>
-                  <Ionicons name="time-outline" size={14} color={colors.textMuted} />
-                  <Text style={styles.metaText}>
-                    {log ? formatDuration(log.duration) : ""}
+              ) : (
+                <>
+                  <Text style={styles.title} numberOfLines={2}>
+                    {log.title}
                   </Text>
-                </View>
-              </View>
 
-              <View style={styles.divider} />
+                  <View style={styles.metaRow}>
+                    <View style={styles.metaItem}>
+                      <Ionicons name="calendar-outline" size={14} color={colors.textMuted} />
+                      <Text style={styles.metaText}>{formatDate(log.logDate)}</Text>
+                    </View>
+                    <View style={styles.metaItem}>
+                      <Ionicons name="time-outline" size={14} color={colors.textMuted} />
+                      <Text style={styles.metaText}>{formatDuration(log.duration)}</Text>
+                    </View>
+                  </View>
 
-              <ScrollView style={styles.scrollArea} showsVerticalScrollIndicator={false}>
-                <Text style={styles.content}>{log?.content}</Text>
-              </ScrollView>
+                  <View style={styles.divider} />
+
+                  <ScrollView style={styles.scrollArea} showsVerticalScrollIndicator={false}>
+                    <Text style={styles.content}>{log.content}</Text>
+                  </ScrollView>
+                </>
+              )}
             </View>
           </View>
         </View>
@@ -146,6 +164,11 @@ const styles = StyleSheet.create({
   // 부모가 auto 높이라 flex로는 크기를 못 잡으므로, 직접 상한을 줘서 이 높이를 넘으면 스크롤되게 함
   scrollArea: {
     maxHeight: SCREEN_HEIGHT * 0.55,
+  },
+  loadingArea: {
+    height: 120,
+    alignItems: "center",
+    justifyContent: "center",
   },
   content: {
     fontSize: 14,

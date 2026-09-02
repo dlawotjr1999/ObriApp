@@ -8,6 +8,7 @@ import {
   StyleSheet,
   KeyboardAvoidingView,
   Platform,
+  Alert,
 } from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
@@ -15,6 +16,8 @@ import { Ionicons } from "@expo/vector-icons";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { colors } from "@/constants/theme";
 import { formatDate, parseDate, toDateOnly } from "@/utils/datetime";
+import { createPracticeLog } from "@/api/practiceLog";
+import { ApiError } from "@/lib/apiClient";
 import ThemedButton from "@/components/common/ThemedButton";
 
 export default function PracticeLogCreateScreen() {
@@ -27,9 +30,36 @@ export default function PracticeLogCreateScreen() {
   const [durationMinutes, setDurationMinutes] = useState("");
   const [content, setContent] = useState("");
   const [showDatePicker, setShowDatePicker] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // 필수값: 제목·날짜·연습 시간. 내용은 선택
   const canSubmit = title.trim() !== "" && date !== "" && Number(durationMinutes) > 0;
+
+  // 등록하기 버튼 핸들러 — POST /api/practice-logs 호출.
+  // 성공하면 router.back()으로 목록 화면에 돌아가고, 그 화면의 useFocusEffect가
+  // 포커스 시 재조회하므로 여기서 목록 state를 직접 갱신할 필요는 없다.
+  // 내용(content)은 선택 입력이라 빈 문자열이면 undefined로 보내 백엔드 null과 구분한다.
+  const handleSubmit = async () => {
+    if (isSubmitting) return; // 버튼 연타로 중복 등록되는 것을 막는다
+    setIsSubmitting(true);
+    try {
+      await createPracticeLog({
+        title: title.trim(),
+        logDate: date,
+        duration: Number(durationMinutes),
+        content: content.trim() || undefined,
+      });
+      router.back();
+    } catch (err) {
+      // ApiError면 백엔드가 내려준 메시지를, 그 외(네트워크 오류 등)는 기본 안내 문구를 보여준다
+      Alert.alert(
+        "등록 실패",
+        err instanceof ApiError ? err.message : "연습일지를 등록하지 못했어요."
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   return (
     <SafeAreaView style={styles.container} edges={["top"]}>
@@ -123,11 +153,8 @@ export default function PracticeLogCreateScreen() {
           <ThemedButton
             title="등록하기"
             disabled={!canSubmit}
-            onPress={() => {
-              // TODO: 연습일지 등록 API(POST /api/practice-logs) 연동
-              // payload: { logDate: date, duration: Number(durationMinutes), content, title }
-              router.back();
-            }}
+            loading={isSubmitting}
+            onPress={handleSubmit}
           />
         </View>
       </KeyboardAvoidingView>
