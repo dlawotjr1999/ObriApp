@@ -5,6 +5,7 @@
   "scripts": {
     "start": "expo start",
     "reset-project": "node ./scripts/reset-project.js",
+    "register-test-user": "node --env-file=.env scripts/register-test-user.mjs",
     "android": "expo start --android",
     "ios": "expo start --ios",
     "web": "expo start --web",
