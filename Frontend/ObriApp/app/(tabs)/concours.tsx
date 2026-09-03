@@ -5,16 +5,13 @@ import { colors } from "@/constants/theme";
 import { getContests } from "@/api/concours";
 import { ApiError } from "@/lib/apiClient";
 import { ContestDetail } from "@/types/contest";
-import { ContestFilter, DEFAULT_CONTEST_FILTER } from "@/types/contestFilter";
 import AppHeader from "@/components/common/AppHeader";
 import EmptyState from "@/components/common/EmptyState";
 import ContestCard from "@/components/contest/ContestCard";
 import ContestDetailModal from "@/components/contest/ContestDetailModal";
-import ContestFilterBar from "@/components/contest/ContestFilterBar";
 
 export default function ConcoursScreen() {
   const [selected, setSelected] = useState<ContestDetail | null>(null);
-  const [filter, setFilter] = useState<ContestFilter>(DEFAULT_CONTEST_FILTER);
 
   const [contests, setContests] = useState<ContestDetail[]>([]);
   const [currentPage, setCurrentPage] = useState(0);
@@ -23,12 +20,11 @@ export default function ConcoursScreen() {
   const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // 필터가 바뀌면 첫 페이지부터 새로 조회
   const loadFirstPage = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      const page = await getContests(filter.categories, 0);
+      const page = await getContests(0);
       setContests(page.content);
       setCurrentPage(page.currentPage);
       setHasNext(page.hasNext);
@@ -37,7 +33,7 @@ export default function ConcoursScreen() {
     } finally {
       setLoading(false);
     }
-  }, [filter]);
+  }, []);
 
   useEffect(() => {
     loadFirstPage();
@@ -48,7 +44,7 @@ export default function ConcoursScreen() {
     if (loadingMore || !hasNext) return;
     setLoadingMore(true);
     try {
-      const page = await getContests(filter.categories, currentPage + 1);
+      const page = await getContests(currentPage + 1);
       setContests((prev) => [...prev, ...page.content]);
       setCurrentPage(page.currentPage);
       setHasNext(page.hasNext);
@@ -62,12 +58,6 @@ export default function ConcoursScreen() {
   return (
     <SafeAreaView style={styles.container} edges={["top"]}>
       <AppHeader />
-
-      <ContestFilterBar
-        filter={filter}
-        onChange={setFilter}
-        onReset={() => setFilter(DEFAULT_CONTEST_FILTER)}
-      />
 
       {!loading && !error && (
         <View style={styles.resultRow}>
@@ -100,8 +90,8 @@ export default function ConcoursScreen() {
           ListEmptyComponent={
             <EmptyState
               icon="trophy-outline"
-              title="조건에 맞는 콩쿠르가 없어요"
-              description="필터를 조정하거나 나중에 다시 확인해 주세요."
+              title="등록된 콩쿠르가 없어요"
+              description="나중에 다시 확인해 주세요."
             />
           }
         />
