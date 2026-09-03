@@ -54,10 +54,12 @@ public class ConcoursController {
         return ResponseEntity.ok(APIResponse.ok("콩쿠르 조회 성공", response));
     }
 
-    // 크롤링 수동 트리거 — 로그인한 사용자면 누구나 호출 가능(role 체계 없음, 백로그 참고). 중복 실행은 서비스에서 409 차단
+    // 크롤링 수동 트리거 — 개발자 전용(Swagger/curl, 프론트 미호출). maxPages로 검증 범위 제한 가능(생략 시 전체 순회)
+    // 로그인한 사용자면 누구나 호출 가능(role 체계 없음, 백로그 참고). 중복 실행은 서비스에서 409 차단
     @PostMapping("/crawl")
-    public ResponseEntity<APIResponse<Map<String, Integer>>> triggerCrawl() {
-        int savedCount = concoursCrawlerService.crawl();
+    public ResponseEntity<APIResponse<Map<String, Integer>>> triggerCrawl(
+            @RequestParam(required = false) Integer maxPages) {
+        int savedCount = concoursCrawlerService.crawl(maxPages);
         return ResponseEntity.ok(APIResponse.ok("콩쿠르 크롤링 완료", Map.of("savedCount", savedCount)));
     }
 }
