@@ -39,7 +39,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background,
   },
   backgroundImage: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     width: "100%",
     height: "100%",
     resizeMode: "cover",

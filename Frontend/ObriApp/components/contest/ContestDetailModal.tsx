@@ -29,7 +29,7 @@ export default function ContestDetailModal({ contest, onClose }: ContestDetailMo
       <View style={styles.wrapper}>
         {/* 바깥 터치 시 닫기 */}
         <TouchableOpacity
-          style={StyleSheet.absoluteFillObject}
+          style={StyleSheet.absoluteFill}
           activeOpacity={1}
           onPress={onClose}
         />
