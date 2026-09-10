@@ -61,4 +61,12 @@ public class Concours {
         concours.crawledAt = LocalDateTime.now();
         return concours;
     }
+
+    // 재크롤링 시 날짜 갱신 — 카테고리·주최자는 원본에서 거의 안 바뀌어 대상에서 제외(BACKLOG #41)
+    public void updateFromCrawl(LocalDateTime startDate, LocalDateTime endDate, LocalDateTime deadline) {
+        this.startDate = startDate;
+        this.endDate = endDate;
+        this.deadline = deadline;
+        this.crawledAt = LocalDateTime.now();
+    }
 }
