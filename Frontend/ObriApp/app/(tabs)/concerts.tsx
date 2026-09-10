@@ -2,21 +2,25 @@ import React, { useCallback, useEffect, useState } from "react";
 import { View, FlatList, StyleSheet, Text, ActivityIndicator } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { colors } from "@/constants/theme";
-import { getContests } from "@/api/concours";
+import { getConcerts } from "@/api/concert";
 import { ApiError } from "@/lib/apiClient";
-import { ContestDetail } from "@/types/contest";
-import { ContestFilter, DEFAULT_CONTEST_FILTER } from "@/types/contestFilter";
+import { Concert } from "@/types/concert";
+import { ConcertFilter, DEFAULT_CONCERT_FILTER } from "@/types/concertFilter";
 import AppHeader from "@/components/common/AppHeader";
 import EmptyState from "@/components/common/EmptyState";
-import ContestCard from "@/components/contest/ContestCard";
-import ContestDetailModal from "@/components/contest/ContestDetailModal";
-import ContestFilterBar from "@/components/contest/ContestFilterBar";
+import ConcertCard from "@/components/concert/ConcertCard";
+import ConcertDetailModal from "@/components/concert/ConcertDetailModal";
+import ConcertFilterBar from "@/components/concert/ConcertFilterBar";
+import ConcertFilterSheet from "@/components/concert/ConcertFilterSheet";
 
-export default function ConcoursScreen() {
-  const [selected, setSelected] = useState<ContestDetail | null>(null);
-  const [filter, setFilter] = useState<ContestFilter>(DEFAULT_CONTEST_FILTER);
+// 연주회 목록 화면 — 필터(카테고리·지역·기간) + 무한스크롤 목록 + 상세 모달.
+// 필터가 바뀌면 loadFirstPage가 재실행되어 0페이지부터 다시 조회한다(아래 useEffect 의존성 참고).
+export default function ConcertsScreen() {
+  const [selected, setSelected] = useState<Concert | null>(null);
+  const [filter, setFilter] = useState<ConcertFilter>(DEFAULT_CONCERT_FILTER);
+  const [sheetVisible, setSheetVisible] = useState(false);
 
-  const [contests, setContests] = useState<ContestDetail[]>([]);
+  const [concerts, setConcerts] = useState<Concert[]>([]);
   const [currentPage, setCurrentPage] = useState(0);
   const [hasNext, setHasNext] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -28,12 +32,12 @@ export default function ConcoursScreen() {
     setLoading(true);
     setError(null);
     try {
-      const page = await getContests(filter.categories, 0);
-      setContests(page.content);
+      const page = await getConcerts(filter, 0);
+      setConcerts(page.content);
       setCurrentPage(page.currentPage);
       setHasNext(page.hasNext);
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : "콩쿠르 목록을 불러오지 못했어요.");
+      setError(err instanceof ApiError ? err.message : "연주회 목록을 불러오지 못했어요.");
     } finally {
       setLoading(false);
     }
@@ -48,8 +52,8 @@ export default function ConcoursScreen() {
     if (loadingMore || !hasNext) return;
     setLoadingMore(true);
     try {
-      const page = await getContests(filter.categories, currentPage + 1);
-      setContests((prev) => [...prev, ...page.content]);
+      const page = await getConcerts(filter, currentPage + 1);
+      setConcerts((prev) => [...prev, ...page.content]);
       setCurrentPage(page.currentPage);
       setHasNext(page.hasNext);
     } catch {
@@ -63,15 +67,16 @@ export default function ConcoursScreen() {
     <SafeAreaView style={styles.container} edges={["top"]}>
       <AppHeader />
 
-      <ContestFilterBar
+      <ConcertFilterBar
         filter={filter}
         onChange={setFilter}
-        onReset={() => setFilter(DEFAULT_CONTEST_FILTER)}
+        onOpenSheet={() => setSheetVisible(true)}
+        onReset={() => setFilter(DEFAULT_CONCERT_FILTER)}
       />
 
       {!loading && !error && (
         <View style={styles.resultRow}>
-          <Text style={styles.resultText}>총 {contests.length}개</Text>
+          <Text style={styles.resultText}>총 {concerts.length}개</Text>
         </View>
       )}
 
@@ -83,10 +88,10 @@ export default function ConcoursScreen() {
         <EmptyState icon="cloud-offline-outline" title="목록을 불러오지 못했어요" description={error} />
       ) : (
         <FlatList
-          data={contests}
+          data={concerts}
           keyExtractor={(item) => String(item.id)}
           renderItem={({ item }) => (
-            <ContestCard contest={item} onPress={() => setSelected(item)} />
+            <ConcertCard concert={item} onPress={() => setSelected(item)} />
           )}
           contentContainerStyle={styles.listContent}
           ItemSeparatorComponent={() => <View style={styles.separator} />}
@@ -99,15 +104,22 @@ export default function ConcoursScreen() {
           }
           ListEmptyComponent={
             <EmptyState
-              icon="trophy-outline"
-              title="조건에 맞는 콩쿠르가 없어요"
+              icon="musical-notes-outline"
+              title="조건에 맞는 연주회가 없어요"
               description="필터를 조정하거나 나중에 다시 확인해 주세요."
             />
           }
         />
       )}
 
-      <ContestDetailModal contest={selected} onClose={() => setSelected(null)} />
+      <ConcertFilterSheet
+        visible={sheetVisible}
+        filter={filter}
+        onApply={setFilter}
+        onClose={() => setSheetVisible(false)}
+      />
+
+      <ConcertDetailModal concert={selected} onClose={() => setSelected(null)} />
     </SafeAreaView>
   );
 }

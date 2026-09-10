@@ -1,35 +1,36 @@
 import React from "react";
-import { View, Text, TouchableOpacity, StyleSheet, Modal, Linking, Alert } from "react-native";
+import { View, Text, TouchableOpacity, StyleSheet, Modal, Linking, Alert, Image } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { colors } from "@/constants/theme";
-import { ContestDetail } from "@/types/contest";
+import { Concert } from "@/types/concert";
 import { formatDate } from "@/utils/datetime";
 import Tag from "@/components/common/Tag";
 import IconText from "@/components/common/IconText";
 import ThemedButton from "@/components/common/ThemedButton";
 
-interface ContestDetailModalProps {
-  contest: ContestDetail | null;
+interface ConcertDetailModalProps {
+  concert: Concert | null;
   onClose: () => void;
 }
 
-export default function ContestDetailModal({ contest, onClose }: ContestDetailModalProps) {
-  const handleApply = async () => {
-    if (!contest) return;
+export default function ConcertDetailModal({ concert, onClose }: ConcertDetailModalProps) {
+  // 콩쿠르의 "지원하기"와 달리, 연주회는 신청 대상이 아니라 KOPIS 상세 페이지로 안내만 한다
+  const handleViewSource = async () => {
+    if (!concert) return;
     try {
-      await Linking.openURL(contest.sourceUrl);
+      await Linking.openURL(concert.sourceUrl);
     } catch {
       Alert.alert("링크를 열 수 없어요", "잠시 후 다시 시도해주세요.");
     }
   };
 
   return (
-    <Modal visible={!!contest} transparent animationType="fade" onRequestClose={onClose}>
+    <Modal visible={!!concert} transparent animationType="fade" onRequestClose={onClose}>
       {/* 전체 래퍼: 반투명 배경 + 중앙 정렬 */}
       <View style={styles.wrapper}>
         {/* 바깥 터치 시 닫기 */}
         <TouchableOpacity
-          style={StyleSheet.absoluteFillObject}
+          style={StyleSheet.absoluteFill}
           activeOpacity={1}
           onPress={onClose}
         />
@@ -45,27 +46,30 @@ export default function ContestDetailModal({ contest, onClose }: ContestDetailMo
           <View style={styles.sheet}>
             {/* 흰색 카드 프레임 */}
             <View style={styles.card}>
+              {concert?.posterUrl && (
+                <Image source={{ uri: concert.posterUrl }} style={styles.poster} resizeMode="cover" />
+              )}
+
               <Text style={styles.title} numberOfLines={2}>
-                {contest?.title}
+                {concert?.title}
               </Text>
 
               <View style={styles.badgeRow}>
-                {contest && <Tag label={contest.category} />}
+                {concert && <Tag label={concert.category} />}
               </View>
 
               <View style={styles.divider} />
 
               <View style={styles.metaList}>
-                <IconText icon="business-outline" text={contest?.organizer ?? ""} />
                 <IconText
-                  icon="alarm-outline"
-                  text={contest ? `접수 마감 ${formatDate(contest.deadline)}` : ""}
+                  icon="location-outline"
+                  text={concert ? `${concert.venue} · ${concert.region}` : ""}
                 />
                 <IconText
                   icon="calendar-outline"
                   text={
-                    contest
-                      ? `대회 기간 ${formatDate(contest.startDate)} ~ ${formatDate(contest.endDate)}`
+                    concert
+                      ? `공연 기간 ${formatDate(concert.startDate)} ~ ${formatDate(concert.endDate)}`
                       : ""
                   }
                 />
@@ -73,7 +77,7 @@ export default function ContestDetailModal({ contest, onClose }: ContestDetailMo
 
               <View style={styles.divider} />
 
-              <ThemedButton title="지원하기" onPress={handleApply} />
+              <ThemedButton title="공연 정보 보기" onPress={handleViewSource} />
             </View>
           </View>
         </View>
@@ -122,6 +126,11 @@ const styles = StyleSheet.create({
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: colors.border,
     gap: 14,
+  },
+  poster: {
+    width: "100%",
+    height: 160,
+    borderRadius: 10,
   },
   title: {
     fontSize: 16,

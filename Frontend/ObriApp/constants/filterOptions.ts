@@ -1,7 +1,5 @@
 export const CATEGORIES = ["결혼", "행사", "추모", "레코딩", "기타"];
 
-export const CONTEST_CATEGORIES = ["피아노", "현악", "관악", "성악", "타악", "기타"];
-
 export const INSTRUMENTS = [
   "바이올린", "비올라", "첼로", "더블베이스",
   "플루트", "오보에", "클라리넷", "바순",
@@ -10,6 +8,18 @@ export const INSTRUMENTS = [
 ];
 
 export const REGIONS = ["서울", "경기", "인천", "부산", "대구", "대전", "광주", "기타"];
+
+// 연주회(KOPIS) 전용 지역·카테고리 — KOPIS의 area/genrenm 값이 REGIONS·CATEGORIES와 표기가 달라 별도로 둠
+// (예: REGIONS는 "서울"이지만 KOPIS는 "서울특별시" — Concert.region과 정확히 일치해야 필터가 걸림)
+export const CONCERT_REGIONS = [
+  "서울특별시", "부산광역시", "대구광역시", "인천광역시", "광주광역시", "대전광역시", "울산광역시",
+  "세종특별자치시", "경기도", "강원특별자치도", "충청북도", "충청남도", "전북특별자치도", "전라남도",
+  "경상북도", "경상남도", "제주특별자치도",
+];
+
+// CCCA(서양음악/클래식)는 실제 호출로 확인했지만, CCCC(국악)·CCCD(대중음악)는 KOPIS 공통코드 추정값이라
+// genrenm 표기가 정확히 이 문자열인지 검증 전(백엔드 KopisSyncService 주석과 동일 caveat)
+export const CONCERT_CATEGORIES = ["서양음악(클래식)", "국악", "대중음악"];
 
 export const STATUS_LABELS: Record<string, string> = {
   OPEN: "모집중",

@@ -50,12 +50,12 @@ export default function TabsLayout() {
         }}
       />
       <Tabs.Screen
-        name="concours"
+        name="concerts"
         options={{
-          title: "콩쿠르 확인",
+          title: "연주회",
           tabBarIcon: ({ color, focused, size }) => (
             <Ionicons
-              name={focused ? "trophy" : "trophy-outline"}
+              name={focused ? "disc" : "disc-outline"}
               size={size}
               color={color}
             />
