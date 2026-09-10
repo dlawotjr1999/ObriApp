@@ -1,11 +1,11 @@
 import React, { useCallback, useState } from "react";
-import { View, FlatList, StyleSheet, TouchableOpacity, Text, ActivityIndicator } from "react-native";
+import { View, FlatList, StyleSheet, TouchableOpacity, Text, ActivityIndicator, Alert } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useFocusEffect } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
 import { colors } from "@/constants/theme";
-import { getPracticeLog, getPracticeLogs } from "@/api/practiceLog";
+import { deletePracticeLog, getPracticeLog, getPracticeLogs } from "@/api/practiceLog";
 import { ApiError } from "@/lib/apiClient";
 import { PracticeLogDetail, PracticeLogSummary } from "@/types/practiceLog";
 import AppHeader from "@/components/common/AppHeader";
@@ -30,6 +30,7 @@ export default function PracticeLogScreen() {
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [selectedLog, setSelectedLog] = useState<PracticeLogDetail | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   // 이 탭이 포커스될 때마다 0페이지부터 다시 조회한다(currentPage/hasNext도 그 응답 기준으로 리셋).
   // 최초 진입은 물론, "작성하기"에서 등록을 마치고 router.back()으로 돌아왔을 때도
@@ -99,6 +100,44 @@ export default function PracticeLogScreen() {
     }
   };
 
+  // 수정 화면으로 이동 — 모달을 먼저 닫아, 돌아왔을 때(useFocusEffect 재조회) 이전 모달이
+  // 남아 있지 않도록 한다.
+  const handleEdit = () => {
+    if (selectedId === null) return;
+    const id = selectedId;
+    setSelectedId(null);
+    router.push({ pathname: "/practice-log/[id]/edit", params: { id: String(id) } });
+  };
+
+  // 삭제 확인 후 DELETE 호출. 성공하면 목록에서 즉시 제거하고 모달을 닫는다
+  // (이 화면이 포커스를 잃지 않으므로 useFocusEffect 재조회에 기대지 않고 직접 state를 갱신).
+  const handleDelete = () => {
+    if (selectedId === null) return;
+    const id = selectedId;
+    Alert.alert("연습일지를 삭제할까요?", "삭제하면 되돌릴 수 없어요.", [
+      { text: "취소", style: "cancel" },
+      {
+        text: "삭제",
+        style: "destructive",
+        onPress: async () => {
+          setDeleting(true);
+          try {
+            await deletePracticeLog(id);
+            setLogs((prev) => prev.filter((log) => log.id !== id));
+            setSelectedId(null);
+          } catch (err) {
+            Alert.alert(
+              "삭제 실패",
+              err instanceof ApiError ? err.message : "연습일지를 삭제하지 못했어요."
+            );
+          } finally {
+            setDeleting(false);
+          }
+        },
+      },
+    ]);
+  };
+
   return (
     <SafeAreaView style={styles.container} edges={["top"]}>
       <AppHeader />
@@ -152,6 +191,9 @@ export default function PracticeLogScreen() {
         log={selectedLog}
         loading={detailLoading}
         onClose={() => setSelectedId(null)}
+        onEdit={handleEdit}
+        onDelete={handleDelete}
+        deleting={deleting}
       />
     </SafeAreaView>
   );

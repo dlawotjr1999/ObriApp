@@ -20,3 +20,13 @@ export function getPracticeLog(id: number) {
 export function createPracticeLog(payload: PracticeLogCreateRequest) {
   return apiRequest<PracticeLogDetail>("/api/practice-logs", { method: "POST", body: payload });
 }
+
+// 연습일지 수정 (전체 필드 교체, 본인 것만). 등록과 동일한 요청 바디를 재사용한다.
+export function updatePracticeLog(id: number, payload: PracticeLogCreateRequest) {
+  return apiRequest<PracticeLogDetail>(`/api/practice-logs/${id}`, { method: "PUT", body: payload });
+}
+
+// 연습일지 삭제 (본인 것만)
+export function deletePracticeLog(id: number) {
+  return apiRequest<void>(`/api/practice-logs/${id}`, { method: "DELETE" });
+}

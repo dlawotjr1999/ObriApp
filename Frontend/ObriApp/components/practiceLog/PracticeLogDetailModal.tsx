@@ -13,6 +13,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { colors } from "@/constants/theme";
 import { PracticeLogDetail } from "@/types/practiceLog";
 import { formatDate, formatDuration } from "@/utils/datetime";
+import ThemedButton from "@/components/common/ThemedButton";
 
 const { height: SCREEN_HEIGHT } = Dimensions.get("window");
 
@@ -26,6 +27,11 @@ interface PracticeLogDetailModalProps {
   // 위 상세 조회가 진행 중인 동안 true — 이 모달은 그동안 title/날짜/내용 대신 스피너만 그린다
   loading?: boolean;
   onClose: () => void;
+  // 수정·삭제는 API 호출과 목록 state 갱신이 얽혀 있어 부모(practice-log.tsx)가 처리한다.
+  // 이 모달은 버튼만 그리고, 조회 중(log null)이거나 삭제 진행 중일 땐 숨긴다.
+  onEdit: () => void;
+  onDelete: () => void;
+  deleting?: boolean;
 }
 
 export default function PracticeLogDetailModal({
@@ -33,6 +39,9 @@ export default function PracticeLogDetailModal({
   log,
   loading = false,
   onClose,
+  onEdit,
+  onDelete,
+  deleting = false,
 }: PracticeLogDetailModalProps) {
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
@@ -86,6 +95,22 @@ export default function PracticeLogDetailModal({
                   <ScrollView style={styles.scrollArea} showsVerticalScrollIndicator={false}>
                     <Text style={styles.content}>{log.content}</Text>
                   </ScrollView>
+
+                  <View style={styles.actionRow}>
+                    <ThemedButton
+                      title="수정"
+                      variant="outline"
+                      style={styles.actionButton}
+                      onPress={onEdit}
+                    />
+                    <ThemedButton
+                      title="삭제"
+                      variant="outline"
+                      style={styles.actionButton}
+                      loading={deleting}
+                      onPress={onDelete}
+                    />
+                  </View>
                 </>
               )}
             </View>
@@ -164,6 +189,15 @@ const styles = StyleSheet.create({
   // 부모가 auto 높이라 flex로는 크기를 못 잡으므로, 직접 상한을 줘서 이 높이를 넘으면 스크롤되게 함
   scrollArea: {
     maxHeight: SCREEN_HEIGHT * 0.55,
+  },
+  actionRow: {
+    flexDirection: "row",
+    gap: 10,
+    marginTop: 14,
+  },
+  actionButton: {
+    flex: 1,
+    height: 44,
   },
   loadingArea: {
     height: 120,
