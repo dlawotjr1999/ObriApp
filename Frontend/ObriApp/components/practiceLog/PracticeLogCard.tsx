@@ -1,14 +1,16 @@
 import React from "react";
 import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
 import { colors } from "@/constants/theme";
-import { PracticeLog } from "@/types/practiceLog";
+import { PracticeLogSummary } from "@/types/practiceLog";
 import { formatDate, formatDuration } from "@/utils/datetime";
 
 interface PracticeLogCardProps {
-  log: PracticeLog;
+  log: PracticeLogSummary;
   onPress?: () => void;
 }
 
+// 목록 카드 — 날짜·연습 시간·제목만 표시. content는 목록 API 응답에 아예 없으므로
+// 이 컴포넌트는 PracticeLogSummary만 받고, 상세(content)는 onPress 이후 부모가 별도 조회한다.
 export default function PracticeLogCard({ log, onPress }: PracticeLogCardProps) {
   return (
     <TouchableOpacity style={styles.card} activeOpacity={0.8} onPress={onPress}>

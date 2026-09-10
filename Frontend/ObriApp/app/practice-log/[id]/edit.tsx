@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   View,
   Text,
@@ -9,41 +9,67 @@ import {
   KeyboardAvoidingView,
   Platform,
   Alert,
+  ActivityIndicator,
 } from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
-import { useRouter } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { colors } from "@/constants/theme";
 import { formatDate, parseDate, toDateOnly } from "@/utils/datetime";
-import { createPracticeLog } from "@/api/practiceLog";
+import { getPracticeLog, updatePracticeLog } from "@/api/practiceLog";
 import { ApiError } from "@/lib/apiClient";
 import ThemedButton from "@/components/common/ThemedButton";
 
-export default function PracticeLogCreateScreen() {
+// 연습일지 수정 화면 — create.tsx와 같은 입력 폼을 쓰되, 진입 시 기존 값을 불러와 채워둔다.
+export default function PracticeLogEditScreen() {
+  const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const insets = useSafeAreaInsets();
 
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
+
   const [title, setTitle] = useState("");
-  // 백엔드 PracticeLog.logDate가 LocalDate(날짜만)이므로 "YYYY-MM-DD"로 보관
   const [date, setDate] = useState("");
   const [durationMinutes, setDurationMinutes] = useState("");
   const [content, setContent] = useState("");
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // 필수값: 제목·날짜·연습 시간. 내용은 선택
+  // 진입 시 기존 값을 조회해 폼을 채운다. 목록에서 이미 받은 값을 재사용하지 않는 이유는
+  // 상세 모달과 이 화면이 별도 진입점이라 항상 최신 값을 보장하려는 것(PracticeLogDetailModal과 동일한 이유).
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const log = await getPracticeLog(Number(id));
+        if (cancelled) return;
+        setTitle(log.title);
+        setDate(log.logDate);
+        setDurationMinutes(String(log.duration));
+        setContent(log.content ?? "");
+      } catch {
+        if (cancelled) return;
+        setLoadError(true);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [id]);
+
   const canSubmit = title.trim() !== "" && date !== "" && Number(durationMinutes) > 0;
 
-  // 등록하기 버튼 핸들러 — POST /api/practice-logs 호출.
-  // 성공하면 router.back()으로 목록 화면에 돌아가고, 그 화면의 useFocusEffect가
-  // 포커스 시 재조회하므로 여기서 목록 state를 직접 갱신할 필요는 없다.
-  // 내용(content)은 선택 입력이라 빈 문자열이면 undefined로 보내 백엔드 null과 구분한다.
+  // 수정하기 버튼 핸들러 — PUT /api/practice-logs/{id} 호출.
+  // 성공하면 router.back()으로 돌아가고, 목록 화면의 useFocusEffect가 재조회한다.
   const handleSubmit = async () => {
-    if (isSubmitting) return; // 버튼 연타로 중복 등록되는 것을 막는다
+    if (isSubmitting) return;
     setIsSubmitting(true);
     try {
-      await createPracticeLog({
+      await updatePracticeLog(Number(id), {
         title: title.trim(),
         logDate: date,
         duration: Number(durationMinutes),
@@ -51,15 +77,34 @@ export default function PracticeLogCreateScreen() {
       });
       router.back();
     } catch (err) {
-      // ApiError면 백엔드가 내려준 메시지를, 그 외(네트워크 오류 등)는 기본 안내 문구를 보여준다
       Alert.alert(
-        "등록 실패",
-        err instanceof ApiError ? err.message : "연습일지를 등록하지 못했어요."
+        "수정 실패",
+        err instanceof ApiError ? err.message : "연습일지를 수정하지 못했어요."
       );
     } finally {
       setIsSubmitting(false);
     }
   };
+
+  if (loading) {
+    return (
+      <SafeAreaView style={styles.container} edges={["top"]}>
+        <View style={styles.centerFill}>
+          <ActivityIndicator color={colors.primary} />
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  if (loadError) {
+    return (
+      <SafeAreaView style={styles.container} edges={["top"]}>
+        <View style={styles.centerFill}>
+          <Text style={styles.errorText}>연습일지를 불러오지 못했어요.</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.container} edges={["top"]}>
@@ -70,7 +115,7 @@ export default function PracticeLogCreateScreen() {
         >
           <Ionicons name="arrow-back" size={22} color={colors.primary} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>연습일지 작성</Text>
+        <Text style={styles.headerTitle}>연습일지 수정</Text>
         <View style={{ width: 22 }} />
       </View>
 
@@ -151,7 +196,7 @@ export default function PracticeLogCreateScreen() {
 
         <View style={[styles.footer, { paddingBottom: insets.bottom + 12 }]}>
           <ThemedButton
-            title="등록하기"
+            title="수정하기"
             disabled={!canSubmit}
             loading={isSubmitting}
             onPress={handleSubmit}
@@ -210,7 +255,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: colors.textPrimary,
   },
-  // 날짜 필드는 TextInput이 아닌 TouchableOpacity라 내부 Text에 별도 지정
   inputText: {
     fontSize: 14,
     color: colors.textPrimary,
@@ -228,5 +272,10 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background,
     borderTopWidth: StyleSheet.hairlineWidth,
     borderTopColor: colors.border,
+  },
+  centerFill: { flex: 1, alignItems: "center", justifyContent: "center" },
+  errorText: {
+    fontSize: 14,
+    color: colors.textMuted,
   },
 });
