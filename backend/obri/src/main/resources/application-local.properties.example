@@ -13,3 +13,8 @@ spring.jpa.properties.hibernate.format_sql=true
 
 # Expo web(브라우저)으로 로컬 연동 테스트할 때만 필요
 app.cors.allowed-origins=http://localhost:8081
+
+# KOPIS 오픈API — data.go.kr이 아니라 KOPIS 자체 사이트(kopis.or.kr)에서 발급받은 서비스키
+kopis.service-key=발급받은키로교체
+# 로컬에서 동기화를 바로 확인하고 싶을 때만 짧은 주기로 오버라이드(예: 매분 0초)
+# kopis.sync.cron=0 * * * * *
