@@ -39,7 +39,7 @@ dependencies {
 	// PostgreSQL
 	runtimeOnly 'org.postgresql:postgresql'
 
-	// 콩쿠르 크롤러 (HTML 파싱)
+	// KOPIS 오픈API 응답(XML) 파싱
 	implementation 'org.jsoup:jsoup:1.17.2'
 
 	// Firebase Admin SDK (서버용)
