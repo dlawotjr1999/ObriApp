@@ -58,24 +58,36 @@ class KopisSyncServiceTest {
                 "https://www.kopis.or.kr/por/db/pblprfr/pblprfrView.do?menuId=MNU_00020&mt20Id=PF1");
     }
 
+    // CCCA(서양음악/클래식)에만 항목이 있고, CCCC(국악)·CCCD(대중음악)는 1페이지부터 비어있는 전형적인 상황을 재현
+    private void stubOnlyClassicalGenreHasItem() {
+        when(client.fetchListDocument(anyString(), anyString(), eq(1), eq(100), eq("CCCA")))
+                .thenReturn(parseXml(ONE_ITEM_XML));
+        when(client.fetchListDocument(anyString(), anyString(), eq(2), eq(100), eq("CCCA")))
+                .thenReturn(parseXml(EMPTY_XML));
+        when(client.fetchListDocument(anyString(), anyString(), eq(1), eq(100), eq("CCCC")))
+                .thenReturn(parseXml(EMPTY_XML));
+        when(client.fetchListDocument(anyString(), anyString(), eq(1), eq(100), eq("CCCD")))
+                .thenReturn(parseXml(EMPTY_XML));
+    }
+
     @Test
-    void sync_savesNewItemAndStopsAtEmptyPage() {
-        when(client.fetchListDocument(anyString(), anyString(), eq(1), eq(100))).thenReturn(parseXml(ONE_ITEM_XML));
-        when(client.fetchListDocument(anyString(), anyString(), eq(2), eq(100))).thenReturn(parseXml(EMPTY_XML));
+    void sync_savesNewItemAndStopsAtEmptyPagePerGenre() {
+        stubOnlyClassicalGenreHasItem();
         when(concertRepository.findByExternalId("PF1")).thenReturn(Optional.empty());
 
         int savedCount = kopisSyncService.sync();
 
         assertThat(savedCount).isEqualTo(1);
         verify(concertRepository, times(1)).save(any(Concert.class));
-        verify(client, never()).fetchListDocument(anyString(), anyString(), eq(3), eq(100));
+        verify(client, never()).fetchListDocument(anyString(), anyString(), eq(3), eq(100), eq("CCCA"));
+        verify(client, never()).fetchListDocument(anyString(), anyString(), eq(2), eq(100), eq("CCCC"));
+        verify(client, never()).fetchListDocument(anyString(), anyString(), eq(2), eq(100), eq("CCCD"));
     }
 
     @Test
     void sync_updatesExistingItemWithoutCountingAsNew() {
         Concert existing = existingConcert();
-        when(client.fetchListDocument(anyString(), anyString(), eq(1), eq(100))).thenReturn(parseXml(ONE_ITEM_XML));
-        when(client.fetchListDocument(anyString(), anyString(), eq(2), eq(100))).thenReturn(parseXml(EMPTY_XML));
+        stubOnlyClassicalGenreHasItem();
         when(concertRepository.findByExternalId("PF1")).thenReturn(Optional.of(existing));
 
         int savedCount = kopisSyncService.sync();
@@ -85,25 +97,28 @@ class KopisSyncServiceTest {
     }
 
     @Test
-    void sync_returnsZeroWhenFirstPageIsEmpty() {
-        when(client.fetchListDocument(anyString(), anyString(), eq(1), eq(100))).thenReturn(parseXml(EMPTY_XML));
+    void sync_returnsZeroWhenEveryGenreFirstPageIsEmpty() {
+        when(client.fetchListDocument(anyString(), anyString(), eq(1), eq(100), anyString()))
+                .thenReturn(parseXml(EMPTY_XML));
 
         int savedCount = kopisSyncService.sync();
 
         assertThat(savedCount).isZero();
         verifyNoInteractions(concertRepository);
-        verify(client, never()).fetchListDocument(anyString(), anyString(), eq(2), eq(100));
+        verify(client, never()).fetchListDocument(anyString(), anyString(), eq(2), eq(100), anyString());
     }
 
     @Test
-    void sync_returnsZeroWhenFirstPageFetchFails() {
-        when(client.fetchListDocument(anyString(), anyString(), eq(1), eq(100)))
+    void sync_treatsGenreFetchFailureAsEmptyPageAndContinuesOtherGenres() {
+        when(client.fetchListDocument(anyString(), anyString(), eq(1), eq(100), anyString()))
                 .thenThrow(new KopisSyncException("네트워크 오류"));
 
         int savedCount = kopisSyncService.sync();
 
         assertThat(savedCount).isZero();
         verifyNoInteractions(concertRepository);
+        // 장르 3개(CCCA/CCCC/CCCD) 각각 1페이지는 시도해야 함
+        verify(client, times(3)).fetchListDocument(anyString(), anyString(), eq(1), eq(100), anyString());
     }
 
     @Test
@@ -111,7 +126,7 @@ class KopisSyncServiceTest {
         CountDownLatch started = new CountDownLatch(1);
         CountDownLatch release = new CountDownLatch(1);
 
-        when(client.fetchListDocument(anyString(), anyString(), eq(1), eq(100))).thenAnswer(invocation -> {
+        when(client.fetchListDocument(anyString(), anyString(), eq(1), eq(100), anyString())).thenAnswer(invocation -> {
             started.countDown();
             release.await();
             return parseXml(EMPTY_XML);

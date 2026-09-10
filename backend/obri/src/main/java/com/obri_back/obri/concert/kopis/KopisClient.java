@@ -17,15 +17,16 @@ import java.io.IOException;
 public class KopisClient {
 
     private static final String LIST_URL_TEMPLATE =
-            "http://www.kopis.or.kr/openApi/restful/pblprfr?service=%s&stdate=%s&eddate=%s&cpage=%d&rows=%d&shcate=CCCA";
+            "http://www.kopis.or.kr/openApi/restful/pblprfr?service=%s&stdate=%s&eddate=%s&cpage=%d&rows=%d&shcate=%s";
     private static final int TIMEOUT_MS = 10_000;
 
     @Value("${kopis.service-key}")
     private String serviceKey;
 
-    // 공연목록 조회. stdate/eddate는 "yyyyMMdd" 형식. shcate=CCCA(서양음악/클래식)로 고정 필터링
-    public Document fetchListDocument(String stdate, String eddate, int page, int rows) {
-        String url = String.format(LIST_URL_TEMPLATE, serviceKey, stdate, eddate, page, rows);
+    // 공연목록 조회. stdate/eddate는 "yyyyMMdd" 형식. genreCode는 KOPIS 장르코드(shcate) — 호출부(KopisSyncService)가
+    // 장르별로 각각 호출해 합친다(KOPIS API가 shcate 다중값을 지원하지 않아 장르 하나당 별도 요청 필요)
+    public Document fetchListDocument(String stdate, String eddate, int page, int rows, String genreCode) {
+        String url = String.format(LIST_URL_TEMPLATE, serviceKey, stdate, eddate, page, rows, genreCode);
         try {
             return Jsoup.connect(url).parser(Parser.xmlParser()).timeout(TIMEOUT_MS).get();
         } catch (IOException e) {
