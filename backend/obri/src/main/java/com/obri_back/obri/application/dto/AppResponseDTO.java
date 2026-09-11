@@ -13,14 +13,14 @@ import java.util.List;
 
 /*
  * 지원서 응답 DTO — 전 엔드포인트 공통(글 요약 post + 지원자 요약 applicant 중첩)
- * 구인자는 applicant를, 지원자는 post를 소비 (관점별 비대칭 없이 단일 DTO로 통일)
+ * 모집자는 applicant를, 지원자는 post를 소비 (관점별 비대칭 없이 단일 DTO로 통일)
  */
 @Getter
 @Builder
 public class AppResponseDTO {
     private Long id;
     private ApplicationPostSummaryDTO post;
-    // UserResponseDTO 대신 ApplicantResponseDTO 사용: 구인자에게 지원자의 email이 노출되는 것을 차단
+    // UserResponseDTO 대신 ApplicantResponseDTO 사용: 모집자에게 지원자의 email이 노출되는 것을 차단
     private ApplicantResponseDTO applicant;
     private String additionalInfo;
     private ApplicationStatus status;

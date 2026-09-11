@@ -8,7 +8,7 @@ import org.junit.jupiter.api.Test;
 import static org.assertj.core.api.Assertions.assertThat;
 
 // CLAUDE.md §8: ApplicationAccessPolicy가 getUser().getId().equals(...) 체인을 직접 다루지 않도록
-// 지원자/구인자 판단 로직 자체를 Application으로 이관(Tell-Don't-Ask)
+// 지원자/모집자 판단 로직 자체를 Application으로 이관(Tell-Don't-Ask)
 class ApplicationTest {
 
     private final User applicant = User.builder().id(1L).nickname("applicant").firebaseUid("applicant-uid").build();

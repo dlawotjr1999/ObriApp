@@ -42,7 +42,7 @@ class NotificationServiceTest {
 
     @Test
     void notifyNewPost_sendsToTopic() throws Exception {
-        notificationService.notifyNewPost(1L, "결혼식 바이올린 구인");
+        notificationService.notifyNewPost(1L, "현악 앙상블 단원 모집");
 
         verify(firebaseMessaging, times(1)).send(any(Message.class));
     }
@@ -60,14 +60,14 @@ class NotificationServiceTest {
 
     @Test
     void notifyNewApplication_skipsWhenTokenNull() {
-        notificationService.notifyNewApplication(null, 1L, "결혼식 바이올린 구인");
+        notificationService.notifyNewApplication(null, 1L, "현악 앙상블 단원 모집");
 
         verifyNoInteractions(firebaseMessaging);
     }
 
     @Test
     void notifyNewApplication_sendsWhenTokenPresent() throws Exception {
-        notificationService.notifyNewApplication("recruiter-token", 1L, "결혼식 바이올린 구인");
+        notificationService.notifyNewApplication("recruiter-token", 1L, "현악 앙상블 단원 모집");
 
         verify(firebaseMessaging, times(1)).send(any(Message.class));
     }
@@ -81,14 +81,14 @@ class NotificationServiceTest {
 
     @Test
     void notifyPostDeleted_skipsWhenNoTokens() {
-        notificationService.notifyPostDeleted(List.of(), 1L, "결혼식 바이올린 구인");
+        notificationService.notifyPostDeleted(List.of(), 1L, "현악 앙상블 단원 모집");
 
         verifyNoInteractions(firebaseMessaging);
     }
 
     @Test
     void notifyPostDeleted_sendsMulticastWhenTokensPresent() throws Exception {
-        notificationService.notifyPostDeleted(List.of("token-a", "token-b"), 1L, "결혼식 바이올린 구인");
+        notificationService.notifyPostDeleted(List.of("token-a", "token-b"), 1L, "현악 앙상블 단원 모집");
 
         verify(firebaseMessaging, times(1)).sendEachForMulticast(any());
     }

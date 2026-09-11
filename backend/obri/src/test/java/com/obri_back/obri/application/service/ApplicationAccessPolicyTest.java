@@ -31,7 +31,7 @@ class ApplicationAccessPolicyTest {
     void requireRecruiterOnPost_passesWhenOwner() {
         Post post = Post.create(recruiter, PostInfo.builder().build());
 
-        assertThatCode(() -> accessPolicy.requireRecruiter(recruiter, post, "구인자만 가능합니다"))
+        assertThatCode(() -> accessPolicy.requireRecruiter(recruiter, post, "모집자만 가능합니다"))
                 .doesNotThrowAnyException();
     }
 
@@ -39,16 +39,16 @@ class ApplicationAccessPolicyTest {
     void requireRecruiterOnPost_throwsForbiddenWhenNotOwner() {
         Post post = Post.create(recruiter, PostInfo.builder().build());
 
-        assertThatThrownBy(() -> accessPolicy.requireRecruiter(applicant, post, "구인자만 가능합니다"))
+        assertThatThrownBy(() -> accessPolicy.requireRecruiter(applicant, post, "모집자만 가능합니다"))
                 .isInstanceOf(ForbiddenException.class)
-                .hasMessage("구인자만 가능합니다");
+                .hasMessage("모집자만 가능합니다");
     }
 
     @Test
     void requireRecruiterOnApplication_passesWhenPostOwner() {
         Application application = buildApplication();
 
-        assertThatCode(() -> accessPolicy.requireRecruiter(recruiter, application, "구인자만 가능합니다"))
+        assertThatCode(() -> accessPolicy.requireRecruiter(recruiter, application, "모집자만 가능합니다"))
                 .doesNotThrowAnyException();
     }
 
@@ -56,9 +56,9 @@ class ApplicationAccessPolicyTest {
     void requireRecruiterOnApplication_throwsForbiddenWhenNotPostOwner() {
         Application application = buildApplication();
 
-        assertThatThrownBy(() -> accessPolicy.requireRecruiter(applicant, application, "구인자만 가능합니다"))
+        assertThatThrownBy(() -> accessPolicy.requireRecruiter(applicant, application, "모집자만 가능합니다"))
                 .isInstanceOf(ForbiddenException.class)
-                .hasMessage("구인자만 가능합니다");
+                .hasMessage("모집자만 가능합니다");
     }
 
     @Test

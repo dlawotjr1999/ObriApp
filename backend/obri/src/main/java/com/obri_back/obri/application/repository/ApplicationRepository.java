@@ -14,11 +14,11 @@ import com.obri_back.obri.application.entity.Application;
 import com.obri_back.obri.application.entity.ApplicationStatus;
 
 /*
- * Application 저장소 — 지원자별/구인글별 조회, 중복 지원 체크, 알림 대상 토큰 조회 제공
+ * Application 저장소 — 지원자별/모집글별 조회, 중복 지원 체크, 알림 대상 토큰 조회 제공
  */
 public interface ApplicationRepository extends JpaRepository<Application, Long> {
 
-    // 구인글 수정 알림 대상(지정 상태) 지원자의 fcm_token 조회 — 토큰 없는 유저는 제외
+    // 모집글 수정 알림 대상(지정 상태) 지원자의 fcm_token 조회 — 토큰 없는 유저는 제외
     @Query("SELECT a.user.fcmToken FROM Application a " +
            "WHERE a.post.id = :postId AND a.status IN :statuses AND a.user.fcmToken IS NOT NULL")
     List<String> findApplicantFcmTokens(@Param("postId") Long postId,

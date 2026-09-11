@@ -26,16 +26,16 @@ class NotificationEventListenerTest {
 
     @Test
     void onNewApplication_delegatesToNotifyNewApplication() {
-        listener.onNewApplication(new NewApplicationNotificationEvent("recruiter-token", 1L, "결혼식 바이올린 구인"));
+        listener.onNewApplication(new NewApplicationNotificationEvent("recruiter-token", 1L, "현악 앙상블 단원 모집"));
 
-        verify(notificationService, times(1)).notifyNewApplication("recruiter-token", 1L, "결혼식 바이올린 구인");
+        verify(notificationService, times(1)).notifyNewApplication("recruiter-token", 1L, "현악 앙상블 단원 모집");
     }
 
     @Test
     void onNewPost_delegatesToNotifyNewPost() {
-        listener.onNewPost(new NewPostNotificationEvent(1L, "결혼식 바이올린 구인"));
+        listener.onNewPost(new NewPostNotificationEvent(1L, "현악 앙상블 단원 모집"));
 
-        verify(notificationService, times(1)).notifyNewPost(1L, "결혼식 바이올린 구인");
+        verify(notificationService, times(1)).notifyNewPost(1L, "현악 앙상블 단원 모집");
     }
 
     @Test
@@ -54,8 +54,8 @@ class NotificationEventListenerTest {
 
     @Test
     void onPostDeleted_delegatesToNotifyPostDeleted() {
-        listener.onPostDeleted(new PostDeletedNotificationEvent(List.of("accepted-token"), 1L, "결혼식 바이올린 구인"));
+        listener.onPostDeleted(new PostDeletedNotificationEvent(List.of("accepted-token"), 1L, "현악 앙상블 단원 모집"));
 
-        verify(notificationService, times(1)).notifyPostDeleted(List.of("accepted-token"), 1L, "결혼식 바이올린 구인");
+        verify(notificationService, times(1)).notifyPostDeleted(List.of("accepted-token"), 1L, "현악 앙상블 단원 모집");
     }
 }
