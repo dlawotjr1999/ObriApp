@@ -15,7 +15,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /*
- * 구인글 목록 동적 필터 명세 빌더
+ * 모집글 목록 동적 필터 명세 빌더
  * GET /api/posts 필터: 필터 간 AND, 같은 필터 내 다중값은 OR
  * eventAt이 지난 글은 항상 제외(공연 종료 후 목록 노출 방지 — BACKLOG.md #8)
  * status는 필터 파라미터로 받지 않고 항상 OPEN·PARTIALLY_CLOSED만 노출 — CLOSED(마감)는 이 공개 목록에

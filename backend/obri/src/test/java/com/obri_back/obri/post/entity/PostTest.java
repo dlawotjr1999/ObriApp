@@ -199,7 +199,7 @@ class PostTest {
         assertThat(post.getStatus()).isEqualTo(PostStatus.CLOSED);
     }
 
-    // BACKLOG.md #34: 구인글 상세 "설명" 섹션에 대응하는 필드
+    // BACKLOG.md #34: 모집글 상세 "설명" 섹션에 대응하는 필드
     @Test
     void create_setsDescriptionFromInfo() {
         User owner = User.builder().id(1L).nickname("owner").firebaseUid("owner-uid").build();

@@ -76,12 +76,11 @@ class PostControllerTest {
     void createPost_returns200WithRegisteredPost() throws Exception {
         PostResponseDTO response = PostResponseDTO.builder()
                 .id(1L)
-                .category("결혼")
-                .title("결혼식 바이올린 구인")
+                .category("앙상블")
+                .title("현악 앙상블 단원 모집")
                 .eventAt(LocalDateTime.of(2024, 5, 1, 14, 0))
-                .location("서울 강남구 OO웨딩홀")
-                .timetable("리허설 1회 (13:00), 본식 (14:00)")
-                .pay(150000)
+                .location("서울 강남구 OO스튜디오")
+                .timetable("매주 토요일 오후 2시 합주")
                 .status(PostStatus.OPEN)
                 .instruments(List.of(
                         PostInstrumentDTO.builder().instrument("바이올린").people(2).confirmed(0).closed(false).build()
@@ -96,13 +95,12 @@ class PostControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {
-                                  "category": "결혼",
-                                  "title": "결혼식 바이올린 구인",
+                                  "category": "앙상블",
+                                  "title": "현악 앙상블 단원 모집",
                                   "eventAt": "2024-05-01T14:00:00",
-                                  "location": "서울 강남구 OO웨딩홀",
+                                  "location": "서울 강남구 OO스튜디오",
                                   "region": "서울",
-                                  "timetable": "리허설 1회 (13:00), 본식 (14:00)",
-                                  "pay": 150000,
+                                  "timetable": "매주 토요일 오후 2시 합주",
                                   "instruments": [
                                     { "instrument": "바이올린", "people": 2 }
                                   ]
@@ -110,9 +108,9 @@ class PostControllerTest {
                                 """))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value(200))
-                .andExpect(jsonPath("$.message").value("구인글이 등록되었습니다"))
+                .andExpect(jsonPath("$.message").value("모집글이 등록되었습니다"))
                 .andExpect(jsonPath("$.data.id").value(1))
-                .andExpect(jsonPath("$.data.title").value("결혼식 바이올린 구인"))
+                .andExpect(jsonPath("$.data.title").value("현악 앙상블 단원 모집"))
                 .andExpect(jsonPath("$.data.status").value("OPEN"));
     }
 
@@ -123,11 +121,10 @@ class PostControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {
-                                  "category": "결혼",
+                                  "category": "앙상블",
                                   "eventAt": "2024-05-01T14:00:00",
-                                  "location": "서울 강남구 OO웨딩홀",
-                                  "timetable": "리허설 1회",
-                                  "pay": 150000,
+                                  "location": "서울 강남구 OO스튜디오",
+                                  "timetable": "매주 토요일 오후 2시 합주",
                                   "instruments": [{ "instrument": "바이올린", "people": 2 }]
                                 }
                                 """))
@@ -143,13 +140,12 @@ class PostControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {
-                                  "category": "결혼",
-                                  "title": "결혼식 바이올린 구인",
+                                  "category": "앙상블",
+                                  "title": "현악 앙상블 단원 모집",
                                   "eventAt": "2024-05-01T14:00:00",
-                                  "location": "서울 강남구 OO웨딩홀",
+                                  "location": "서울 강남구 OO스튜디오",
                                   "region": "서울",
-                                  "timetable": "리허설 1회",
-                                  "pay": 150000,
+                                  "timetable": "매주 토요일 오후 2시 합주",
                                   "instruments": [
                                     { "instrument": "바이올린", "people": 2 },
                                     { "instrument": "바이올린", "people": 3 }
@@ -163,15 +159,14 @@ class PostControllerTest {
     void getPosts_returns200WithPagedList() throws Exception {
         PostSummaryResponseDTO summary = PostSummaryResponseDTO.builder()
                 .id(1L)
-                .title("결혼식 바이올린 구인")
-                .category("결혼")
+                .title("현악 앙상블 단원 모집")
+                .category("앙상블")
                 .eventAt(LocalDateTime.of(2024, 5, 1, 14, 0))
-                .location("서울 강남구 OO웨딩홀")
+                .location("서울 강남구 OO스튜디오")
                 .instruments(List.of(
                         PostInstrumentDTO.builder().instrument("바이올린").people(2).confirmed(0).closed(false).build()
                 ))
-                .timetable("리허설 1회 (13:00), 본식 (14:00)")
-                .pay(150000)
+                .timetable("매주 토요일 오후 2시 합주")
                 .status(PostStatus.OPEN)
                 .build();
 
@@ -191,15 +186,14 @@ class PostControllerTest {
     void getMyPosts_returns200WithPagedList() throws Exception {
         PostSummaryResponseDTO summary = PostSummaryResponseDTO.builder()
                 .id(1L)
-                .title("결혼식 바이올린 구인")
-                .category("결혼")
+                .title("현악 앙상블 단원 모집")
+                .category("앙상블")
                 .eventAt(LocalDateTime.of(2024, 5, 1, 14, 0))
-                .location("서울 강남구 OO웨딩홀")
+                .location("서울 강남구 OO스튜디오")
                 .instruments(List.of(
                         PostInstrumentDTO.builder().instrument("바이올린").people(2).confirmed(0).closed(false).build()
                 ))
-                .timetable("리허설 1회")
-                .pay(150000)
+                .timetable("매주 토요일 오후 2시 합주")
                 .status(PostStatus.OPEN)
                 .build();
 
@@ -223,12 +217,11 @@ class PostControllerTest {
                 .applicationCount(3L)
                 .isMine(false)
                 .hasApplied(false)
-                .category("결혼")
-                .title("결혼식 바이올린 구인")
+                .category("앙상블")
+                .title("현악 앙상블 단원 모집")
                 .eventAt(LocalDateTime.of(2024, 5, 1, 14, 0))
-                .location("서울 강남구 OO웨딩홀")
-                .timetable("리허설 1회 (13:00), 본식 (14:00)")
-                .pay(150000)
+                .location("서울 강남구 OO스튜디오")
+                .timetable("매주 토요일 오후 2시 합주")
                 .status(PostStatus.OPEN)
                 .instruments(List.of(
                         PostInstrumentDTO.builder().instrument("바이올린").people(2).confirmed(0).closed(false).build()
@@ -250,12 +243,11 @@ class PostControllerTest {
     void updatePost_returns200WithUpdatedPost() throws Exception {
         PostResponseDTO response = PostResponseDTO.builder()
                 .id(1L)
-                .category("결혼")
+                .category("앙상블")
                 .title("수정된 제목")
                 .eventAt(LocalDateTime.of(2024, 5, 1, 15, 0))
-                .location("서울 강남구 OO웨딩홀")
-                .timetable("리허설 1회 (14:00), 본식 (15:00)")
-                .pay(200000)
+                .location("서울 강남구 OO스튜디오")
+                .timetable("매주 토요일 오후 3시 합주")
                 .status(PostStatus.OPEN)
                 .instruments(List.of(
                         PostInstrumentDTO.builder().instrument("바이올린").people(3).confirmed(0).closed(false).build()
@@ -270,13 +262,12 @@ class PostControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {
-                                  "category": "결혼",
+                                  "category": "앙상블",
                                   "title": "수정된 제목",
                                   "eventAt": "2024-05-01T15:00:00",
-                                  "location": "서울 강남구 OO웨딩홀",
+                                  "location": "서울 강남구 OO스튜디오",
                                   "region": "서울",
-                                  "timetable": "리허설 1회 (14:00), 본식 (15:00)",
-                                  "pay": 200000,
+                                  "timetable": "매주 토요일 오후 3시 합주",
                                   "instruments": [
                                     { "instrument": "바이올린", "people": 3 }
                                   ]
@@ -295,7 +286,7 @@ class PostControllerTest {
                         .with(authentication(auth)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value(200))
-                .andExpect(jsonPath("$.message").value("구인글이 마감되었습니다"));
+                .andExpect(jsonPath("$.message").value("모집글이 마감되었습니다"));
     }
 
     @Test
@@ -306,6 +297,6 @@ class PostControllerTest {
                         .with(authentication(auth)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value(200))
-                .andExpect(jsonPath("$.message").value("구인글이 삭제되었습니다"));
+                .andExpect(jsonPath("$.message").value("모집글이 삭제되었습니다"));
     }
 }

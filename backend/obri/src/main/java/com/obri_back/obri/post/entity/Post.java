@@ -32,7 +32,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 /*
- * 구인글 엔티티
+ * 모집글 엔티티
  * 작성자(User)를 단방향 참조하고 PostInstrument와 양방향 1:N 소유.
  * 악기 확정·마감·글 전체 상태(OPEN/PARTIALLY_CLOSED/CLOSED) 전이를 도메인 메서드로 관리
  */
@@ -73,10 +73,7 @@ public class Post {
     @Column(name = "timetable" , nullable = false)
     private String timetable;
 
-    @Column(name = "pay", nullable = false)
-    private Integer pay;
-
-    // 구인글 상세 설명 (선택 입력) — BACKLOG.md #34, 프론트 상세 화면 "설명" 섹션에 대응
+    // 모집글 상세 설명 (선택 입력) — BACKLOG.md #34, 프론트 상세 화면 "설명" 섹션에 대응
     // length만 지정(columnDefinition 미사용) — DB별 raw SQL 타입(TEXT 등)에 의존하지 않아 이식성 확보
     @Column(name = "description", length = 2000)
     private String description;
@@ -98,7 +95,7 @@ public class Post {
     @Column(name = "created_at")
     private LocalDateTime createdAt;
 
-    // 구인글 생성 (악기 목록은 호출부에서 addInstrument로 추가). 초기 상태 OPEN
+    // 모집글 생성 (악기 목록은 호출부에서 addInstrument로 추가). 초기 상태 OPEN
     public static Post create(User user, PostInfo info) {
         Post post = new Post();
         post.user = user;
@@ -108,7 +105,6 @@ public class Post {
         post.location = info.getLocation();
         post.region = info.getRegion();
         post.timetable = info.getTimetable();
-        post.pay = info.getPay();
         post.description = info.getDescription();
         post.status = PostStatus.OPEN;
         post.manuallyClosed = false;
@@ -128,7 +124,6 @@ public class Post {
         this.location = info.getLocation();
         this.region = info.getRegion();
         this.timetable = info.getTimetable();
-        this.pay = info.getPay();
         this.description = info.getDescription();
     }
 

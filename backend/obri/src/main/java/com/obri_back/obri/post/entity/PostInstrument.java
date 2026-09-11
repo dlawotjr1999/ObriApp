@@ -14,7 +14,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 /*
- * 구인글 모집 악기 엔티티 (Post 종속, 양방향 1:N의 자식)
+ * 모집글의 모집 악기 엔티티 (Post 종속, 양방향 1:N의 자식)
  * 악기별 모집 인원(people)·확정 인원(confirmed)·마감 여부(closed)를 추적하며,
  * 악기 단위 @Version 낙관적 락으로 동시 수락 경합을 방지
  */

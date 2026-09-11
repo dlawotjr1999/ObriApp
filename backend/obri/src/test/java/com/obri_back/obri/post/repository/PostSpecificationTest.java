@@ -53,13 +53,12 @@ class PostSpecificationTest {
 
     private void persistPost(String region, String location) {
         Post post = Post.create(owner, PostInfo.builder()
-                .category("결혼")
+                .category("앙상블")
                 .title("제목")
                 .eventAt(LocalDateTime.now().plusDays(7))
                 .location(location)
                 .region(region)
                 .timetable("13:00")
-                .pay(100000)
                 .build());
         post.addInstrument(PostInstrument.of(post, "바이올린", 1));
         entityManager.persist(post);

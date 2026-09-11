@@ -7,8 +7,8 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import com.obri_back.obri.post.entity.PostInstrument;
 
 /*
- * PostInstrument 저장소 — 구인글별 모집 악기 목록 조회 제공
+ * PostInstrument 저장소 — 모집글별 모집 악기 목록 조회 제공
  */
 public interface PostInstrumentRepository extends JpaRepository<PostInstrument, Long> {
-    List<PostInstrument> findByPostId(Long postId);  // 구인글의 악기 목록
+    List<PostInstrument> findByPostId(Long postId);  // 모집글의 악기 목록
 }

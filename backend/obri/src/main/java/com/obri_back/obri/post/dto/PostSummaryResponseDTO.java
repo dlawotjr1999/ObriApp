@@ -13,7 +13,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 /*
- * 구인글 목록/마이페이지용 요약 응답 DTO (writer·applicationCount 등 상세 필드 제외)
+ * 모집글 목록/마이페이지용 요약 응답 DTO (writer·applicationCount 등 상세 필드 제외)
  */
 @Getter
 @Builder
@@ -28,7 +28,6 @@ public class PostSummaryResponseDTO {
     private String region;
     private List<PostInstrumentDTO> instruments;
     private String timetable;
-    private Integer pay;
     private PostStatus status;
 
     // Post 엔티티 → 요약 DTO 변환
@@ -44,7 +43,6 @@ public class PostSummaryResponseDTO {
                         .map(PostInstrumentDTO::from)
                         .collect(Collectors.toList()))
                 .timetable(post.getTimetable())
-                .pay(post.getPay())
                 .status(post.getStatus())
                 .build();
     }
