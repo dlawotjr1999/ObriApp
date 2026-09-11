@@ -3,7 +3,6 @@ package com.obri_back.obri.user.service;
 import com.obri_back.obri.global.exception.ConflictGuard;
 import com.obri_back.obri.global.exception.NotFoundException;
 import com.obri_back.obri.user.dto.CareerDTO;
-import com.obri_back.obri.user.dto.SchoolEmailUpdateRequestDTO;
 import com.obri_back.obri.user.dto.UserPublicProfileDTO;
 import com.obri_back.obri.user.dto.UserResponseDTO;
 import com.obri_back.obri.user.dto.UserUpdateRequestDTO;
@@ -21,7 +20,7 @@ import java.util.stream.Collectors;
 
 /**
  * 유저 관련 비즈니스 로직 처리
- * 유저 정보 조회, 수정, 탈퇴 및 내 구인글/지원 목록 조회
+ * 유저 정보 조회, 수정, 탈퇴 및 내 모집글/지원 목록 조회
  */
 @Service
 @RequiredArgsConstructor
@@ -91,7 +90,7 @@ public class UserService {
         }
 
         // 유저 정보 수정
-        managedUser.updateInfo(request.getNickname(), request.getInstrument(), request.getSchool(), request.getIsGraduate());
+        managedUser.updateInfo(request.getNickname(), request.getInstrument());
 
         // 경력 전체 삭제 후 새로 insert
         if (request.getCareers() != null) {
@@ -115,29 +114,6 @@ public class UserService {
     public void deleteUser(User user) {
         User managedUser = getManagedUserById(user.getId());
         userRepository.delete(managedUser);
-    }
-
-    /*
-     * 학교 이메일 등록/변경
-     * 소속(학적) 증명 목적 — 저장만 하고 미인증 상태(schoolEmailVerified=false)로 둠
-     * 현재 값과 같으면 아무 것도 하지 않음
-     *
-     * @param user    현재 로그인한 유저(detached일 수 있음 — 내부에서 managed 재조회)
-     * @param request 학교 이메일 요청 DTO
-     */
-    @Transactional
-    public void updateSchoolEmail(User user, SchoolEmailUpdateRequestDTO request) {
-        User managedUser = getManagedUserById(user.getId());
-
-        String schoolEmail = request.getSchoolEmail();
-        if (schoolEmail.equals(managedUser.getSchoolEmail())) {
-            return;
-        }
-
-        ConflictGuard.requireUnique(
-                userRepository.existsBySchoolEmail(schoolEmail), "이미 등록된 학교 이메일입니다");
-
-        managedUser.updateSchoolEmail(schoolEmail);
     }
 
     /*

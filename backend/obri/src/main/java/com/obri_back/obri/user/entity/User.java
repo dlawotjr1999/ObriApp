@@ -49,25 +49,11 @@ public class User {
     @Column(name = "phone_number", nullable = false, unique = true)
     private String phoneNumber;
 
-    // 소속(학적) 증명용 학교 이메일 — 계정 고유성 앵커는 아니지만 UNIQUE로 부가 방어. 선택 필드
-    @Column(name = "school_email", unique = true)
-    private String schoolEmail;
-
-    @Column(name = "school_email_verified", nullable = false)
-    private boolean schoolEmailVerified;
-
     @Column(name = "nickname", nullable = false)
     private String nickname;
 
     @Column(name = "instrument", nullable = false)
     private String instrument;
-
-    @Column(name = "school", nullable = false)
-    private String school;
-
-    // 졸업 여부 (true: 졸업, false: 재학)
-    @Column(name = "is_graduate", nullable = false)
-    private boolean isGraduate;
 
     @Column(name = "fcm_token")
     private String fcmToken;
@@ -95,17 +81,9 @@ public class User {
         this.phoneNumber = phoneNumber;
     }
 
-    // 학교 이메일 등록/변경 — 값이 바뀌면 재인증이 필요하므로 인증 상태를 리셋
-    public void updateSchoolEmail(String schoolEmail) {
-        this.schoolEmail = schoolEmail;
-        this.schoolEmailVerified = false;
-    }
-
     // 내 정보 수정: null이 아닌 필드만 선택적으로 반영 (phoneNumber는 전용 인증 엔드포인트로 이관되어 여기서 다루지 않음)
-    public void updateInfo(String nickname, String instrument, String school, Boolean isGraduate) {
+    public void updateInfo(String nickname, String instrument) {
         if (nickname != null) this.nickname = nickname;
         if (instrument != null) this.instrument = instrument;
-        if (school != null) this.school = school;
-        if (isGraduate != null) this.isGraduate = isGraduate;
     }
 }

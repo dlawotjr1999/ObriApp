@@ -18,7 +18,5 @@ public class UserUpdateRequestDTO {
     private String nickname;
 
     private String instrument;
-    private String school;
-    private Boolean isGraduate;
     private List<CareerDTO> careers;  // id 있으면 수정, 없으면 추가
 }

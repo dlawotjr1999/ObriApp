@@ -21,8 +21,6 @@ import java.util.stream.Collectors;
 public class UserPublicProfileDTO {
     private String nickname;
     private String instrument;
-    private String school;
-    private Boolean isGraduate;
     private LocalDateTime createdAt;
     private List<CareerDTO> careers;
 
@@ -31,8 +29,6 @@ public class UserPublicProfileDTO {
         return UserPublicProfileDTO.builder()
                 .nickname(user.getNickname())
                 .instrument(user.getInstrument())
-                .school(user.getSchool())
-                .isGraduate(user.isGraduate())
                 .createdAt(user.getCreatedAt())
                 .careers(user.getCareers().stream()
                         .map(CareerDTO::from)

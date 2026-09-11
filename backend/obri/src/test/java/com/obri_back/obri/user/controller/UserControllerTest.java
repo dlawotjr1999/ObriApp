@@ -14,7 +14,6 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.context.annotation.Import;
-import org.springframework.http.MediaType;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
@@ -58,8 +57,6 @@ class UserControllerTest {
                 .phoneNumber("010-1234-5678")
                 .nickname("tester")
                 .instrument("바이올린")
-                .school("서울대")
-                .isGraduate(false)
                 .build();
 
         auth = new UsernamePasswordAuthenticationToken(mockUser, null, List.of());
@@ -73,8 +70,6 @@ class UserControllerTest {
                 .email("test@test.com")
                 .phoneNumber("010-1234-5678")
                 .instrument("바이올린")
-                .school("서울대")
-                .isGraduate(false)
                 .careers(List.of())
                 .createdAt(LocalDateTime.of(2024, 1, 1, 0, 0))
                 .build();
@@ -112,8 +107,6 @@ class UserControllerTest {
         UserPublicProfileDTO response = UserPublicProfileDTO.builder()
                 .nickname("other")
                 .instrument("첼로")
-                .school("연세대")
-                .isGraduate(true)
                 .careers(List.of())
                 .createdAt(LocalDateTime.of(2024, 1, 1, 0, 0))
                 .build();
@@ -127,36 +120,6 @@ class UserControllerTest {
                 .andExpect(jsonPath("$.data.nickname").value("other"))
                 .andExpect(jsonPath("$.data.email").doesNotExist())
                 .andExpect(jsonPath("$.data.phoneNumber").doesNotExist());
-    }
-
-    @Test
-    void updateSchoolEmail_returns200() throws Exception {
-        doNothing().when(userService).updateSchoolEmail(any(User.class), any());
-
-        mockMvc.perform(patch("/api/users/me/school-email")
-                        .with(authentication(auth))
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("""
-                                {
-                                  "schoolEmail": "student@school.ac.kr"
-                                }
-                                """))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.status").value(200))
-                .andExpect(jsonPath("$.message").value("학교 이메일이 등록되었습니다. 인증이 필요합니다."));
-    }
-
-    @Test
-    void updateSchoolEmail_returns400WhenInvalidFormat() throws Exception {
-        mockMvc.perform(patch("/api/users/me/school-email")
-                        .with(authentication(auth))
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("""
-                                {
-                                  "schoolEmail": "not-an-email"
-                                }
-                                """))
-                .andExpect(status().isBadRequest());
     }
 
     @Test
