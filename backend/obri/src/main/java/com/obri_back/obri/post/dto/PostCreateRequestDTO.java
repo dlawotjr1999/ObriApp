@@ -15,7 +15,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 /*
- * 구인글 등록/수정 요청 바디 (POST·PUT /api/posts)
+ * 모집글 등록/수정 요청 바디 (POST·PUT /api/posts)
  * 모집 악기는 중첩 InstrumentItem 리스트로 받음
  */
 @Getter
@@ -43,10 +43,7 @@ public class PostCreateRequestDTO {
     @NotBlank
     private String timetable;
 
-    @NotNull
-    private Integer pay;
-
-    // 구인글 상세 설명 (선택 입력) — BACKLOG.md #34
+    // 모집글 상세 설명 (선택 입력) — BACKLOG.md #34
     private String description;
 
     @NotNull

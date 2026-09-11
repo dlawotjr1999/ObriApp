@@ -69,14 +69,13 @@ class PostServiceTest {
                 .build();
 
         request = PostCreateRequestDTO.builder()
-                .category("결혼")
-                .title("결혼식 바이올린 구인")
+                .category("앙상블")
+                .title("현악 앙상블 단원 모집")
                 .eventAt(LocalDateTime.of(2024, 5, 1, 14, 0))
-                .location("서울 강남구 OO웨딩홀")
+                .location("서울 강남구 OO스튜디오")
                 .region("서울")
-                .timetable("리허설 1회 (13:00), 본식 (14:00)")
-                .pay(150000)
-                .description("결혼식 축가 반주 부탁드립니다")
+                .timetable("매주 토요일 오후 2시 합주")
+                .description("함께 연습하고 공연할 현악 단원을 모집합니다")
                 .instruments(List.of(
                         PostCreateRequestDTO.InstrumentItem.builder()
                                 .instrument("바이올린").people(2).build(),
@@ -94,7 +93,6 @@ class PostServiceTest {
                 .location(request.getLocation())
                 .region(request.getRegion())
                 .timetable(request.getTimetable())
-                .pay(request.getPay())
                 .description(request.getDescription())
                 .build());
         request.getInstruments().forEach(item ->
@@ -110,10 +108,10 @@ class PostServiceTest {
         PostResponseDTO result = postService.createPost(owner, request);
 
         assertThat(result.getStatus()).isEqualTo(PostStatus.OPEN);
-        assertThat(result.getTitle()).isEqualTo("결혼식 바이올린 구인");
-        assertThat(result.getCategory()).isEqualTo("결혼");
+        assertThat(result.getTitle()).isEqualTo("현악 앙상블 단원 모집");
+        assertThat(result.getCategory()).isEqualTo("앙상블");
         assertThat(result.getRegion()).isEqualTo("서울");
-        assertThat(result.getDescription()).isEqualTo("결혼식 축가 반주 부탁드립니다");
+        assertThat(result.getDescription()).isEqualTo("함께 연습하고 공연할 현악 단원을 모집합니다");
         assertThat(result.getInstruments()).hasSize(2);
         assertThat(result.getInstruments().get(0).getInstrument()).isEqualTo("바이올린");
         assertThat(result.getInstruments().get(0).getConfirmed()).isEqualTo(0);
@@ -132,7 +130,7 @@ class PostServiceTest {
         ArgumentCaptor<NewPostNotificationEvent> captor =
                 ArgumentCaptor.forClass(NewPostNotificationEvent.class);
         verify(eventPublisher, times(1)).publishEvent(captor.capture());
-        assertThat(captor.getValue().title()).isEqualTo("결혼식 바이올린 구인");
+        assertThat(captor.getValue().title()).isEqualTo("현악 앙상블 단원 모집");
     }
 
     @Test
@@ -148,7 +146,7 @@ class PostServiceTest {
         assertThat(result.getIsMine()).isFalse();
         assertThat(result.getHasApplied()).isTrue();
         assertThat(result.getWriter().getNickname()).isEqualTo("tester");
-        assertThat(result.getDescription()).isEqualTo("결혼식 축가 반주 부탁드립니다");
+        assertThat(result.getDescription()).isEqualTo("함께 연습하고 공연할 현악 단원을 모집합니다");
     }
 
     @Test
@@ -165,13 +163,12 @@ class PostServiceTest {
         given(postRepository.findById(10L)).willReturn(Optional.of(post));
 
         PostCreateRequestDTO update = PostCreateRequestDTO.builder()
-                .category("결혼")
+                .category("앙상블")
                 .title("수정된 제목")
                 .eventAt(LocalDateTime.of(2024, 5, 1, 15, 0))
-                .location("서울 강남구 OO웨딩홀")
+                .location("서울 강남구 OO스튜디오")
                 .region("경기")
-                .timetable("리허설 1회 (14:00), 본식 (15:00)")
-                .pay(200000)
+                .timetable("매주 토요일 오후 3시 합주")
                 .description("수정된 설명")
                 .instruments(List.of(
                         PostCreateRequestDTO.InstrumentItem.builder()
@@ -182,7 +179,6 @@ class PostServiceTest {
         PostResponseDTO result = postService.updatePost(10L, owner, update);
 
         assertThat(result.getTitle()).isEqualTo("수정된 제목");
-        assertThat(result.getPay()).isEqualTo(200000);
         assertThat(result.getRegion()).isEqualTo("경기");
         assertThat(result.getDescription()).isEqualTo("수정된 설명");
         assertThat(result.getInstruments()).hasSize(1);
@@ -252,7 +248,7 @@ class PostServiceTest {
         var result = postService.getPosts(null, null, null, null, null, PageRequest.of(0, 10));
 
         assertThat(result.getContent()).hasSize(1);
-        assertThat(result.getContent().get(0).getTitle()).isEqualTo("결혼식 바이올린 구인");
+        assertThat(result.getContent().get(0).getTitle()).isEqualTo("현악 앙상블 단원 모집");
     }
 
     @Test
@@ -264,6 +260,6 @@ class PostServiceTest {
         var result = postService.getMyPosts(1L, PageRequest.of(0, 10));
 
         assertThat(result.getContent()).hasSize(1);
-        assertThat(result.getContent().get(0).getTitle()).isEqualTo("결혼식 바이올린 구인");
+        assertThat(result.getContent().get(0).getTitle()).isEqualTo("현악 앙상블 단원 모집");
     }
 }

@@ -12,7 +12,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 /*
- * 구인글 등록/수정 응답 DTO (생성·갱신 결과 반환용)
+ * 모집글 등록/수정 응답 DTO (생성·갱신 결과 반환용)
  */
 @Getter
 @Builder
@@ -27,7 +27,6 @@ public class PostResponseDTO {
     private String location;
     private String region;
     private String timetable;
-    private Integer pay;
     private String description;
     private PostStatus status;
     private List<PostInstrumentDTO> instruments;
@@ -43,7 +42,6 @@ public class PostResponseDTO {
                 .location(post.getLocation())
                 .region(post.getRegion())
                 .timetable(post.getTimetable())
-                .pay(post.getPay())
                 .description(post.getDescription())
                 .status(post.getStatus())
                 .instruments(post.getPostInstruments().stream()

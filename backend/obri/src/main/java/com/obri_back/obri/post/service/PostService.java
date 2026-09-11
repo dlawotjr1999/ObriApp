@@ -27,7 +27,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 /*
- * 구인글 관련 비즈니스 로직
+ * 모집글 관련 비즈니스 로직
  * 등록·조회(전체/내글/단건)·수정·마감·삭제 및 악기 확정 상태 관리
  * 상태 변경·알림 발송을 각 도메인/서비스에 위임
  */
@@ -41,7 +41,7 @@ public class PostService {
     private final ApplicationService applicationService;
     private final ApplicationEventPublisher eventPublisher;
 
-    // 구인글 등록 — 악기 목록을 함께 저장하고 전체 broadcast 알림 발송
+    // 모집글 등록 — 악기 목록을 함께 저장하고 전체 broadcast 알림 발송
     @Transactional
     public PostResponseDTO createPost(User user, PostCreateRequestDTO request) {
         Post post = Post.create(user, toPostInfo(request));
@@ -49,13 +49,13 @@ public class PostService {
                 post.addInstrument(PostInstrument.of(post, item.getInstrument(), item.getPeople()))
         );
         Post saved = postRepository.save(post);
-        // 새 구인글 → 전체 구독자에게 broadcast. AFTER_COMMIT 이후 발송(BACKLOG.md #33) — 이 트랜잭션이
-        // 롤백되면 이벤트 자체가 버려져 존재하지 않는 구인글의 알림이 나가지 않는다
+        // 새 모집글 → 전체 구독자에게 broadcast. AFTER_COMMIT 이후 발송(BACKLOG.md #33) — 이 트랜잭션이
+        // 롤백되면 이벤트 자체가 버려져 존재하지 않는 모집글의 알림이 나가지 않는다
         eventPublisher.publishEvent(new NewPostNotificationEvent(saved.getId(), saved.getTitle()));
         return PostResponseDTO.from(saved);
     }
 
-    // 구인글 전체 조회 — Specification 동적 필터 적용 후 요약 DTO로 반환
+    // 모집글 전체 조회 — Specification 동적 필터 적용 후 요약 DTO로 반환
     // status 필터 없음(BACKLOG.md #35) — PostSpecification이 항상 OPEN·PARTIALLY_CLOSED만 노출
     @Transactional(readOnly = true)
     public Page<PostSummaryResponseDTO> getPosts(List<String> categories, List<String> instruments,
@@ -64,13 +64,13 @@ public class PostService {
         return postRepository.findAll(spec, pageable).map(PostSummaryResponseDTO::from);
     }
 
-    // 내가 올린 구인글 목록(마이페이지) — 카드 리스트용 요약. 정렬은 컨트롤러 Pageable에서 결정
+    // 내가 올린 모집글 목록(마이페이지) — 카드 리스트용 요약. 정렬은 컨트롤러 Pageable에서 결정
     @Transactional(readOnly = true)
     public Page<PostSummaryResponseDTO> getMyPosts(Long userId, Pageable pageable) {
         return postRepository.findByUserId(userId, pageable).map(PostSummaryResponseDTO::from);
     }
 
-    // 구인글 단건 조회 — applicationCount·isMine·hasApplied를 계산해 상세 DTO 반환
+    // 모집글 단건 조회 — applicationCount·isMine·hasApplied를 계산해 상세 DTO 반환
     @Transactional(readOnly = true)
     public PostDetailResponseDTO getPost(Long postId, User user) {
         Post post = findPostOrThrow(postId);
@@ -82,7 +82,7 @@ public class PostService {
         return PostDetailResponseDTO.from(post, applicationCount, isMine, hasApplied);
     }
 
-    // 구인글 수정 (작성자만) — 악기 목록 전체 교체 후 대기·수락 지원자에게 알림
+    // 모집글 수정 (작성자만) — 악기 목록 전체 교체 후 대기·수락 지원자에게 알림
     @Transactional
     public PostResponseDTO updatePost(Long postId, User user, PostCreateRequestDTO request) {
         Post post = findPostOrThrow(postId);
@@ -95,13 +95,13 @@ public class PostService {
                 .collect(Collectors.toList());
         post.replaceInstruments(newInstruments);
 
-        // 구인글 수정 → 지원자에게 알릴지 여부까지 Application 도메인이 결정 — 명세 시나리오 1.8
+        // 모집글 수정 → 지원자에게 알릴지 여부까지 Application 도메인이 결정 — 명세 시나리오 1.8
         applicationService.notifyApplicantsOfPostUpdate(postId, post.getTitle());
 
         return PostResponseDTO.from(post);
     }
 
-    // 구인글 수동 전체 마감 (작성자만)
+    // 모집글 수동 전체 마감 (작성자만)
     @Transactional
     public void closePost(Long postId, User user) {
         Post post = findPostOrThrow(postId);
@@ -109,7 +109,7 @@ public class PostService {
         post.close();
     }
 
-    // 구인글 삭제 (작성자만) — 지원서 정리·삭제 알림은 Application 도메인에 위임
+    // 모집글 삭제 (작성자만) — 지원서 정리·삭제 알림은 Application 도메인에 위임
     @Transactional
     public void deletePost(Long postId, User user) {
         Post post = findPostOrThrow(postId);
@@ -128,15 +128,14 @@ public class PostService {
                 .location(request.getLocation())
                 .region(request.getRegion())
                 .timetable(request.getTimetable())
-                .pay(request.getPay())
                 .description(request.getDescription())
                 .build();
     }
 
-    // 구인글 조회 공통 헬퍼 — 없으면 404
+    // 모집글 조회 공통 헬퍼 — 없으면 404
     private Post findPostOrThrow(Long postId) {
         return postRepository.findById(postId)
-                .orElseThrow(() -> new NotFoundException("구인글을 찾을 수 없습니다"));
+                .orElseThrow(() -> new NotFoundException("모집글을 찾을 수 없습니다"));
     }
 
     // 작성자 본인 여부 검증 — 아니면 403
