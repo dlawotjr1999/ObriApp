@@ -1,0 +1,175 @@
+import React, { useCallback, useEffect, useState } from "react";
+import { View, Text, FlatList, StyleSheet, ActivityIndicator, Alert } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { useLocalSearchParams } from "expo-router";
+import { colors } from "@/constants/theme";
+import { getApplicationsByPostId, acceptApplication, rejectApplication, revokeApplication } from "@/api/application";
+import { ApiError } from "@/lib/apiClient";
+import { ApplicationSummary } from "@/types/application";
+import ScreenHeader from "@/components/common/ScreenHeader";
+import EmptyState from "@/components/common/EmptyState";
+import ApplicantCard from "@/components/application/ApplicantCard";
+
+// 지원자 목록(모집자 전용). GET /api/applications/post/{postId}는 모집자 본인만 200이고
+// 그 외엔 403이 나므로(ApplicationAccessPolicy.requireRecruiter), 별도 프론트 접근 제어 없이
+// 에러 응답을 그대로 화면에 보여주는 것으로 충분하다 — 어차피 이 화면 진입 버튼 자체가
+// post/[id]/index.tsx에서 isMine일 때만 노출된다.
+export default function ApplicantsScreen() {
+  const { id, title } = useLocalSearchParams<{ id: string; title?: string }>();
+
+  const [applications, setApplications] = useState<ApplicationSummary[]>([]);
+  const [currentPage, setCurrentPage] = useState(0);
+  const [hasNext, setHasNext] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  // 수락/거절/철회 중인 지원서 id — 해당 카드의 버튼만 잠근다(전체 목록을 잠그지 않음).
+  // accept/reject/revoke는 PATCH지만 상태 전이가 끝난 지원서에 재호출하면 400이 나는 비멱등 동작이라
+  // 이 잠금이 실질적인 중복 요청 방지 장치다.
+  const [processingId, setProcessingId] = useState<number | null>(null);
+
+  const loadFirstPage = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const page = await getApplicationsByPostId(Number(id), 0);
+      setApplications(page.content);
+      setCurrentPage(page.currentPage);
+      setHasNext(page.hasNext);
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : "지원자 목록을 불러오지 못했어요.");
+    } finally {
+      setLoading(false);
+    }
+  }, [id]);
+
+  useEffect(() => {
+    loadFirstPage();
+  }, [loadFirstPage]);
+
+  const loadNextPage = async () => {
+    if (loadingMore || !hasNext) return;
+    setLoadingMore(true);
+    try {
+      const page = await getApplicationsByPostId(Number(id), currentPage + 1);
+      setApplications((prev) => [...prev, ...page.content]);
+      setCurrentPage(page.currentPage);
+      setHasNext(page.hasNext);
+    } catch {
+      // 다음 페이지 실패는 조용히 무시 — 이미 보여준 목록은 그대로 유지, 스크롤하면 재시도됨
+    } finally {
+      setLoadingMore(false);
+    }
+  };
+
+  // 수락/거절/철회 공통 처리. 성공하면 서버를 다시 조회하지 않고 로컬 목록의 해당 항목만
+  // 새 상태로 바꿔치기한다 — 방금 반영한 상태를 이미 알고 있으므로 전체 목록 재조회는 낭비다.
+  const applyLocalStatus = (applicationId: number, status: ApplicationSummary["status"]) => {
+    setApplications((prev) =>
+      prev.map((a) => (a.id === applicationId ? { ...a, status } : a))
+    );
+  };
+
+  const runAction = async (
+    applicationId: number,
+    action: (id: number) => Promise<void>,
+    nextStatus: ApplicationSummary["status"],
+    failTitle: string
+  ) => {
+    if (processingId) return;
+    setProcessingId(applicationId);
+    try {
+      await action(applicationId);
+      applyLocalStatus(applicationId, nextStatus);
+    } catch (err) {
+      Alert.alert(failTitle, err instanceof ApiError ? err.message : "잠시 후 다시 시도해주세요.");
+    } finally {
+      setProcessingId(null);
+    }
+  };
+
+  return (
+    <SafeAreaView style={styles.container} edges={["top"]}>
+      <View style={styles.headerArea}>
+        <ScreenHeader />
+        <Text style={styles.headerTitle}>지원자 목록</Text>
+        {title ? (
+          <Text style={styles.headerSubtitle} numberOfLines={1}>
+            {title}
+          </Text>
+        ) : null}
+      </View>
+
+      {loading ? (
+        <View style={styles.centerFill}>
+          <ActivityIndicator color={colors.primary} />
+        </View>
+      ) : error ? (
+        <EmptyState icon="cloud-offline-outline" title="목록을 불러오지 못했어요" description={error} />
+      ) : (
+        <FlatList
+          data={applications}
+          keyExtractor={(item) => String(item.id)}
+          renderItem={({ item }) => (
+            <ApplicantCard
+              application={item}
+              processing={processingId === item.id}
+              onAccept={() =>
+                runAction(item.id, acceptApplication, "ACCEPTED", "수락 실패")
+              }
+              onReject={() =>
+                runAction(item.id, rejectApplication, "REJECTED", "거절 실패")
+              }
+              onRevoke={() =>
+                runAction(item.id, revokeApplication, "REVOKED", "철회 실패")
+              }
+            />
+          )}
+          contentContainerStyle={styles.listContent}
+          ItemSeparatorComponent={() => <View style={styles.separator} />}
+          onEndReached={loadNextPage}
+          onEndReachedThreshold={0.4}
+          ListFooterComponent={
+            loadingMore ? (
+              <ActivityIndicator style={styles.footerSpinner} color={colors.primary} />
+            ) : null
+          }
+          ListEmptyComponent={
+            <EmptyState
+              icon="people-outline"
+              title="아직 지원자가 없어요"
+              description="새로운 지원이 도착하면 여기에 표시돼요."
+            />
+          }
+        />
+      )}
+    </SafeAreaView>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: colors.background,
+  },
+  headerArea: {
+    paddingHorizontal: 24,
+    paddingTop: 8,
+    gap: 2,
+  },
+  headerTitle: {
+    fontSize: 20,
+    fontWeight: "700",
+    color: colors.textPrimary,
+    marginTop: 8,
+  },
+  headerSubtitle: {
+    fontSize: 13,
+    color: colors.textMuted,
+    marginBottom: 8,
+  },
+  centerFill: { flex: 1, alignItems: "center", justifyContent: "center" },
+  listContent: { flexGrow: 1, padding: 16 },
+  separator: { height: 12 },
+  footerSpinner: { marginVertical: 16 },
+});

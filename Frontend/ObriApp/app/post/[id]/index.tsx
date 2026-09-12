@@ -5,12 +5,14 @@ import {
   ScrollView,
   StyleSheet,
   ActivityIndicator,
+  Alert,
 } from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
-import { useLocalSearchParams } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { colors } from "@/constants/theme";
 import { getPost } from "@/api/post";
+import { submitApplication } from "@/api/application";
 import { ApiError } from "@/lib/apiClient";
 import { PostDetail } from "@/types/post";
 import { MOCK_USER } from "@/mocks/user";
@@ -20,6 +22,7 @@ import EmptyState from "@/components/common/EmptyState";
 import IconText from "@/components/common/IconText";
 import Tag from "@/components/common/Tag";
 import ThemedButton from "@/components/common/ThemedButton";
+import ApplicationSubmitModal from "@/components/application/ApplicationSubmitModal";
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
@@ -32,11 +35,15 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 
 export default function PostDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
+  const router = useRouter();
   const insets = useSafeAreaInsets();
 
   const [post, setPost] = useState<PostDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  const [applyModalVisible, setApplyModalVisible] = useState(false);
+  const [submittingApplication, setSubmittingApplication] = useState(false);
 
   // 단건 조회. id가 잘못됐거나(404) 이미 삭제된 글이면 백엔드가 NotFoundException(404)을 던지므로
   // 그 경우도 "찾을 수 없음" EmptyState로 자연스럽게 합류시킨다(별도 404 분기 불필요).
@@ -99,7 +106,8 @@ export default function PostDetailScreen() {
   const isClosed = post.status === "CLOSED";
 
   // 버튼 비활성 우선순위는 ApplicationService.submitApplication의 검증 순서와 동일하게 맞춘다:
-  // 마감글 → 공연종료 → 내 악기 정원마감 → 본인 글 → 중복 지원
+  // 마감글 → 공연종료 → 내 악기 정원마감 → 중복 지원. 본인 글(isMyPost)은 애초에 이 버튼 자체가
+  // "지원자 보기" 버튼으로 대체되므로(아래 footer 분기) 여기서 다루지 않는다.
   let applyLabel = "지원하기";
   let applyDisabled = false;
   if (isClosed) {
@@ -111,13 +119,30 @@ export default function PostDetailScreen() {
   } else if (instrumentClosed) {
     applyLabel = "정원이 마감된 악기";
     applyDisabled = true;
-  } else if (isMyPost) {
-    applyLabel = "내가 등록한 모집글";
-    applyDisabled = true;
   } else if (hasApplied) {
     applyLabel = "이미 지원한 모집글";
     applyDisabled = true;
   }
+
+  // 지원 제출. 성공하면 모달을 닫고 단건 조회를 다시 실행해 hasApplied·applicationCount를
+  // 서버 최신 값으로 갱신한다(로컬에서 hasApplied=true로 낙관적 갱신하지 않는 이유: applicationCount처럼
+  // 이 화면이 직접 계산할 수 없는 값도 같이 바뀌므로, 재조회가 더 단순하고 정확하다).
+  const handleSubmitApplication = async (additionalInfo: string) => {
+    if (submittingApplication) return; // 제출은 POST라 비멱등 — 연속 탭 시 지원이 두 번 생기지 않도록 잠금
+    setSubmittingApplication(true);
+    try {
+      await submitApplication({ postId: post.id, additionalInfo: additionalInfo || undefined });
+      setApplyModalVisible(false);
+      await loadPost();
+    } catch (err) {
+      Alert.alert(
+        "지원 실패",
+        err instanceof ApiError ? err.message : "잠시 후 다시 시도해주세요."
+      );
+    } finally {
+      setSubmittingApplication(false);
+    }
+  };
 
   return (
     <SafeAreaView style={styles.container} edges={["top"]}>
@@ -185,17 +210,33 @@ export default function PostDetailScreen() {
         ) : null}
       </ScrollView>
 
-      {/* 하단 고정: 지원하기 (우측) */}
+      {/* 하단 고정: 본인 글이면 지원자 관리로, 아니면 지원하기로 (우측) */}
       <View style={[styles.footer, { paddingBottom: insets.bottom + 12 }]}>
-        <ThemedButton
-          title={applyLabel}
-          disabled={applyDisabled}
-          style={styles.applyButton}
-          onPress={() => {
-            // TODO: 지원 제출 API(POST /api/applications/submit) 연동 — application 도메인 작업 범위
-          }}
-        />
+        {isMyPost ? (
+          <ThemedButton
+            title={`지원자 보기 (${post.applicationCount})`}
+            style={styles.applyButton}
+            onPress={() =>
+              router.push({ pathname: "/post/[id]/applicants", params: { id: String(post.id) } })
+            }
+          />
+        ) : (
+          <ThemedButton
+            title={applyLabel}
+            disabled={applyDisabled}
+            style={styles.applyButton}
+            onPress={() => setApplyModalVisible(true)}
+          />
+        )}
       </View>
+
+      <ApplicationSubmitModal
+        visible={applyModalVisible}
+        postTitle={post.title}
+        submitting={submittingApplication}
+        onSubmit={handleSubmitApplication}
+        onClose={() => setApplyModalVisible(false)}
+      />
     </SafeAreaView>
   );
 }
