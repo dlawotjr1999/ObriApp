@@ -10,8 +10,7 @@ import { useLocalSearchParams } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { colors } from "@/constants/theme";
 import { getMockPostById } from "@/mocks/posts";
-import { MOCK_USER, MY_POST_IDS } from "@/mocks/user";
-import { MOCK_APPLICATIONS } from "@/mocks/applications";
+import { MOCK_USER } from "@/mocks/user";
 import { formatEventDateTime } from "@/utils/datetime";
 import ScreenHeader from "@/components/common/ScreenHeader";
 import EmptyState from "@/components/common/EmptyState";
@@ -52,10 +51,13 @@ export default function PostDetailScreen() {
   // 지원 대상 악기는 선택형이 아니라 내 프로필 악기(user.getInstrument())로 서버가 자동 판정한다
   // (AppRequestDTO엔 postId/additionalInfo뿐, 악기 필드 없음 — 별도 선택 UI 불필요)
   const myInstrumentSlot = post.instruments.find((it) => it.instrument === MOCK_USER.instrument);
-  const instrumentClosed = !!myInstrumentSlot && myInstrumentSlot.currentPeople >= myInstrumentSlot.people;
+  // closed는 서버가 confirmed>=people로 이미 계산해 내려주는 값 — 프론트에서 다시 비교하지 않는다.
+  const instrumentClosed = !!myInstrumentSlot && myInstrumentSlot.closed;
 
-  const isMyPost = MY_POST_IDS.includes(post.id);
-  const hasApplied = MOCK_APPLICATIONS.some((a) => a.post.id === post.id);
+  // isMine·hasApplied는 서버가 로그인 유저 기준으로 계산해 내려주는 값을 그대로 쓴다
+  // (PostDetailResponseDTO) — 별도 목록을 프론트에서 대조해 재계산하지 않는다.
+  const isMyPost = post.isMine;
+  const hasApplied = post.hasApplied;
   const eventPassed = new Date(post.eventAt) < new Date();
   const isClosed = post.status === "CLOSED";
 
@@ -101,16 +103,12 @@ export default function PostDetailScreen() {
           </View>
           <Text style={styles.title}>{post.title}</Text>
 
-          {/* 작성자 */}
+          {/* 작성자 — 매너 점수는 백엔드에 아직 없는 향후 기능(REVIEWS 테이블 도입 전)이라 표시하지 않음 */}
           <View style={styles.writerRow}>
             <Ionicons name="person-circle-outline" size={18} color={colors.textMuted} />
             <Text style={styles.writerText}>
               {post.writer.nickname} · {post.writer.instrument}
             </Text>
-            <View style={styles.mannerBadge}>
-              <Ionicons name="star" size={12} color={colors.primaryLight} />
-              <Text style={styles.mannerText}>{post.writer.mannerScore.toFixed(1)}</Text>
-            </View>
           </View>
         </View>
 
@@ -130,7 +128,7 @@ export default function PostDetailScreen() {
             {post.instruments.map((it) => (
               <Tag
                 key={it.instrument}
-                label={`${it.instrument} ${it.currentPeople}/${it.people}`}
+                label={`${it.instrument} ${it.confirmed}/${it.people}`}
                 variant={it.instrument === MOCK_USER.instrument ? "filled" : "outline"}
               />
             ))}
@@ -211,17 +209,6 @@ const styles = StyleSheet.create({
   writerText: {
     fontSize: 13,
     color: colors.textSecondary,
-  },
-  mannerBadge: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 2,
-    marginLeft: 2,
-  },
-  mannerText: {
-    fontSize: 12,
-    color: colors.textSecondary,
-    fontWeight: "500",
   },
   divider: {
     height: StyleSheet.hairlineWidth,

@@ -1,36 +1,69 @@
-// 모집글(Post) 도메인 타입. 노션 API 스펙(GET /api/posts) 기준.
-// 화면·컴포넌트·더미데이터가 공유하는 단일 소스.
+// 모집글(Post) 도메인 타입. 백엔드 PostSummaryResponseDTO/PostDetailResponseDTO/PostResponseDTO 기준
+// (backend/obri/.../post/dto)으로 필드를 1:1 맞춘다. 화면·컴포넌트·더미데이터가 공유하는 단일 소스.
 
 export type PostStatus = "OPEN" | "PARTIALLY_CLOSED" | "CLOSED";
 
+// 백엔드 PostInstrumentDTO와 1:1 대응. confirmed는 수락 완료된 인원(=지원 수락 시 서버가 증가),
+// closed는 해당 악기 정원이 찼는지 여부(confirmed >= people일 때 서버가 true로 계산해 내려줌 —
+// 프론트에서 다시 계산하지 않고 이 값을 그대로 신뢰한다).
 export interface PostInstrument {
+  id: number;
   instrument: string;
-  currentPeople: number;
   people: number;
+  confirmed: number;
+  closed: boolean;
 }
 
-// 리스트(전체 조회)에서 카드로 보여줄 때 필요한 최소 필드.
-// 단건 조회의 writer / timetable 등은 PostDetail에서 확장.
+// 목록(GET /api/posts, GET /api/posts/me)에서 카드로 보여줄 때 필요한 필드.
+// 백엔드 PostSummaryResponseDTO와 1:1 대응.
 export interface PostSummary {
   id: number;
   title: string;
   category: string;
-  eventAt: string; // ISO 8601 (예: "2024-05-01T14:00:00")
+  eventAt: string; // ISO 8601 (예: "2026-08-01T14:00:00")
   location: string;
+  region: string;
   instruments: PostInstrument[];
+  timetable: string;
   status: PostStatus;
 }
 
+// 단건 조회 응답에 중첩되는 작성자 요약. 백엔드 PostDetailResponseDTO.Writer와 1:1 대응.
+// 매너 점수(REVIEWS 테이블) 같은 평판 필드는 백엔드에 아직 없는 향후 기능이라 여기 없음 — 임의로
+// 추가하면 실 데이터 연결 시 항상 undefined가 되므로 타입에 없는 게 맞다.
 export interface PostWriter {
   nickname: string;
   instrument: string;
-  mannerScore: number;
 }
 
-// 단건 조회(GET /api/posts/{id}) 응답. 상세 화면에서 사용.
+// 단건 조회(GET /api/posts/{id}) 응답. 백엔드 PostDetailResponseDTO와 1:1 대응.
+// isMine·hasApplied·applicationCount는 요청한 유저 기준으로 서버가 계산해 내려주는 값이므로,
+// 화면에서 별도 목록(내 글 id 목록·내 지원 목록 등)을 대조해 프론트가 다시 계산하지 않는다.
 export interface PostDetail extends PostSummary {
   writer: PostWriter;
+  applicationCount: number;
+  isMine: boolean;
+  hasApplied: boolean;
+  description?: string;
+  createdAt: string;
+}
+
+// 모집글 등록(POST /api/posts)·수정(PUT /api/posts/{id}) 공용 요청 바디.
+// 백엔드 PostCreateRequestDTO와 1:1 대응 — 수정 시 instruments는 "이번에 모집할 전체 목록"이어야
+// 한다(부분 추가 아님, 이름이 같은 항목만 확정 인원·마감 상태를 승계하고 나머지는 갈아끼워짐).
+export interface PostCreateRequest {
+  category: string;
+  title: string;
+  eventAt: string;
+  location: string;
+  region: string;
   timetable: string;
+  description?: string;
+  instruments: { instrument: string; people: number }[];
+}
+
+// 등록·수정 응답. 백엔드 PostResponseDTO와 1:1 대응 — 목록/상세 전용 필드(writer·isMine 등) 없음.
+export interface PostResponse extends PostSummary {
   description?: string;
   createdAt: string;
 }
