@@ -75,8 +75,6 @@ public class AuthService {
                 .nickname(request.getNickname())
                 .phoneNumber(phoneNumber)
                 .instrument(request.getInstrument())
-                .school(request.getSchool())
-                .isGraduate(request.getIsGraduate())
                 .build();
 
         try {

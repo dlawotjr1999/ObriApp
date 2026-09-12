@@ -65,8 +65,6 @@ class ConcertControllerTest {
                 .phoneNumber("010-1234-5678")
                 .nickname("tester")
                 .instrument("바이올린")
-                .school("서울대")
-                .isGraduate(false)
                 .build();
 
         auth = new UsernamePasswordAuthenticationToken(mockUser, null, List.of());

@@ -76,8 +76,6 @@ class AuthControllerTest {
                 .phoneNumber("010-1234-5678")
                 .nickname("tester")
                 .instrument("바이올린")
-                .school("서울대")
-                .isGraduate(false)
                 .build();
 
         auth = new UsernamePasswordAuthenticationToken(mockUser, null, List.of());
@@ -98,8 +96,6 @@ class AuthControllerTest {
                                 {
                                   "nickname": "tester",
                                   "instrument": "바이올린",
-                                  "school": "서울대",
-                                  "isGraduate": false,
                                   "careers": [
                                     { "organization": "서울시향", "contexts": "2023년 객원 연주" }
                                   ]
@@ -122,9 +118,7 @@ class AuthControllerTest {
                         .content("""
                                 {
                                   "nickname": "테스터",
-                                  "instrument": "바이올린",
-                                  "school": "서울대",
-                                  "isGraduate": false
+                                  "instrument": "바이올린"
                                 }
                                 """))
                 .andExpect(status().isUnauthorized())
@@ -141,9 +135,7 @@ class AuthControllerTest {
                         .content("""
                                 {
                                   "nickname": "테스터",
-                                  "instrument": "바이올린",
-                                  "school": "서울대",
-                                  "isGraduate": false
+                                  "instrument": "바이올린"
                                 }
                                 """))
                 .andExpect(status().isUnauthorized())
@@ -159,9 +151,7 @@ class AuthControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {
-                                  "instrument": "바이올린",
-                                  "school": "서울대",
-                                  "isGraduate": false
+                                  "instrument": "바이올린"
                                 }
                                 """))
                 .andExpect(status().isBadRequest());
@@ -174,39 +164,7 @@ class AuthControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {
-                                  "nickname": "tester",
-                                  "school": "서울대",
-                                  "isGraduate": false
-                                }
-                                """))
-                .andExpect(status().isBadRequest());
-    }
-
-    @Test
-    void register_returns400WhenSchoolMissing() throws Exception {
-        mockMvc.perform(post("/api/auth/register")
-                        .header("Authorization", "Bearer test-token")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("""
-                                {
-                                  "nickname": "tester",
-                                  "instrument": "바이올린",
-                                  "isGraduate": false
-                                }
-                                """))
-                .andExpect(status().isBadRequest());
-    }
-
-    @Test
-    void register_returns400WhenIsGraduateMissing() throws Exception {
-        mockMvc.perform(post("/api/auth/register")
-                        .header("Authorization", "Bearer test-token")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("""
-                                {
-                                  "nickname": "tester",
-                                  "instrument": "바이올린",
-                                  "school": "서울대"
+                                  "nickname": "tester"
                                 }
                                 """))
                 .andExpect(status().isBadRequest());

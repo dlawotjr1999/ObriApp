@@ -46,7 +46,6 @@ class PostSpecificationTest {
                 .phoneNumber("010-0000-0000")
                 .nickname("owner")
                 .instrument("바이올린")
-                .school("서울대")
                 .build();
         entityManager.persist(owner);
     }

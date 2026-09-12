@@ -16,8 +16,6 @@ import java.util.stream.Collectors;
 public class ApplicantResponseDTO {
     private String nickname;
     private String instrument;
-    private String school;
-    private Boolean isGraduate;
     private String phoneNumber;
     private List<CareerDTO> careers;
 
@@ -35,8 +33,6 @@ public class ApplicantResponseDTO {
         return ApplicantResponseDTO.builder()
                 .nickname(user.getNickname())
                 .instrument(user.getInstrument())
-                .school(user.getSchool())
-                .isGraduate(user.isGraduate())
                 .phoneNumber(user.getPhoneNumber())
                 .careers(careers)
                 .build();

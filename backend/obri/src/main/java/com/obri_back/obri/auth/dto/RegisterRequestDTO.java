@@ -2,7 +2,6 @@ package com.obri_back.obri.auth.dto;
 
 import com.obri_back.obri.user.dto.CareerDTO;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -30,12 +29,6 @@ public class RegisterRequestDTO {
 
     @NotBlank(message = "악기를 입력해주세요")
     private String instrument;
-
-    @NotBlank(message = "학교를 입력해주세요")
-    private String school;
-
-    @NotNull(message = "졸업 여부를 입력해주세요")
-    private Boolean isGraduate;
 
     private List<CareerDTO> careers;
 }

@@ -57,8 +57,6 @@ class ApplicationControllerTest {
                 .firebaseUid("test-uid")
                 .nickname("tester")
                 .instrument("바이올린")
-                .school("서울대")
-                .isGraduate(false)
                 .build();
 
         auth = new UsernamePasswordAuthenticationToken(mockUser, null, List.of());
