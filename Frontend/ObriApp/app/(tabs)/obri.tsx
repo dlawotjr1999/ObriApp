@@ -1,17 +1,24 @@
-import React, { useState, useMemo } from "react";
-import { View, FlatList, StyleSheet, TouchableOpacity, Text } from "react-native";
+import React, { useCallback, useEffect, useState } from "react";
+import { View, FlatList, StyleSheet, TouchableOpacity, Text, ActivityIndicator } from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { colors } from "@/constants/theme";
-import { MOCK_POSTS } from "@/mocks/posts";
-import { parseDate } from "@/utils/datetime";
+import { getPosts } from "@/api/post";
+import { ApiError } from "@/lib/apiClient";
+import { PostSummary } from "@/types/post";
+import { PostFilter, DEFAULT_FILTER } from "@/types/filter";
 import AppHeader from "@/components/common/AppHeader";
 import EmptyState from "@/components/common/EmptyState";
 import PostCard from "@/components/post/PostCard";
 import FilterBar from "@/components/post/FilterBar";
 import FilterSheet from "@/components/post/FilterSheet";
-import { PostFilter, DEFAULT_FILTER } from "@/types/filter";
 
+// 모집글 목록 화면 — 필터(카테고리·악기·지역·기간) + 무한스크롤 목록 + FAB(등록).
+// 필터가 바뀌면 loadFirstPage가 재실행되어 0페이지부터 다시 조회한다(아래 useEffect 의존성 참고).
+//
+// filter.sort("최신순" 토글)와 filter.status(상태 칩)는 이 화면에서 UI로는 남아있지만 서버 쿼리에는
+// 반영되지 않는다 — api/post.ts의 buildQuery 주석 참고: 목록은 항상 createdAt DESC 고정이고,
+// 공개 목록은 항상 OPEN·PARTIALLY_CLOSED만 노출(CLOSED 선택 자체가 서버에서 무의미)되기 때문이다.
 export default function ObriScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
@@ -19,46 +26,48 @@ export default function ObriScreen() {
   const [filter, setFilter] = useState<PostFilter>(DEFAULT_FILTER);
   const [sheetVisible, setSheetVisible] = useState(false);
 
-  const filteredPosts = useMemo(() => {
-    // 공연 날짜가 지난 글은 항상 제외 (백엔드 PostSpecification과 동일한 규칙 — status 필터로도 우회 불가)
-    let result = MOCK_POSTS.filter((p) => new Date(p.eventAt) >= new Date());
+  const [posts, setPosts] = useState<PostSummary[]>([]);
+  const [currentPage, setCurrentPage] = useState(0);
+  const [hasNext, setHasNext] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-    if (filter.categories.length > 0) {
-      result = result.filter((p) => filter.categories.includes(p.category));
+  // 필터가 바뀌면 첫 페이지부터 새로 조회
+  const loadFirstPage = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const page = await getPosts(filter, 0);
+      setPosts(page.content);
+      setCurrentPage(page.currentPage);
+      setHasNext(page.hasNext);
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : "모집글 목록을 불러오지 못했어요.");
+    } finally {
+      setLoading(false);
     }
-    if (filter.instruments.length > 0) {
-      result = result.filter((p) =>
-        p.instruments.some((i) => filter.instruments.includes(i.instrument))
-      );
-    }
-    if (filter.regions.length > 0) {
-      result = result.filter((p) =>
-        filter.regions.some((r) => p.location.includes(r))
-      );
-    }
-    if (filter.startDate) {
-      const start = parseDate(filter.startDate);
-      result = result.filter((p) => new Date(p.eventAt) >= start);
-    }
-    if (filter.endDate) {
-      const end = parseDate(filter.endDate);
-      end.setHours(23, 59, 59, 999);
-      result = result.filter((p) => new Date(p.eventAt) <= end);
-    }
-    if (filter.status.length > 0) {
-      result = result.filter((p) => filter.status.includes(p.status));
-    } else {
-      // 백엔드 기본 노출 규칙과 동일: status 미지정 시 CLOSED는 제외(명시적 필터로만 조회 가능)
-      result = result.filter((p) => p.status !== "CLOSED");
-    }
-    if (filter.sort === "latest") {
-      result = [...result].sort(
-        (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-      );
-    }
-
-    return result;
   }, [filter]);
+
+  useEffect(() => {
+    loadFirstPage();
+  }, [loadFirstPage]);
+
+  // 무한스크롤 — 다음 페이지를 이어붙임
+  const loadNextPage = async () => {
+    if (loadingMore || !hasNext) return;
+    setLoadingMore(true);
+    try {
+      const page = await getPosts(filter, currentPage + 1);
+      setPosts((prev) => [...prev, ...page.content]);
+      setCurrentPage(page.currentPage);
+      setHasNext(page.hasNext);
+    } catch {
+      // 다음 페이지 실패는 조용히 무시 — 이미 보여준 목록은 그대로 유지, 스크롤하면 재시도됨
+    } finally {
+      setLoadingMore(false);
+    }
+  };
 
   return (
     <SafeAreaView style={styles.container} edges={["top"]}>
@@ -71,29 +80,46 @@ export default function ObriScreen() {
         onReset={() => setFilter(DEFAULT_FILTER)}
       />
 
-      <View style={styles.resultRow}>
-        <Text style={styles.resultText}>총 {filteredPosts.length}개</Text>
-      </View>
+      {!loading && !error && (
+        <View style={styles.resultRow}>
+          <Text style={styles.resultText}>총 {posts.length}개</Text>
+        </View>
+      )}
 
-      <FlatList
-        data={filteredPosts}
-        keyExtractor={(item) => String(item.id)}
-        renderItem={({ item }) => (
-          <PostCard
-            post={item}
-            onPress={(id) => router.push({ pathname: "/post/[id]", params: { id } })}
-          />
-        )}
-        contentContainerStyle={styles.listContent}
-        ItemSeparatorComponent={() => <View style={styles.separator} />}
-        ListEmptyComponent={
-          <EmptyState
-            icon="document-text-outline"
-            title="조건에 맞는 모집글이 없어요"
-            description="필터를 조정하거나 나중에 다시 확인해 주세요."
-          />
-        }
-      />
+      {loading ? (
+        <View style={styles.centerFill}>
+          <ActivityIndicator color={colors.primary} />
+        </View>
+      ) : error ? (
+        <EmptyState icon="cloud-offline-outline" title="목록을 불러오지 못했어요" description={error} />
+      ) : (
+        <FlatList
+          data={posts}
+          keyExtractor={(item) => String(item.id)}
+          renderItem={({ item }) => (
+            <PostCard
+              post={item}
+              onPress={(id) => router.push({ pathname: "/post/[id]", params: { id } })}
+            />
+          )}
+          contentContainerStyle={styles.listContent}
+          ItemSeparatorComponent={() => <View style={styles.separator} />}
+          onEndReached={loadNextPage}
+          onEndReachedThreshold={0.4}
+          ListFooterComponent={
+            loadingMore ? (
+              <ActivityIndicator style={styles.footerSpinner} color={colors.primary} />
+            ) : null
+          }
+          ListEmptyComponent={
+            <EmptyState
+              icon="document-text-outline"
+              title="조건에 맞는 모집글이 없어요"
+              description="필터를 조정하거나 나중에 다시 확인해 주세요."
+            />
+          }
+        />
+      )}
 
       <FilterSheet
         visible={sheetVisible}
@@ -135,6 +161,8 @@ const styles = StyleSheet.create({
   separator: {
     height: 12,
   },
+  centerFill: { flex: 1, alignItems: "center", justifyContent: "center" },
+  footerSpinner: { marginVertical: 16 },
   fab: {
     position: "absolute",
     right: 24,

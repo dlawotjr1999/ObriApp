@@ -8,12 +8,16 @@ import {
   StyleSheet,
   KeyboardAvoidingView,
   Platform,
+  Alert,
 } from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { colors } from "@/constants/theme";
-import { CATEGORIES } from "@/constants/filterOptions";
+import { CATEGORIES, REGIONS } from "@/constants/filterOptions";
+import { createPost } from "@/api/post";
+import { ApiError } from "@/lib/apiClient";
+import { PostCreateRequest } from "@/types/post";
 import ThemedButton from "@/components/common/ThemedButton";
 import ChipSelect from "@/components/common/ChipSelect";
 import PostInstrumentFormItem, {
@@ -29,7 +33,9 @@ export default function PostCreateScreen() {
   const [eventDate, setEventDate] = useState("");
   const [eventTime, setEventTime] = useState("");
   const [location, setLocation] = useState("");
+  const [region, setRegion] = useState("");
   const [timetable, setTimetable] = useState("");
+  const [submitting, setSubmitting] = useState(false);
 
   // 배열 index는 항목 삭제 시 뒤 요소가 앞으로 당겨져 재사용되므로,
   // React key로 쓰기 위한 항목별 안정적인 로컬 id를 별도로 관리한다.
@@ -53,6 +59,36 @@ export default function PostCreateScreen() {
   const handleInstrumentAdd = () => {
     setInstruments((prev) => [...prev, { instrument: "", people: "" }]);
     setInstrumentKeys((prev) => [...prev, keyCounter.current++]);
+  };
+
+  // 모집글 등록. POST는 멱등이 아니라(같은 요청을 두 번 보내면 글이 두 개 생김) submitting 플래그로
+  // 버튼을 잠가 연속 탭에 의한 중복 등록을 막는다. 실패해도 이 화면에 그대로 남아 재시도할 수 있게
+  // router.back()은 성공 시에만 호출한다.
+  const handleSubmit = async () => {
+    if (submitting) return;
+    setSubmitting(true);
+    try {
+      const payload: PostCreateRequest = {
+        category,
+        title,
+        eventAt: `${eventDate}T${eventTime}:00`,
+        location,
+        region,
+        timetable,
+        instruments: instruments
+          .filter((it) => it.instrument && it.people)
+          .map(({ instrument, people }) => ({ instrument, people: Number(people) })),
+      };
+      await createPost(payload);
+      router.back();
+    } catch (err) {
+      Alert.alert(
+        "등록 실패",
+        err instanceof ApiError ? err.message : "잠시 후 다시 시도해주세요."
+      );
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -127,6 +163,13 @@ export default function PostCreateScreen() {
             />
           </View>
 
+          <ChipSelect
+            label="지역"
+            options={REGIONS}
+            selected={region}
+            onSelect={setRegion}
+          />
+
           <View style={styles.fieldGroup}>
             <Text style={styles.label}>시간표</Text>
             <TextInput
@@ -163,13 +206,9 @@ export default function PostCreateScreen() {
         {/* 하단 등록 버튼 */}
         <View style={[styles.footer, { paddingBottom: insets.bottom + 12 }]}>
           <ThemedButton
-            title="등록하기"
-            onPress={() => {
-              // TODO: 모집글 등록 API(POST /api/posts) 연동. PostCreateRequestDTO 규격:
-              // { category, title, eventAt: `${eventDate}T${eventTime}:00`, location, timetable,
-              //   instruments: instruments.map(({ instrument, people }) => ({ instrument, people: Number(people) })) }
-              router.back();
-            }}
+            title={submitting ? "등록 중..." : "등록하기"}
+            onPress={handleSubmit}
+            disabled={submitting}
           />
         </View>
       </KeyboardAvoidingView>

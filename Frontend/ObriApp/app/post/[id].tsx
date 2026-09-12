@@ -1,15 +1,18 @@
-import React from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import {
   View,
   Text,
   ScrollView,
   StyleSheet,
+  ActivityIndicator,
 } from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { useLocalSearchParams } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { colors } from "@/constants/theme";
-import { getMockPostById } from "@/mocks/posts";
+import { getPost } from "@/api/post";
+import { ApiError } from "@/lib/apiClient";
+import { PostDetail } from "@/types/post";
 import { MOCK_USER } from "@/mocks/user";
 import { formatEventDateTime } from "@/utils/datetime";
 import ScreenHeader from "@/components/common/ScreenHeader";
@@ -30,8 +33,42 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 export default function PostDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const insets = useSafeAreaInsets();
-  // TODO: 모집글 단건 조회 API(GET /api/posts/{id}) 연동 (임시 더미 조회)
-  const post = getMockPostById(Number(id));
+
+  const [post, setPost] = useState<PostDetail | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  // 단건 조회. id가 잘못됐거나(404) 이미 삭제된 글이면 백엔드가 NotFoundException(404)을 던지므로
+  // 그 경우도 "찾을 수 없음" EmptyState로 자연스럽게 합류시킨다(별도 404 분기 불필요).
+  const loadPost = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const result = await getPost(Number(id));
+      setPost(result);
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : "모집글을 불러오지 못했어요.");
+    } finally {
+      setLoading(false);
+    }
+  }, [id]);
+
+  useEffect(() => {
+    loadPost();
+  }, [loadPost]);
+
+  if (loading) {
+    return (
+      <SafeAreaView style={styles.container} edges={["top"]}>
+        <View style={styles.headerArea}>
+          <ScreenHeader />
+        </View>
+        <View style={styles.centerFill}>
+          <ActivityIndicator color={colors.primary} />
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   if (!post) {
     return (
@@ -42,7 +79,7 @@ export default function PostDetailScreen() {
         <EmptyState
           icon="alert-circle-outline"
           title="모집글을 찾을 수 없어요"
-          description="삭제되었거나 존재하지 않는 모집글입니다."
+          description={error ?? "삭제되었거나 존재하지 않는 모집글입니다."}
         />
       </SafeAreaView>
     );
@@ -155,7 +192,7 @@ export default function PostDetailScreen() {
           disabled={applyDisabled}
           style={styles.applyButton}
           onPress={() => {
-            // TODO: 오브리 지원 API(POST /api/posts/{id}/applications) 연동
+            // TODO: 지원 제출 API(POST /api/applications/submit) 연동 — application 도메인 작업 범위
           }}
         />
       </View>
@@ -174,6 +211,11 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingHorizontal: 24,
+  },
+  centerFill: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
   },
   hero: {
     alignItems: "flex-start",
