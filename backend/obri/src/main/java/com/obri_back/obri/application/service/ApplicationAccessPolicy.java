@@ -15,14 +15,14 @@ import org.springframework.stereotype.Component;
 @Component
 public class ApplicationAccessPolicy {
 
-    // 구인글 작성자만 허용
+    // 모집글 작성자만 허용
     public void requireRecruiter(User user, Post post, String message) {
         if (!post.isOwnedBy(user)) {
             throw new ForbiddenException(message);
         }
     }
 
-    // 지원서가 걸린 글의 구인자만 허용
+    // 지원서가 걸린 글의 모집자만 허용
     public void requireRecruiter(User user, Application application, String message) {
         if (!application.isRecruiter(user)) {
             throw new ForbiddenException(message);
@@ -36,7 +36,7 @@ public class ApplicationAccessPolicy {
         }
     }
 
-    // 구인자 또는 지원자 본인만 허용 (지원서 단건 조회)
+    // 모집자 또는 지원자 본인만 허용 (지원서 단건 조회)
     public void requireViewer(User user, Application application, String message) {
         if (!application.isApplicant(user) && !application.isRecruiter(user)) {
             throw new ForbiddenException(message);

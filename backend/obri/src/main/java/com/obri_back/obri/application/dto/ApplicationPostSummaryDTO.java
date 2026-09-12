@@ -9,7 +9,7 @@ import lombok.Getter;
 import java.time.LocalDateTime;
 
 /*
- * 지원서 응답에 중첩되는 구인글 요약 DTO (지원자가 소비)
+ * 지원서 응답에 중첩되는 모집글 요약 DTO (지원자가 소비)
  */
 @Getter
 @Builder

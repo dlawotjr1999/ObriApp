@@ -31,7 +31,7 @@ import lombok.RequiredArgsConstructor;
  * GET   /api/applications/me                            — 내 지원 목록 (마이페이지)
  * GET   /api/applications/{id}                          — 지원서 단건 조회
  * PATCH /api/applications/{id}/{accept|reject|cancel|revoke} — 상태 변경 (의도별 분리)
- * GET   /api/applications/post/{postId}                 — 구인글별 지원자 목록 (구인자용)
+ * GET   /api/applications/post/{postId}                 — 모집글별 지원자 목록 (모집자용)
  */
 @RestController
 @RequestMapping("/api/applications")
@@ -70,7 +70,7 @@ public class ApplicationController {
         return ResponseEntity.ok(APIResponse.ok("지원서를 조회했습니다", response));
     }
 
-    // 지원 수락 (구인자, PENDING → ACCEPTED)
+    // 지원 수락 (모집자, PENDING → ACCEPTED)
     @PatchMapping("/{id}/accept")
     public ResponseEntity<APIResponse<Void>> acceptApplication(
         @AuthenticationPrincipal User user,
@@ -80,7 +80,7 @@ public class ApplicationController {
         return ResponseEntity.ok(APIResponse.ok("지원을 수락했습니다"));
     }
 
-    // 지원 거절 (구인자, PENDING → REJECTED)
+    // 지원 거절 (모집자, PENDING → REJECTED)
     @PatchMapping("/{id}/reject")
     public ResponseEntity<APIResponse<Void>> rejectApplication(
         @AuthenticationPrincipal User user,
@@ -100,7 +100,7 @@ public class ApplicationController {
         return ResponseEntity.ok(APIResponse.ok("지원을 취소했습니다"));
     }
 
-    // 수락 철회 (구인자, ACCEPTED → REVOKED; 확정 취소·자리 재오픈)
+    // 수락 철회 (모집자, ACCEPTED → REVOKED; 확정 취소·자리 재오픈)
     @PatchMapping("/{id}/revoke")
     public ResponseEntity<APIResponse<Void>> revokeApplication(
         @AuthenticationPrincipal User user,
@@ -110,7 +110,7 @@ public class ApplicationController {
         return ResponseEntity.ok(APIResponse.ok("수락을 철회했습니다"));
     }
 
-    // 구인글별 지원자 목록 (구인자용)
+    // 모집글별 지원자 목록 (모집자용)
     // PostController 이동 시 PostController → ApplicationService cross-domain 의존이 생기므로 여기에 유지
     @GetMapping("/post/{postId}")
     public ResponseEntity<APIResponse<PageResponse<AppResponseDTO>>> getApplicationsByPostId(

@@ -13,10 +13,10 @@ import java.util.List;
 
 /*
  * FCM 알림 발송 서비스
- * - 신규 구인글: "new_post" 토픽 broadcast
+ * - 신규 모집글: "new_post" 토픽 broadcast
  * - 지원 결과(수락/거절): fcm_token 단건 push
- * - 구인글 수정: PENDING·ACCEPTED 지원자 multicast
- * - 구인글 삭제: ACCEPTED 지원자 multicast
+ * - 모집글 수정: PENDING·ACCEPTED 지원자 multicast
+ * - 모집글 삭제: ACCEPTED 지원자 multicast
  *
  * 규칙(CLAUDE.md 3.8):
  * - notification 테이블 없음. user.fcm_token만 사용
@@ -34,18 +34,18 @@ public class NotificationService {
 
     private final FirebaseMessaging firebaseMessaging;
 
-    // 새 구인글 등록 → 전체 구독자에게 broadcast
+    // 새 모집글 등록 → 전체 구독자에게 broadcast
     public void notifyNewPost(Long postId, String title) {
         Message message = Message.builder()
                 .setTopic(NEW_POST_TOPIC)
                 .setNotification(Notification.builder()
-                        .setTitle("새 구인글이 등록되었어요")
+                        .setTitle("새 모집글이 등록되었어요")
                         .setBody(title)
                         .build())
                 .putData("type", "NEW_POST")
                 .putData("postId", String.valueOf(postId))
                 .build();
-        send(message, "신규 구인글 알림", postId);
+        send(message, "신규 모집글 알림", postId);
     }
 
     // 지원 결과(수락/거절) → 지원자 단건 push
@@ -66,7 +66,7 @@ public class NotificationService {
         send(message, "지원 결과 알림", null);
     }
 
-    // 새 지원 도착 → 구인글 작성자(구인자) 단건 push
+    // 새 지원 도착 → 모집글 작성자(모집자) 단건 push
     public void notifyNewApplication(String recruiterFcmToken, Long postId, String postTitle) {
         if (recruiterFcmToken == null || recruiterFcmToken.isBlank()) {
             return; // 토큰 없으면 발송 생략
@@ -83,7 +83,7 @@ public class NotificationService {
         send(message, "새 지원 알림", postId);
     }
 
-    // 구인글 수정 → 대기·수락 지원자에게 multicast
+    // 모집글 수정 → 대기·수락 지원자에게 multicast
     public void notifyPostUpdated(List<String> fcmTokens, Long postId, String title) {
         if (fcmTokens == null || fcmTokens.isEmpty()) {
             return;
@@ -91,7 +91,7 @@ public class NotificationService {
         MulticastMessage message = MulticastMessage.builder()
                 .addAllTokens(fcmTokens)
                 .setNotification(Notification.builder()
-                        .setTitle("지원한 구인글이 수정되었어요")
+                        .setTitle("지원한 모집글이 수정되었어요")
                         .setBody(title)
                         .build())
                 .putData("type", "POST_UPDATED")
@@ -100,11 +100,11 @@ public class NotificationService {
         try {
             firebaseMessaging.sendEachForMulticast(message);
         } catch (Exception e) {
-            log.warn("구인글 수정 알림 발송 실패 postId={}", postId, e);
+            log.warn("모집글 수정 알림 발송 실패 postId={}", postId, e);
         }
     }
 
-    // 구인글 삭제 → 확정(ACCEPTED)된 지원자에게 multicast
+    // 모집글 삭제 → 확정(ACCEPTED)된 지원자에게 multicast
     public void notifyPostDeleted(List<String> fcmTokens, Long postId, String title) {
         if (fcmTokens == null || fcmTokens.isEmpty()) {
             return;
@@ -112,7 +112,7 @@ public class NotificationService {
         MulticastMessage message = MulticastMessage.builder()
                 .addAllTokens(fcmTokens)
                 .setNotification(Notification.builder()
-                        .setTitle("지원했던 구인글이 삭제되었어요")
+                        .setTitle("지원했던 모집글이 삭제되었어요")
                         .setBody(title)
                         .build())
                 .putData("type", "POST_DELETED")
@@ -121,7 +121,7 @@ public class NotificationService {
         try {
             firebaseMessaging.sendEachForMulticast(message);
         } catch (Exception e) {
-            log.warn("구인글 삭제 알림 발송 실패 postId={}", postId, e);
+            log.warn("모집글 삭제 알림 발송 실패 postId={}", postId, e);
         }
     }
 

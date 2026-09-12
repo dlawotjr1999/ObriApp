@@ -85,7 +85,7 @@ class ApplicationServiceTest {
         applicationService.submitApplication(applicant, request);
 
         verify(applicationRepository, times(1)).save(any(Application.class));
-        // 지원 도착 시 구인자에게 알림 발송 위임 — BACKLOG.md #15: AFTER_COMMIT까지 미루기 위해 이벤트로 발행
+        // 지원 도착 시 모집자에게 알림 발송 위임 — BACKLOG.md #15: AFTER_COMMIT까지 미루기 위해 이벤트로 발행
         verify(eventPublisher, times(1)).publishEvent(any(NewApplicationNotificationEvent.class));
     }
 
@@ -124,7 +124,7 @@ class ApplicationServiceTest {
 
         assertThatThrownBy(() -> applicationService.submitApplication(applicant, request))
                 .isInstanceOf(BadRequestException.class)
-                .hasMessage("마감된 구인글에는 지원할 수 없습니다");
+                .hasMessage("마감된 모집글에는 지원할 수 없습니다");
 
         verify(applicationRepository, never()).save(any());
     }
@@ -172,7 +172,7 @@ class ApplicationServiceTest {
 
         assertThatThrownBy(() -> applicationService.submitApplication(recruiter, request))
                 .isInstanceOf(ForbiddenException.class)
-                .hasMessage("본인 구인글에는 지원할 수 없습니다");
+                .hasMessage("본인 모집글에는 지원할 수 없습니다");
 
         verify(applicationRepository, never()).save(any());
     }
@@ -185,7 +185,7 @@ class ApplicationServiceTest {
 
         assertThatThrownBy(() -> applicationService.submitApplication(applicant, request))
                 .isInstanceOf(NotFoundException.class)
-                .hasMessage("구인글을 찾을 수 없습니다");
+                .hasMessage("모집글을 찾을 수 없습니다");
     }
 
     // ── 지원자 목록 조회 ──────────────────────────────────
@@ -195,13 +195,13 @@ class ApplicationServiceTest {
     @Test
     void getApplicationsByPostId_throwsForbiddenWhenNotOwner() {
         given(postRepository.findById(10L)).willReturn(Optional.of(post));
-        doThrow(new ForbiddenException("구인자만 지원자 목록을 조회할 수 있습니다"))
-                .when(accessPolicy).requireRecruiter(applicant, post, "구인자만 지원자 목록을 조회할 수 있습니다");
+        doThrow(new ForbiddenException("모집자만 지원자 목록을 조회할 수 있습니다"))
+                .when(accessPolicy).requireRecruiter(applicant, post, "모집자만 지원자 목록을 조회할 수 있습니다");
 
         assertThatThrownBy(() -> applicationService.getApplicationsByPostId(
                 10L, applicant, org.springframework.data.domain.PageRequest.of(0, 10)))
                 .isInstanceOf(ForbiddenException.class)
-                .hasMessage("구인자만 지원자 목록을 조회할 수 있습니다");
+                .hasMessage("모집자만 지원자 목록을 조회할 수 있습니다");
     }
 
     // BACKLOG.md #21: careers는 user.getCareers() lazy 접근 대신 UserService의 배치 조회로 채워지는지 검증
@@ -310,8 +310,8 @@ class ApplicationServiceTest {
     void accept_throwsForbiddenWhenApplicant() {
         Application app = buildApplication(ApplicationStatus.PENDING);
         given(applicationRepository.findById(100L)).willReturn(Optional.of(app));
-        doThrow(new ForbiddenException("구인자만 수락 또는 거절할 수 있습니다"))
-                .when(accessPolicy).requireRecruiter(applicant, app, "구인자만 수락 또는 거절할 수 있습니다");
+        doThrow(new ForbiddenException("모집자만 수락 또는 거절할 수 있습니다"))
+                .when(accessPolicy).requireRecruiter(applicant, app, "모집자만 수락 또는 거절할 수 있습니다");
 
         assertThatThrownBy(() -> applicationService.accept(applicant, 100L))
                 .isInstanceOf(ForbiddenException.class);
@@ -359,12 +359,12 @@ class ApplicationServiceTest {
         given(applicationRepository.findApplicantFcmTokens(10L, java.util.List.of(ApplicationStatus.ACCEPTED)))
                 .willReturn(java.util.List.of("accepted-token"));
 
-        applicationService.handlePostDeletion(10L, "결혼식 바이올린 구인");
+        applicationService.handlePostDeletion(10L, "현악 앙상블 단원 모집");
 
         org.mockito.InOrder inOrder = inOrder(applicationRepository, eventPublisher);
         inOrder.verify(applicationRepository).findApplicantFcmTokens(10L, java.util.List.of(ApplicationStatus.ACCEPTED));
         inOrder.verify(applicationRepository).deleteByPostId(10L);
         inOrder.verify(eventPublisher).publishEvent(
-                new PostDeletedNotificationEvent(java.util.List.of("accepted-token"), 10L, "결혼식 바이올린 구인"));
+                new PostDeletedNotificationEvent(java.util.List.of("accepted-token"), 10L, "현악 앙상블 단원 모집"));
     }
 }

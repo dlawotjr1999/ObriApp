@@ -75,7 +75,7 @@ public class Application {
         return this.user.getId().equals(user.getId());
     }
 
-    // 이 지원서가 걸린 글의 구인자가 user인지 확인 — Post에 위임(Post.getUser()를 여기서 직접 만지지 않음)
+    // 이 지원서가 걸린 글의 모집자가 user인지 확인 — Post에 위임(Post.getUser()를 여기서 직접 만지지 않음)
     public boolean isRecruiter(User user) {
         return this.post.isOwnedBy(user);
     }

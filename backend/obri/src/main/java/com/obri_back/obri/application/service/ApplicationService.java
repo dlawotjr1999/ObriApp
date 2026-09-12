@@ -38,10 +38,10 @@ import java.util.stream.Collectors;
 Application 관련 비즈니스 로직
 - 지원서 제출(지원자 관점)
 - 지원서 단건 조회(지원자 관점; 탭하여 들어갔을 때 구체적으로 볼 수 있는 정보들)
-- 지원 상태 업데이트 (구인자: ACCEPTED/REJECTED, 지원자: CANCELLED)
+- 지원 상태 업데이트 (모집자: ACCEPTED/REJECTED, 지원자: CANCELLED)
 
 - 한 게시글에 대한 지원서 목록 조회(PENDING)
-- 구인글 수정·삭제 시 지원자 알림·정리 처리 (Post 도메인 위임 — BACKLOG.md #12)
+- 모집글 수정·삭제 시 지원자 알림·정리 처리 (Post 도메인 위임 — BACKLOG.md #12)
 
 알림은 전부 NotificationEventListener를 거쳐 커밋 이후(AFTER_COMMIT)에 발송된다 — BACKLOG.md #15.
 이 클래스는 NotificationService를 직접 호출하지 않고 ApplicationEventPublisher로 이벤트만 발행한다.
@@ -61,14 +61,14 @@ public class ApplicationService {
     @Transactional
     public AppResponseDTO submitApplication(User user, AppRequestDTO requestDto) {
         Post post = postRepository.findById(requestDto.getPostId())
-            .orElseThrow(() -> new NotFoundException("구인글을 찾을 수 없습니다"));
+            .orElseThrow(() -> new NotFoundException("모집글을 찾을 수 없습니다"));
 
-        // 마감된 구인글 체크
+        // 마감된 모집글 체크
         if (post.getStatus() == PostStatus.CLOSED) {
-            throw new BadRequestException("마감된 구인글에는 지원할 수 없습니다");
+            throw new BadRequestException("마감된 모집글에는 지원할 수 없습니다");
         }
 
-        // 공연 날짜가 지난 구인글 체크 (인원이 안 찼어도 날짜가 지나면 지원 불가)
+        // 공연 날짜가 지난 모집글 체크 (인원이 안 찼어도 날짜가 지나면 지원 불가)
         if (post.getEventAt().isBefore(LocalDateTime.now())) {
             throw new BadRequestException("이미 종료된 공연에는 지원할 수 없습니다");
         }
@@ -80,12 +80,12 @@ public class ApplicationService {
 
         // 본인 글 지원 체크
         if (post.getUser().getId().equals(user.getId())) {
-            throw new ForbiddenException("본인 구인글에는 지원할 수 없습니다");
+            throw new ForbiddenException("본인 모집글에는 지원할 수 없습니다");
         }
 
         // 중복 지원 체크 (DB UNIQUE 제약의 사전 방어선)
         if (applicationRepository.existsByPostIdAndUserId(post.getId(), user.getId())) {
-            throw new ConflictException("이미 지원한 구인글입니다");
+            throw new ConflictException("이미 지원한 모집글입니다");
         }
 
         // 전공 악기는 지원 시점의 프로필 값을 스냅샷으로 저장 (수락 시 모집 악기와 매칭에 사용)
@@ -99,7 +99,7 @@ public class ApplicationService {
 
         applicationRepository.save(application);
 
-        // 지원 도착 → 구인자(글 작성자)에게 단건 push. AFTER_COMMIT 이후 발송(BACKLOG.md #15) — 이 트랜잭션이
+        // 지원 도착 → 모집자(글 작성자)에게 단건 push. AFTER_COMMIT 이후 발송(BACKLOG.md #15) — 이 트랜잭션이
         // 롤백되면(예: 아래 managedUser 재조회 실패) 이벤트 자체가 버려져 유령 알림이 나가지 않는다
         eventPublisher.publishEvent(new NewApplicationNotificationEvent(
                 post.getUser().getFcmToken(), post.getId(), post.getTitle()));
@@ -117,10 +117,10 @@ public class ApplicationService {
     @Transactional(readOnly = true)
     public Page<AppResponseDTO> getApplicationsByPostId(Long postId, User user, Pageable pageable) {
          Post post = postRepository.findById(postId)
-                .orElseThrow(() -> new NotFoundException("구인글을 찾을 수 없습니다"));
+                .orElseThrow(() -> new NotFoundException("모집글을 찾을 수 없습니다"));
 
-        // 구인자만 조회 가능
-        accessPolicy.requireRecruiter(user, post, "구인자만 지원자 목록을 조회할 수 있습니다");
+        // 모집자만 조회 가능
+        accessPolicy.requireRecruiter(user, post, "모집자만 지원자 목록을 조회할 수 있습니다");
 
         Page<Application> applications = applicationRepository.findByPostId(postId, pageable);
         Map<Long, List<CareerDTO>> careersByUserId = loadCareersByApplicant(applications);
@@ -156,7 +156,7 @@ public class ApplicationService {
         Application application = applicationRepository.findById(applicationId)
                 .orElseThrow(() -> new NotFoundException("지원서를 찾을 수 없습니다"));
 
-        // 구인자 또는 지원자 본인만 조회 가능
+        // 모집자 또는 지원자 본인만 조회 가능
         accessPolicy.requireViewer(user, application, "조회 권한이 없습니다");
 
         return AppResponseDTO.from(application, application.getUser());
@@ -167,11 +167,11 @@ public class ApplicationService {
     // 수락/철회 시 해당 악기 확정 인원·마감은 Post 도메인에 위임
     // 지원 결과(수락/거절)만 지원자에게 단건 push. AFTER_COMMIT 이후 발송(BACKLOG.md #15)
 
-    // 수락 (구인자, PENDING → ACCEPTED)
+    // 수락 (모집자, PENDING → ACCEPTED)
     @Transactional
     public void accept(User user, Long id) {
         Application application = findApplicationOrThrow(id);
-        accessPolicy.requireRecruiter(user, application, "구인자만 수락 또는 거절할 수 있습니다");
+        accessPolicy.requireRecruiter(user, application, "모집자만 수락 또는 거절할 수 있습니다");
         requirePending(application);
         application.getPost().confirmInstrument(application.getInstrument());
         application.updateStatus(ApplicationStatus.ACCEPTED);
@@ -179,11 +179,11 @@ public class ApplicationService {
         eventPublisher.publishEvent(new ApplicationResultNotificationEvent(application.getUser().getFcmToken(), true));
     }
 
-    // 거절 (구인자, PENDING → REJECTED)
+    // 거절 (모집자, PENDING → REJECTED)
     @Transactional
     public void reject(User user, Long id) {
         Application application = findApplicationOrThrow(id);
-        accessPolicy.requireRecruiter(user, application, "구인자만 수락 또는 거절할 수 있습니다");
+        accessPolicy.requireRecruiter(user, application, "모집자만 수락 또는 거절할 수 있습니다");
         requirePending(application);
         application.updateStatus(ApplicationStatus.REJECTED);
         // AFTER_COMMIT 이후 발송(BACKLOG.md #15)
@@ -201,11 +201,11 @@ public class ApplicationService {
         application.updateStatus(ApplicationStatus.CANCELLED);
     }
 
-    // 철회 (구인자, ACCEPTED → REVOKED; 확정 취소·자리 재오픈). 결과 알림 없음
+    // 철회 (모집자, ACCEPTED → REVOKED; 확정 취소·자리 재오픈). 결과 알림 없음
     @Transactional
     public void revoke(User user, Long id) {
         Application application = findApplicationOrThrow(id);
-        accessPolicy.requireRecruiter(user, application, "구인자만 수락을 철회할 수 있습니다");
+        accessPolicy.requireRecruiter(user, application, "모집자만 수락을 철회할 수 있습니다");
         if (application.getStatus() != ApplicationStatus.ACCEPTED) {
             throw new BadRequestException("수락된 지원만 철회할 수 있습니다");
         }
@@ -224,7 +224,7 @@ public class ApplicationService {
         }
     }
 
-    // 구인글 수정 알림 — Post 도메인에서 호출. 대기·수락 지원자에게 알릴지 여부까지 이 도메인이 결정
+    // 모집글 수정 알림 — Post 도메인에서 호출. 대기·수락 지원자에게 알릴지 여부까지 이 도메인이 결정
     // TODO: 수정 알림의 실제 필요성은 추후 재검토 대상(우선순위 낮음, 논의 2026-07-29)
     @Transactional(readOnly = true)
     public void notifyApplicantsOfPostUpdate(Long postId, String title) {
@@ -233,7 +233,7 @@ public class ApplicationService {
         eventPublisher.publishEvent(new PostUpdatedNotificationEvent(tokens, postId, title));
     }
 
-    // 구인글 삭제 처리 — Post 도메인에서 호출(Post row 삭제 전 반드시 먼저 호출, FK 순서 보장)
+    // 모집글 삭제 처리 — Post 도메인에서 호출(Post row 삭제 전 반드시 먼저 호출, FK 순서 보장)
     // ACCEPTED 지원자 토큰 확보 → 지원서 정리 → 삭제 알림까지 전담
     // TODO: 삭제 알림의 실제 필요성은 추후 재검토 대상(우선순위 낮음, 논의 2026-07-29)
     @Transactional
@@ -243,13 +243,13 @@ public class ApplicationService {
         eventPublisher.publishEvent(new PostDeletedNotificationEvent(acceptedTokens, postId, title));
     }
 
-    // 구인글 단건 조회(applicationCount)용 — Post 도메인에서 호출
+    // 모집글 단건 조회(applicationCount)용 — Post 도메인에서 호출
     @Transactional(readOnly = true)
     public long countApplicationsByPostId(Long postId) {
         return applicationRepository.countByPostId(postId);
     }
 
-    // 구인글 단건 조회(hasApplied)용 — Post 도메인에서 호출
+    // 모집글 단건 조회(hasApplied)용 — Post 도메인에서 호출
     @Transactional(readOnly = true)
     public boolean hasApplied(Long postId, Long userId) {
         return applicationRepository.existsByPostIdAndUserId(postId, userId);
