@@ -89,7 +89,7 @@ export default function ObriScreen() {
         ListEmptyComponent={
           <EmptyState
             icon="document-text-outline"
-            title="조건에 맞는 구인글이 없어요"
+            title="조건에 맞는 모집글이 없어요"
             description="필터를 조정하거나 나중에 다시 확인해 주세요."
           />
         }

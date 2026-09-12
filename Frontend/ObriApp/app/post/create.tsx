@@ -29,7 +29,6 @@ export default function PostCreateScreen() {
   const [eventDate, setEventDate] = useState("");
   const [eventTime, setEventTime] = useState("");
   const [location, setLocation] = useState("");
-  const [pay, setPay] = useState("");
   const [timetable, setTimetable] = useState("");
 
   // 배열 index는 항목 삭제 시 뒤 요소가 앞으로 당겨져 재사용되므로,
@@ -63,7 +62,7 @@ export default function PostCreateScreen() {
         <TouchableOpacity onPress={() => router.back()} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
           <Ionicons name="arrow-back" size={22} color={colors.primary} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>구인글 작성</Text>
+        <Text style={styles.headerTitle}>모집글 작성</Text>
         <View style={{ width: 22 }} />
       </View>
 
@@ -87,7 +86,7 @@ export default function PostCreateScreen() {
             <Text style={styles.label}>제목</Text>
             <TextInput
               style={styles.input}
-              placeholder="구인글 제목을 입력하세요"
+              placeholder="모집글 제목을 입력하세요"
               placeholderTextColor={colors.placeholder}
               value={title}
               onChangeText={setTitle}
@@ -121,7 +120,7 @@ export default function PostCreateScreen() {
             <Text style={styles.label}>장소</Text>
             <TextInput
               style={styles.input}
-              placeholder="예: 서울 강남구 OO웨딩홀"
+              placeholder="예: 서울 강남구 OO스튜디오"
               placeholderTextColor={colors.placeholder}
               value={location}
               onChangeText={setLocation}
@@ -129,22 +128,10 @@ export default function PostCreateScreen() {
           </View>
 
           <View style={styles.fieldGroup}>
-            <Text style={styles.label}>페이</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="150000"
-              placeholderTextColor={colors.placeholder}
-              value={pay}
-              onChangeText={(text) => setPay(text.replace(/[^0-9]/g, ""))}
-              keyboardType="number-pad"
-            />
-          </View>
-
-          <View style={styles.fieldGroup}>
             <Text style={styles.label}>시간표</Text>
             <TextInput
               style={[styles.input, styles.textArea]}
-              placeholder="예: 리허설 1회 (13:00), 본식 (14:00)"
+              placeholder="예: 매주 토요일 오후 2시 합주"
               placeholderTextColor={colors.placeholder}
               value={timetable}
               onChangeText={setTimetable}
@@ -178,9 +165,9 @@ export default function PostCreateScreen() {
           <ThemedButton
             title="등록하기"
             onPress={() => {
-              // TODO: 구인글 등록 API(POST /api/posts) 연동. PostCreateRequestDTO 규격:
+              // TODO: 모집글 등록 API(POST /api/posts) 연동. PostCreateRequestDTO 규격:
               // { category, title, eventAt: `${eventDate}T${eventTime}:00`, location, timetable,
-              //   pay: Number(pay), instruments: instruments.map(({ instrument, people }) => ({ instrument, people: Number(people) })) }
+              //   instruments: instruments.map(({ instrument, people }) => ({ instrument, people: Number(people) })) }
               router.back();
             }}
           />

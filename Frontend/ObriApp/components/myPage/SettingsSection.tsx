@@ -24,7 +24,7 @@ export default function SettingsSection({
       <View style={styles.settingsRow}>
         <View style={styles.settingsLeft}>
           <Ionicons name="notifications-outline" size={16} color={colors.textSecondary} />
-          <Text style={styles.settingsText}>구인 알림</Text>
+          <Text style={styles.settingsText}>모집 알림</Text>
         </View>
         <Switch
           value={notifEnabled}

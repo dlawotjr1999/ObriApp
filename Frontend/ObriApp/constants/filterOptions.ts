@@ -1,4 +1,4 @@
-export const CATEGORIES = ["결혼", "행사", "추모", "레코딩", "기타"];
+export const CATEGORIES = ["앙상블", "버스킹", "합주", "연주회", "기타"];
 
 export const INSTRUMENTS = [
   "바이올린", "비올라", "첼로", "더블베이스",
