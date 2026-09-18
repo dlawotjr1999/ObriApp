@@ -1,17 +1,19 @@
-import React from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import {
   View,
   Text,
   ScrollView,
   StyleSheet,
+  ActivityIndicator,
 } from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { useLocalSearchParams } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { colors } from "@/constants/theme";
-import { getMockPostById } from "@/mocks/posts";
-import { MOCK_USER, MY_POST_IDS } from "@/mocks/user";
-import { MOCK_APPLICATIONS } from "@/mocks/applications";
+import { getPost } from "@/api/post";
+import { ApiError } from "@/lib/apiClient";
+import { PostDetail } from "@/types/post";
+import { MOCK_USER } from "@/mocks/user";
 import { formatEventDateTime } from "@/utils/datetime";
 import ScreenHeader from "@/components/common/ScreenHeader";
 import EmptyState from "@/components/common/EmptyState";
@@ -31,8 +33,42 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 export default function PostDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const insets = useSafeAreaInsets();
-  // TODO: 모집글 단건 조회 API(GET /api/posts/{id}) 연동 (임시 더미 조회)
-  const post = getMockPostById(Number(id));
+
+  const [post, setPost] = useState<PostDetail | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  // 단건 조회. id가 잘못됐거나(404) 이미 삭제된 글이면 백엔드가 NotFoundException(404)을 던지므로
+  // 그 경우도 "찾을 수 없음" EmptyState로 자연스럽게 합류시킨다(별도 404 분기 불필요).
+  const loadPost = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const result = await getPost(Number(id));
+      setPost(result);
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : "모집글을 불러오지 못했어요.");
+    } finally {
+      setLoading(false);
+    }
+  }, [id]);
+
+  useEffect(() => {
+    loadPost();
+  }, [loadPost]);
+
+  if (loading) {
+    return (
+      <SafeAreaView style={styles.container} edges={["top"]}>
+        <View style={styles.headerArea}>
+          <ScreenHeader />
+        </View>
+        <View style={styles.centerFill}>
+          <ActivityIndicator color={colors.primary} />
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   if (!post) {
     return (
@@ -43,7 +79,7 @@ export default function PostDetailScreen() {
         <EmptyState
           icon="alert-circle-outline"
           title="모집글을 찾을 수 없어요"
-          description="삭제되었거나 존재하지 않는 모집글입니다."
+          description={error ?? "삭제되었거나 존재하지 않는 모집글입니다."}
         />
       </SafeAreaView>
     );
@@ -52,10 +88,13 @@ export default function PostDetailScreen() {
   // 지원 대상 악기는 선택형이 아니라 내 프로필 악기(user.getInstrument())로 서버가 자동 판정한다
   // (AppRequestDTO엔 postId/additionalInfo뿐, 악기 필드 없음 — 별도 선택 UI 불필요)
   const myInstrumentSlot = post.instruments.find((it) => it.instrument === MOCK_USER.instrument);
-  const instrumentClosed = !!myInstrumentSlot && myInstrumentSlot.currentPeople >= myInstrumentSlot.people;
+  // closed는 서버가 confirmed>=people로 이미 계산해 내려주는 값 — 프론트에서 다시 비교하지 않는다.
+  const instrumentClosed = !!myInstrumentSlot && myInstrumentSlot.closed;
 
-  const isMyPost = MY_POST_IDS.includes(post.id);
-  const hasApplied = MOCK_APPLICATIONS.some((a) => a.post.id === post.id);
+  // isMine·hasApplied는 서버가 로그인 유저 기준으로 계산해 내려주는 값을 그대로 쓴다
+  // (PostDetailResponseDTO) — 별도 목록을 프론트에서 대조해 재계산하지 않는다.
+  const isMyPost = post.isMine;
+  const hasApplied = post.hasApplied;
   const eventPassed = new Date(post.eventAt) < new Date();
   const isClosed = post.status === "CLOSED";
 
@@ -101,16 +140,12 @@ export default function PostDetailScreen() {
           </View>
           <Text style={styles.title}>{post.title}</Text>
 
-          {/* 작성자 */}
+          {/* 작성자 — 매너 점수는 백엔드에 아직 없는 향후 기능(REVIEWS 테이블 도입 전)이라 표시하지 않음 */}
           <View style={styles.writerRow}>
             <Ionicons name="person-circle-outline" size={18} color={colors.textMuted} />
             <Text style={styles.writerText}>
               {post.writer.nickname} · {post.writer.instrument}
             </Text>
-            <View style={styles.mannerBadge}>
-              <Ionicons name="star" size={12} color={colors.primaryLight} />
-              <Text style={styles.mannerText}>{post.writer.mannerScore.toFixed(1)}</Text>
-            </View>
           </View>
         </View>
 
@@ -130,7 +165,7 @@ export default function PostDetailScreen() {
             {post.instruments.map((it) => (
               <Tag
                 key={it.instrument}
-                label={`${it.instrument} ${it.currentPeople}/${it.people}`}
+                label={`${it.instrument} ${it.confirmed}/${it.people}`}
                 variant={it.instrument === MOCK_USER.instrument ? "filled" : "outline"}
               />
             ))}
@@ -157,7 +192,7 @@ export default function PostDetailScreen() {
           disabled={applyDisabled}
           style={styles.applyButton}
           onPress={() => {
-            // TODO: 오브리 지원 API(POST /api/posts/{id}/applications) 연동
+            // TODO: 지원 제출 API(POST /api/applications/submit) 연동 — application 도메인 작업 범위
           }}
         />
       </View>
@@ -176,6 +211,11 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingHorizontal: 24,
+  },
+  centerFill: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
   },
   hero: {
     alignItems: "flex-start",
@@ -211,17 +251,6 @@ const styles = StyleSheet.create({
   writerText: {
     fontSize: 13,
     color: colors.textSecondary,
-  },
-  mannerBadge: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 2,
-    marginLeft: 2,
-  },
-  mannerText: {
-    fontSize: 12,
-    color: colors.textSecondary,
-    fontWeight: "500",
   },
   divider: {
     height: StyleSheet.hairlineWidth,

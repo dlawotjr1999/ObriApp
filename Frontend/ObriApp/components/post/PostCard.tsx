@@ -48,10 +48,10 @@ export default function PostCard({ post, onPress }: PostCardProps) {
           <IconText icon="location-outline" text={post.location} />
         </View>
         <View style={styles.instrumentRow}>
-          {post.instruments.map(({ instrument, currentPeople, people }) => (
+          {post.instruments.map(({ instrument, confirmed, people }) => (
             <View key={instrument} style={styles.instrumentChip}>
               <Text style={styles.instrumentText}>
-                {instrument} {currentPeople}/{people}
+                {instrument} {confirmed}/{people}
               </Text>
             </View>
           ))}
