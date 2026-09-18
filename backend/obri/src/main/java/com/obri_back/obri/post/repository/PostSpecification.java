@@ -17,7 +17,7 @@ import java.util.List;
 /*
  * 모집글 목록 동적 필터 명세 빌더
  * GET /api/posts 필터: 필터 간 AND, 같은 필터 내 다중값은 OR
- * eventAt이 지난 글은 항상 제외(공연 종료 후 목록 노출 방지 — BACKLOG.md #8)
+ * eventAt이 지난 글은 항상 제외(공연 종료 후 목록 노출 방지)
  * status는 필터 파라미터로 받지 않고 항상 OPEN·PARTIALLY_CLOSED만 노출 — CLOSED(마감)는 이 공개 목록에
  * 노출하지 않는다(BACKLOG.md #35). 작성자 본인의 마감글은 PostService.getMyPosts(status 필터 없음)로 조회
  */

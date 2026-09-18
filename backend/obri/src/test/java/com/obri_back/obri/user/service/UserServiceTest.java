@@ -58,7 +58,7 @@ class UserServiceTest {
         assertThat(result.getEmail()).isEqualTo("test@test.com");
     }
 
-    // BACKLOG.md #1: 다른 도메인 서비스가 detached User(예: 필터에서 온 @AuthenticationPrincipal)를
+    // 다른 도메인 서비스가 detached User(예: 필터에서 온 @AuthenticationPrincipal)를
     // managed 인스턴스로 재조회할 때 쓰는 진입점 — UserRepository 대신 이 메서드를 거치게 해 서비스 경계를 지킴
     @Test
     void getManagedUserById_returnsManagedUserWhenExists() {

@@ -85,11 +85,11 @@ class ApplicationServiceTest {
         applicationService.submitApplication(applicant, request);
 
         verify(applicationRepository, times(1)).save(any(Application.class));
-        // 지원 도착 시 모집자에게 알림 발송 위임 — BACKLOG.md #15: AFTER_COMMIT까지 미루기 위해 이벤트로 발행
+        // 지원 도착 시 모집자에게 알림 발송 위임 — AFTER_COMMIT까지 미루기 위해 이벤트로 발행
         verify(eventPublisher, times(1)).publishEvent(any(NewApplicationNotificationEvent.class));
     }
 
-    // BACKLOG.md #1: user는 FirebaseAuthFilter가 조회한 detached 엔티티라 careers(LAZY) 접근 시
+    // user는 FirebaseAuthFilter가 조회한 detached 엔티티라 careers(LAZY) 접근 시
     // LazyInitializationException 발생 — 응답 조립 전 UserService를 통해 managed 인스턴스로 재조회하는지 검증
     // (UserRepository를 직접 주입하면 도메인 경계를 깨므로 UserService를 경유)
     @Test

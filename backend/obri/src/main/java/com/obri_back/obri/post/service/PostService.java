@@ -119,7 +119,7 @@ public class PostService {
         postRepository.delete(post);
     }
 
-    // PostCreateRequestDTO → PostInfo 변환 (BACKLOG.md #13, 엔티티가 웹 DTO를 직접 받지 않도록 분리)
+    // PostCreateRequestDTO → PostInfo 변환 (엔티티가 웹 DTO를 직접 받지 않도록 분리)
     private PostInfo toPostInfo(PostCreateRequestDTO request) {
         return PostInfo.builder()
                 .category(request.getCategory())

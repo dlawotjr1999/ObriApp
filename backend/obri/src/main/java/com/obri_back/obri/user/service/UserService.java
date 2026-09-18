@@ -44,8 +44,8 @@ public class UserService {
 
     /*
      * managed User 재조회 — 다른 도메인 서비스가 detached 엔티티(예: 필터에서 온
-     * @AuthenticationPrincipal User)를 넘겨받았을 때 LAZY 컬렉션 접근을 안전하게 하기 위한 진입점
-     * (BACKLOG.md #1). 다른 도메인이 UserRepository를 직접 찌르지 않도록 이 메서드를 경유시킨다.
+     * @AuthenticationPrincipal User)를 넘겨받았을 때 LAZY 컬렉션 접근을 안전하게 하기 위한 진입점.
+     * 다른 도메인이 UserRepository를 직접 찌르지 않도록 이 메서드를 경유시킨다.
      *
      * @param userId 재조회할 유저의 내부 ID
      * @return managed 상태의 User 엔티티
