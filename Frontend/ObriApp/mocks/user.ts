@@ -15,5 +15,5 @@ export const MOCK_USER: UserProfile = {
   createdAt: "2024-01-01T00:00:00",
 };
 
-// 마이페이지 "내 구인글"에 표시할 post id 목록
+// 마이페이지 "내 모집글"에 표시할 post id 목록
 export const MY_POST_IDS = [1, 4];

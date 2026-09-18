@@ -39,7 +39,7 @@ export default function ProfileSection({
       <View style={styles.statsRow}>
         <View style={styles.statItem}>
           <Text style={styles.statValue}>{myPostCount}</Text>
-          <Text style={styles.statLabel}>내 구인글</Text>
+          <Text style={styles.statLabel}>내 모집글</Text>
         </View>
         <View style={styles.statDivider} />
         <View style={styles.statItem}>

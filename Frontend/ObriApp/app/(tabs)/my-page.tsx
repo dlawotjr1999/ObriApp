@@ -14,7 +14,7 @@ import ApplicationCard from "@/components/myPage/ApplicationCard";
 import SettingsSection from "@/components/myPage/SettingsSection";
 
 const TABS = [
-  { key: "posts", label: "내 구인글" },
+  { key: "posts", label: "내 모집글" },
   { key: "applications", label: "내 지원" },
 ];
 
@@ -41,7 +41,7 @@ export default function MyPageScreen() {
           tabs={TABS}
           pages={[
             myPosts.length === 0 ? (
-              <Text style={styles.emptyText}>등록한 구인글이 없어요.</Text>
+              <Text style={styles.emptyText}>등록한 모집글이 없어요.</Text>
             ) : (
               myPosts.map((post, i) => (
                 <View key={post.id} style={i > 0 ? { marginTop: 12 } : undefined}>
@@ -53,7 +53,7 @@ export default function MyPageScreen() {
               ))
             ),
             MOCK_APPLICATIONS.length === 0 ? (
-              <Text style={styles.emptyText}>지원한 구인글이 없어요.</Text>
+              <Text style={styles.emptyText}>지원한 모집글이 없어요.</Text>
             ) : (
               MOCK_APPLICATIONS.map((app, i) => (
                 <View key={app.id} style={i > 0 ? { marginTop: 12 } : undefined}>

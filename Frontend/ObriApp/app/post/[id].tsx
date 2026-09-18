@@ -13,7 +13,6 @@ import { getMockPostById } from "@/mocks/posts";
 import { MOCK_USER, MY_POST_IDS } from "@/mocks/user";
 import { MOCK_APPLICATIONS } from "@/mocks/applications";
 import { formatEventDateTime } from "@/utils/datetime";
-import { formatKRW } from "@/utils/number";
 import ScreenHeader from "@/components/common/ScreenHeader";
 import EmptyState from "@/components/common/EmptyState";
 import IconText from "@/components/common/IconText";
@@ -32,7 +31,7 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 export default function PostDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const insets = useSafeAreaInsets();
-  // TODO: 구인글 단건 조회 API(GET /api/posts/{id}) 연동 (임시 더미 조회)
+  // TODO: 모집글 단건 조회 API(GET /api/posts/{id}) 연동 (임시 더미 조회)
   const post = getMockPostById(Number(id));
 
   if (!post) {
@@ -43,8 +42,8 @@ export default function PostDetailScreen() {
         </View>
         <EmptyState
           icon="alert-circle-outline"
-          title="구인글을 찾을 수 없어요"
-          description="삭제되었거나 존재하지 않는 구인글입니다."
+          title="모집글을 찾을 수 없어요"
+          description="삭제되었거나 존재하지 않는 모집글입니다."
         />
       </SafeAreaView>
     );
@@ -65,7 +64,7 @@ export default function PostDetailScreen() {
   let applyLabel = "지원하기";
   let applyDisabled = false;
   if (isClosed) {
-    applyLabel = "마감된 구인글";
+    applyLabel = "마감된 모집글";
     applyDisabled = true;
   } else if (eventPassed) {
     applyLabel = "종료된 공연";
@@ -74,10 +73,10 @@ export default function PostDetailScreen() {
     applyLabel = "정원이 마감된 악기";
     applyDisabled = true;
   } else if (isMyPost) {
-    applyLabel = "내가 등록한 구인글";
+    applyLabel = "내가 등록한 모집글";
     applyDisabled = true;
   } else if (hasApplied) {
-    applyLabel = "이미 지원한 구인글";
+    applyLabel = "이미 지원한 모집글";
     applyDisabled = true;
   }
 
@@ -122,7 +121,6 @@ export default function PostDetailScreen() {
           <View style={styles.infoList}>
             <IconText icon="calendar-outline" text={formatEventDateTime(post.eventAt)} />
             <IconText icon="location-outline" text={post.location} />
-            <IconText icon="cash-outline" text={formatKRW(post.pay)} />
           </View>
         </Section>
 
